@@ -75,8 +75,11 @@ var ConstHtmlIds =
 
 var HtmlGeneration =
 {
-    MakeMarketScreenHeader: function () {
-        return '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1 buy-sell-buttons" id ="buySell"><button type="button" class="grid-column-2 buy-sell-text btn btn-primary" id="buyTab">Buy</button><button type="button" class="grid-column-3 buy-sell-text btn btn-outline-primary" id="sellTab">Sell</button></div><div class="grid-row-2"><p id="money">$5000</p></div></div>';
+    MakeMarketScreen: function (money) {
+        let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1 buy-sell-buttons" id ="buySell"><button type="button" class="grid-column-2 buy-sell-text btn btn-primary" id="buyTab">Buy</button><button type="button" class="grid-column-3 buy-sell-text btn btn-outline-primary" id="sellTab">Sell</button></div><div class="grid-row-2"><p id="money">$';
+        html += money;
+        html += '</p></div></div><div class="grid-row-2 scrollviewer-vertical" id="stockList"></div>';
+        return html;
     },
     MakeBuyStockBanner: function(stockName, stockValue) {
         let id = stockName + 'buy';
@@ -134,7 +137,7 @@ var ScreenOps = {
     OpenMarketScreen: function () {
         let mainGrid = $(ConstHtmlIds.MainGrid);
         mainGrid.empty();
-        mainGrid.append(HtmlGeneration.MakeMarketScreenHeader());
+        mainGrid.append(HtmlGeneration.MakeMarketScreen(Connection.CurrentData.Money));
         mainGrid.append(HtmlGeneration.MakeBuyStockBanner());
 
         ScreenOps.AttachOpenMarketTabHandlers();
@@ -143,7 +146,8 @@ var ScreenOps = {
     AttachOpenMarketTabHandlers: function () {
         $(ConstHtmlIds.BuyTab).on(clickHandler, function () {
             let buyButton = $(ConstHtmlIds.BuyTab);
-            let sellButton = $(ConstHtmlIds.BuyTab);
+            let sellButton = $(ConstHtmlIds.SellTab);
+
             if (buyButton.hasClass(ConstHtmlIds.TabInactive)) {
                 buyButton.removeClass(ConstHtmlIds.TabInactive);
                 buyButton.addClass(ConstHtmlIds.TabActive);
@@ -154,8 +158,9 @@ var ScreenOps = {
         });
 
         $(ConstHtmlIds.SellTab).on(clickHandler, function () {
-            let sellButton = $(ConstHtmlIds.BuyTab);
             let buyButton = $(ConstHtmlIds.BuyTab);
+            let sellButton = $(ConstHtmlIds.SellTab);
+
             if (sellButton.hasClass(ConstHtmlIds.TabInactive)) {
                 sellButton.removeClass(ConstHtmlIds.TabInactive);
                 sellButton.addClass(ConstHtmlIds.TabActive);
@@ -206,6 +211,8 @@ var ScreenOps = {
 $(document).ready(function() {
     clickHandler = ("ontouchstart" in window ? "touchend" : "click");
 
+    ScreenOps.OpenMarketScreen();
+    /*
     $(ConstHtmlIds.BuyTab).on(clickHandler, function () {
         let buyButton = $(ConstHtmlIds.BuyTab);
         let sellButton = $(ConstHtmlIds.SellTab);
@@ -231,7 +238,7 @@ $(document).ready(function() {
             ScreenOps.SwitchToSell();
         }
     });
-
+    */
 });
 
 
