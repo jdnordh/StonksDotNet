@@ -205,7 +205,8 @@ var HtmlGeneration =
       return '<div class="center-absolute menu-grid"> <button id="startGame" class="btn btn-primary menu-button">Start Game</button></div>';
    },
    MakePresenter: function () {
-      return '<div id="presenter" class="fill"><h1 id="presenterText" class="grid-column-2 grid-row-1 menu-text">Market Closed</h1><div class="chart-div center-absolute"> <canvas id="presenterChart"></canvas></div></div>';
+      //return '<div id="presenter" class="fill"><h1 id="presenterText" class="grid-column-2 grid-row-1 menu-text">Market Closed</h1><div class="chart-div center-absolute"> <canvas id="presenterChart"></canvas></div></div>';
+      return '<div id="presenter" class="fill"><h1 id="presenterText" class="grid-column-2 grid-row-1 menu-text">Market Closed</h1><div class="chart-div center-absolute" id="presenterChart"></div></div>';
 	},
 }
 
@@ -238,7 +239,7 @@ var ScreenOps = {
       mainGrid.append(HtmlGeneration.MakeStartGameMenu());
       $(ConstHtmlIds.StartGame).on(clickHandler, function () {
          Connection.StartGame();
-         Presenter.CreateChart();
+         Presenter.CreatePlot();
       });
 	},
    SwitchToOpenMarket: function (isBuy) {
@@ -370,6 +371,44 @@ var ScreenOps = {
 };
 
 var Presenter = {
+   CreatePlot: function () {
+      let mainGrid = $(ConstHtmlIds.MainGrid);
+      mainGrid.empty();
+      mainGrid.append(HtmlGeneration.MakePresenter());
+
+      let stockNames = [];
+      let values = [];
+      let colors = ["#ff0000", "#ff00ff", "#ffff00", "#0000ff", "#00ffff", "#00ff00"];
+      for (let stockName in Connection.CurrentData.StockDictionary) {
+         if (Connection.CurrentData.StockDictionary.hasOwnProperty(stockName)) {
+            stockNames.push(stockName);
+            values.push(Connection.CurrentData.StockDictionary[stockName]);
+         }
+      }
+      var trace1 = {
+         x: stockNames,
+         y: values,
+         text: values.map(String),
+         marker: {
+            color: colors
+         },
+         type: 'bar'
+      };
+
+      var data = [trace1];
+      var layout = {
+         title: '',
+         font: {
+            family: 'var(--bs-font-sans-serif)',
+            size: 36,
+            color: '#7f7f7f'
+         },
+         yaxis: { range: [0, 200] },
+         showlegend: false,
+      };
+
+      Plotly.newPlot(ConstHtmlIds.PresenterChart, data, layout);
+	},
    CreateChart: function () {
       let mainGrid = $(ConstHtmlIds.MainGrid);
       mainGrid.empty();
@@ -377,6 +416,7 @@ var Presenter = {
 
       let labels = [];
       let values = [];
+      let colors = ["#ff0000", "#ff00ff", "#ffff00", "#0000ff", "#00ffff", "#00ff00"];
       for (let stockName in Connection.CurrentData.StockDictionary) {
          if (Connection.CurrentData.StockDictionary.hasOwnProperty(stockName)) {
             labels.push(stockName);
@@ -388,8 +428,8 @@ var Presenter = {
          datasets: [
             {
                data: values,
-               borderColor: 'ff0000',
-               backgroundColor: '#ff0000',
+               borderColor: colors,
+               backgroundColor: colors,
             }
          ]
       };
@@ -404,17 +444,18 @@ var Presenter = {
                },
                title: {
                   display: false,
-               }
+               },
+               scales: {
+                  yAxes: [{
+                     display: true,
+                     ticks: {
+                        suggestedMin: 0,
+                        suggestedMax: 200,
+                     }
+                  }]
+               },
             },
-            scales: {
-               yAxes: [{
-                  display: true,
-                  ticks: {
-                     suggestedMin: 0,    // minimum will be 0, unless there is a lower value.
-                     suggestedMax: 200,
-                  }
-               }]
-            },
+            
             legend: {
                display: false
             },
