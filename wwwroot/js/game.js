@@ -71,10 +71,48 @@ var ConstHtmlIds =
     TabInactive: "btn-outline-primary",
     StockList: "#stockList",
     MainGrid: "#mainGrid",
+    PreBuy: "#preBuy",
+    PreSell: "#preSell",
+    Buy: "#buy",
+    BuyAmount: "#buyAmount",
+    Sell: "#sell",
+    SellAmount: "#sellAmount",
 }
 
 var HtmlGeneration =
 {
+    MakePreBuyScreen: function (stockName) {
+        let html = '<div class="overlay-2"><p>How much ';
+        html += stockName;
+        html += ' would you like to buy?</p><select name="amount id="buyAmount">';
+        let stockValue = Connection.CurrentData.StockDictionary[stockName];
+        let money = Connection.CurrentData.Money;
+        for (let i = 0; i <= (money / (stockValue / 100)); i += 500) {
+            html += '<option value="';
+            html += i;
+            html += '">'
+            html += i;
+            html += '</option>';
+        }
+        html += '</select><button class="btn btn-success stock-text" id="buy">Buy</button>';
+        return html;
+    },
+    MakePreSellScreen: function (stockName) {
+        let html = '<div class="overlay-2"><p>How much ';
+        html += stockName;
+        html += ' would you like to sell?</p><select name="amount id="sellAmount">';
+        let stockAmount = Connection.CurrentData.Holdings[stockName];
+        let money = Connection.CurrentData.Money;
+        for (let i = 0; i <= stockAmount; i += 500) {
+            html += '<option value="';
+            html += i;
+            html += '">'
+            html += i;
+            html += '</option>';
+        }
+        html += '</select><button class="btn btn-success stock-text" id="sell">Sell</button>';
+        return html;
+    },
     MakeMarketScreen: function (money) {
         let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1 buy-sell-buttons" id ="buySell"><button type="button" class="grid-column-2 buy-sell-text btn btn-primary" id="buyTab">Buy</button><button type="button" class="grid-column-3 buy-sell-text btn btn-outline-primary" id="sellTab">Sell</button></div><div class="grid-row-2"><p id="money">$';
         html += money;
@@ -92,7 +130,7 @@ var HtmlGeneration =
         html += '">Buy</button></div >';
         return {
             html: html,
-            id: id
+            id: '#' + id
         }
     },
     MakeSellStockBanner: function(stockName, amountHeld) {
@@ -106,7 +144,7 @@ var HtmlGeneration =
         html += '">Sell</button></div >';
         return {
             html: html,
-            id: id
+            id: '#' + id
         }
     }
 }
@@ -192,19 +230,25 @@ var ScreenOps = {
         for (let stockName in Connection.CurrentData.Holdings) {
             if (Connection.CurrentData.Holdings.hasOwnProperty(stockName)) {
                 let amountHeld = Connection.CurrentData.Holdings[stockName];
-                let generated = HtmlGeneration.MakeSellStockBanner(stockName, amountHeld);
-                list.append(generated.html);
-                $(generated.id).on(clickHandler, function () {
-                    ScreenOps.PreSellStock(stockName);
-                });
+                if (amountHeld > 0) {
+                    let generated = HtmlGeneration.MakeSellStockBanner(stockName, amountHeld);
+                    list.append(generated.html);
+                    $(generated.id).on(clickHandler, function () {
+                        ScreenOps.PreSellStock(stockName);
+                    });
+                }
             }
         }
     },
-    PreBuyStock: function (stock) {
+    PreBuyStock: function (stockName) {
         // TODO
+        let list = $(ConstHtmlIds.StockList);
+        list.append(HtmlGeneration.MakePreBuyScreen(stockName));
     },
-    PreSellStock: function (stock) {
+    PreSellStock: function (stockName) {
         // TODO
+        let list = $(ConstHtmlIds.StockList);
+        list.append(HtmlGeneration.MakePreSellScreen(stockName));
     },
 };
 
@@ -212,33 +256,7 @@ $(document).ready(function() {
     clickHandler = ("ontouchstart" in window ? "touchend" : "click");
 
     ScreenOps.OpenMarketScreen();
-    /*
-    $(ConstHtmlIds.BuyTab).on(clickHandler, function () {
-        let buyButton = $(ConstHtmlIds.BuyTab);
-        let sellButton = $(ConstHtmlIds.SellTab);
-
-        if (buyButton.hasClass(ConstHtmlIds.TabInactive)) {
-            buyButton.removeClass(ConstHtmlIds.TabInactive);
-            buyButton.addClass(ConstHtmlIds.TabActive);
-            sellButton.removeClass(ConstHtmlIds.TabActive);
-            sellButton.addClass(ConstHtmlIds.TabInactive);
-            ScreenOps.SwitchToBuy();
-        }
-    });
-
-    $(ConstHtmlIds.SellTab).on(clickHandler, function () {
-        let buyButton = $(ConstHtmlIds.BuyTab);
-        let sellButton = $(ConstHtmlIds.SellTab);
-
-        if (sellButton.hasClass(ConstHtmlIds.TabInactive)) {
-            sellButton.removeClass(ConstHtmlIds.TabInactive);
-            sellButton.addClass(ConstHtmlIds.TabActive);
-            buyButton.removeClass(ConstHtmlIds.TabActive);
-            buyButton.addClass(ConstHtmlIds.TabInactive);
-            ScreenOps.SwitchToSell();
-        }
-    });
-    */
+    
 });
 
 

@@ -1257,11 +1257,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Jordan\\source\\repos\\StockTickerDotNetCore\\StockTickerDotNetCore.csproj",
+      "projectUniqueName": "D:\\Repos\\Stonks\\StockTickerDotNetCore.csproj",
       "projectName": "StockTickerDotNetCore",
-      "projectPath": "C:\\Users\\Jordan\\source\\repos\\StockTickerDotNetCore\\StockTickerDotNetCore.csproj",
+      "projectPath": "D:\\Repos\\Stonks\\StockTickerDotNetCore.csproj",
       "packagesPath": "C:\\Users\\Jordan\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Jordan\\source\\repos\\StockTickerDotNetCore\\obj\\",
+      "outputPath": "D:\\Repos\\Stonks\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet\\"
