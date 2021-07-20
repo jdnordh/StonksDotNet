@@ -4,8 +4,8 @@
 "use strict";
 var clickHandler;
 
-var Game =
-{
+// TODO Redo this part...
+var Connection = {
    ClientMethods: {
       GameCreated: "gameCreated",
       GameJoined: "gameJoined",
@@ -17,10 +17,6 @@ var Game =
       CreateGame: "CreateGame",
       JoinGame: "JoinGame",
    },
-   DataTransferObjects: {},
-}
-// TODO Redo this part...
-var Connection = {
    Init: function () {
       Connection.Hub = new signalR.HubConnectionBuilder()
          .configureLogging(signalR.LogLevel.Debug)
@@ -64,6 +60,25 @@ var Connection = {
       // TODO
       console.log('Sold ' + amount + ' ' + stockName);
    },
+   CreateGame: function () {
+      // TODO
+      console.log('Created game.');
+	},
+   JoinGame: function (username) {
+      // TODO
+      console.log('Joined game with username ' + username + '.');
+   },
+   StartGame: function () {
+      console.log('Started game.');
+	},
+   OnServerUpdate: function () {
+      // TODO
+
+      let updateMethod = ScreenOps.StateBuildMethod[ScreenOps.State];
+      if (updateMethod) {
+         updateMethod();
+		}
+	},
 
    CurrentData: {
       Holdings: {
@@ -102,6 +117,12 @@ var ConstHtmlIds =
    Sell: "#sell",
    SellAmount: "#sellAmount",
    Cancel: "#cancel",
+   CreateGame: "#createGame",
+   JoinGame: "#joinGame",
+   Username: "#username",
+   StartGame: "#startGame",
+   PresenterChart: "presenterChart",
+   PresenterText: "presenterText",
 }
 
 var HtmlGeneration =
@@ -123,7 +144,6 @@ var HtmlGeneration =
       return html;
    },
    MakePreSellScreen: function (stockName) {
-
       let html = '<div class="fill grid-row-2"><p class="buy-sell-prompt">How much ';
       html += stockName;
       html += ' would you like to sell?</p><div class="buy-sell-control"><select class="buy-sell-prompt grid-column-2 grid-row-1 fill" name="amount" id="sellAmount">';
@@ -138,6 +158,9 @@ var HtmlGeneration =
       html += '</select><button class="btn btn-info buy-sell-button fill grid-column-3 grid-row-1" id="sell">Sell</button><div class="buy-sell-cancel fill"><button class="btn btn-danger buy-sell-button fill grid-column-2" id="cancel">Cancel</button></div></div></div>';
       return html;
    },
+   MakeMarketClosedScreen: function () {
+      return '<p class="market-closed">Market Closed</p>';
+	},
    MakeMarketScreen: function (money) {
       let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1 buy-sell-buttons" id ="buySell"><button type="button" class="grid-column-2 buy-sell-text btn btn-primary" id="buyTab">Buy</button><button type="button" class="grid-column-3 buy-sell-text btn btn-outline-primary" id="sellTab">Sell</button></div><div class="grid-row-2"><p id="money">$';
       html += money;
@@ -171,7 +194,19 @@ var HtmlGeneration =
          html: html,
          id: '#' + id
       }
-   }
+   },
+   MakeMainMenu: function () {
+      return '<div class="center-absolute menu-grid"> <button id="createGame" class="btn btn-primary grid-row-1 menu-button">Create Game</button> <button id="joinGame" class="btn btn-primary grid-row-2 menu-button">Join Game</button></div>';
+   },
+   MakeJoinMenu: function (isCreateGame) {
+      return '<div class="center-absolute menu-grid"><div class="menu-sub-grid"> <label for="username" class="menu-text">Username:</label> <input autocomplete="off" type="text" class="menu-text" id="username" /></div> <button id="joinGame" class="btn btn-primary grid-row-2 menu-button">Join Game</button></div>';
+   },
+   MakeStartGameMenu: function () {
+      return '<div class="center-absolute menu-grid"> <button id="startGame" class="btn btn-primary menu-button">Start Game</button></div>';
+   },
+   MakePresenter: function () {
+      return '<div id="presenter" class="fill"><h1 id="presenterText" class="grid-column-2 grid-row-1 menu-text">Market Closed</h1><div class="chart-div center-absolute"> <canvas id="presenterChart"></canvas></div></div>';
+	},
 }
 
 var ScreenOps = {
@@ -192,8 +227,20 @@ var ScreenOps = {
       },
    },
    SwitchToClosedMarket: function () {
-
+      let mainGrid = $(ConstHtmlIds.MainGrid);
+      mainGrid.empty();
+      mainGrid.append(HtmlGeneration.MakeMarketClosedScreen());
+      ScreenOps.State = ScreenOps.States.MarketClosed;
    },
+   SwitchToStartGameMenu: function () {
+      let mainGrid = $(ConstHtmlIds.MainGrid);
+      mainGrid.empty();
+      mainGrid.append(HtmlGeneration.MakeStartGameMenu());
+      $(ConstHtmlIds.StartGame).on(clickHandler, function () {
+         Connection.StartGame();
+         Presenter.CreateChart();
+      });
+	},
    SwitchToOpenMarket: function (isBuy) {
       let mainGrid = $(ConstHtmlIds.MainGrid);
       mainGrid.empty();
@@ -202,11 +249,9 @@ var ScreenOps = {
 
       ScreenOps.AttachOpenMarketTabHandlers();
       if (isBuy) {
-         ScreenOps.State = ScreenOps.States.MarketOpenBuy;
          ScreenOps.SwitchToBuy();
       }
       else {
-         ScreenOps.State = ScreenOps.States.MarketOpenBuy;
          ScreenOps.SwitchToSell();
       }
    },
@@ -238,6 +283,7 @@ var ScreenOps = {
       });
    },
    SwitchToBuy: function () {
+      ScreenOps.State = ScreenOps.States.MarketOpenBuy;
       let list = $(ConstHtmlIds.StockList);
       list.empty();
 
@@ -253,6 +299,7 @@ var ScreenOps = {
       }
    },
    SwitchToSell: function () {
+      ScreenOps.State = ScreenOps.States.MarketOpenSell;
       let list = $(ConstHtmlIds.StockList);
       list.empty();
 
@@ -270,6 +317,7 @@ var ScreenOps = {
       }
    },
    PreBuyStock: function (stockName) {
+      ScreenOps.State = ScreenOps.States.MarketOpenPreBuy;
       let list = $(ConstHtmlIds.StockList);
       list.empty();
       list.append(HtmlGeneration.MakePreBuyScreen(stockName));
@@ -277,6 +325,9 @@ var ScreenOps = {
       // Add handlers
       $(ConstHtmlIds.Buy).on(clickHandler, function () {
          let stockAmount = $(ConstHtmlIds.BuyAmount).find(":selected").text();
+         if (stockAmount === '0') {
+            return;
+         }
          Connection.BuyStock(stockName, stockAmount);
          ScreenOps.SwitchToBuy();
       });
@@ -285,6 +336,7 @@ var ScreenOps = {
       });
    },
    PreSellStock: function (stockName) {
+      ScreenOps.State = ScreenOps.States.MarketOpenPreSell;
       let list = $(ConstHtmlIds.StockList);
       list.empty();
       list.append(HtmlGeneration.MakePreSellScreen(stockName));
@@ -292,6 +344,9 @@ var ScreenOps = {
       // Add handlers
       $(ConstHtmlIds.Sell).on(clickHandler, function () {
          let stockAmount = $(ConstHtmlIds.SellAmount).find(":selected").text();
+         if (stockAmount === '0') {
+            return;
+			}
          Connection.SellStock(stockName, stockAmount);
          ScreenOps.SwitchToSell();
       });
@@ -299,15 +354,122 @@ var ScreenOps = {
          ScreenOps.SwitchToSell();
       });
    },
+   SwitchToJoinMenu: function () {
+
+      let mainGrid = $(ConstHtmlIds.MainGrid);
+      mainGrid.empty();
+      mainGrid.append(HtmlGeneration.MakeJoinMenu());
+      $(ConstHtmlIds.JoinGame).on(clickHandler, function () {
+         let username = $(ConstHtmlIds.Username).val();
+         Connection.JoinGame(username);
+
+         // TODO Switch this
+         ScreenOps.SwitchToOpenMarket(true);
+      });
+	},
+};
+
+var Presenter = {
+   CreateChart: function () {
+      let mainGrid = $(ConstHtmlIds.MainGrid);
+      mainGrid.empty();
+      mainGrid.append(HtmlGeneration.MakePresenter());
+
+      let labels = [];
+      let values = [];
+      for (let stockName in Connection.CurrentData.StockDictionary) {
+         if (Connection.CurrentData.StockDictionary.hasOwnProperty(stockName)) {
+            labels.push(stockName);
+            values.push(Connection.CurrentData.StockDictionary[stockName]);
+         }
+      }
+      const data = {
+         labels: labels,
+         datasets: [
+            {
+               data: values,
+               borderColor: 'ff0000',
+               backgroundColor: '#ff0000',
+            }
+         ]
+      };
+      let config = {
+         type: 'bar',
+         data: data,
+         options: {
+            responsive: true,
+            plugins: {
+               legend: {
+                  position: 'top',
+               },
+               title: {
+                  display: false,
+               }
+            },
+            scales: {
+               yAxes: [{
+                  display: true,
+                  ticks: {
+                     suggestedMin: 0,    // minimum will be 0, unless there is a lower value.
+                     suggestedMax: 200,
+                  }
+               }]
+            },
+            legend: {
+               display: false
+            },
+            tooltips: {
+               callbacks: {
+                  label: function (tooltipItem) {
+                     return tooltipItem.yLabel;
+                  }
+               }
+            }
+         },
+      };
+      let myChart = new Chart(document.getElementById(ConstHtmlIds.PresenterChart).getContext('2d'), config);
+   },
+   StartTimer: function(seconds, display) {
+      var remainingSeconds = seconds;
+      let interval = setInterval(function () {
+
+         remainingSeconds = remainingSeconds < 10 ? "0" + remainingSeconds : remainingSeconds;
+
+         display.text(remainingSeconds);
+
+         if (--remainingSeconds < 0) {
+            clearInterval(interval);
+         }
+      }, 1000);
+   },
+   SetMarketOpen: function (startingSeconds) {
+      let presenterText = $(ConstHtmlIds.PresenterText);
+
+      Presenter.StartTimer(startingSeconds, {
+         text: function (value) {
+            presenterText.val(value);
+         }
+      });
+	}
 };
 
 $(document).ready(function () {
    clickHandler = ("ontouchstart" in window ? "touchend" : "click");
 
-   ScreenOps.SwitchToOpenMarket(true);
+   // Attach menu handlers
+   $(ConstHtmlIds.CreateGame).on(clickHandler, function () {
+      Connection.CreateGame();
+      ScreenOps.SwitchToStartGameMenu();
+   });
+   $(ConstHtmlIds.JoinGame).on(clickHandler, function () {
+      ScreenOps.SwitchToJoinMenu(false);
+   });
 
+   // TODO Other start up stuff??
+   //ScreenOps.SwitchToOpenMarket(true);
+
+   // TODO Any cookies like username or what ever
 });
-
 
 //#region Cookies
 

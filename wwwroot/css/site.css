@@ -14,21 +14,54 @@ for details on configuring this project to bundle and minify static web assets. 
     margin:5px;
 }
 
-.center-relative {
-    width: 70px;
-    height: 70px;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    margin: -35px 0 0 -35px;
-}
-
 .fill {
     width: 100%;
     height: 100%;
 }
 
-.buy-sell-control{
+#presenter{
+   display: grid;
+   grid-template-columns: 15% 70%;
+   grid-template-rows: 15% 70%;
+}
+
+.chart-div {
+   width: 70%;
+   height: 70%;
+}
+
+.menu-text {
+   font-size: 6vh;
+   text-align: center;
+}
+
+.menu-sub-grid {
+   display: grid;
+   width: 100%;
+   height: 100%;
+   grid-template-rows: 50% 50%;
+}
+
+.menu-grid{
+   display: grid;
+   width: 80%;
+   height: 50%;
+   grid-template-rows: 50% 50%;
+   grid-row-gap: 1vh;
+}
+
+.menu-button{
+   font-size: 6vh;
+   word-wrap: break-word;
+   line-height: 6vh;
+}
+
+.market-closed {
+   font-size: 6vh;
+   text-align: center;
+}
+
+.buy-sell-control {
    display: grid;
    grid-template-columns: 9% 40% 40%;
    grid-template-rows: 50% 50%;
