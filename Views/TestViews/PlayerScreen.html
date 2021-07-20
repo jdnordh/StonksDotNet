@@ -1,0 +1,34 @@
+﻿
+<!--<meta http-equiv="refresh" content="5">-->
+
+<head>
+	<link rel="stylesheet" href="../../wwwroot/lib/bootstrap/dist/css/bootstrap.min.css">
+	<link rel="stylesheet" href="../../wwwroot/css/site.css">
+	<script src="../../wwwroot/lib/jquery/dist/jquery.min.js"></script>
+	<script src="../../wwwroot/js/game.js"></script>
+</head>
+
+<div class="grid-player-main grid-fill" id="mainGrid">
+	<div class="grid-row-1 grid-fill buy-sell-div">
+		<div class="grid-row-1 buy-sell-buttons" id="buySell">
+			<button type="button" class="grid-column-2 buy-sell-text btn btn-primary" id="buyTab">Buy</button>
+			<button type="button" class="grid-column-3 buy-sell-text btn btn-outline-primary" id="sellTab">Sell</button>
+		</div>
+		<div class="grid-row-2">
+			<p id="money">$5000</p>
+		</div>
+	</div>
+	<div class="grid-row-2 scrollviewer-vertical" id="stockList">
+		<div class="stock-banner">
+			<p class="grid-column-1 stock-text">Oil</p>
+			<p class="grid-column-2 stock-text">1.15</p>
+			<button type="button" class="grid-column-3 btn btn-success stock-text" id="buyOil">Buy</button>
+		</div>
+		<div class="stock-banner">
+			<p class="grid-column-1 stock-text">Oil</p>
+			<p class="grid-column-2 stock-text">1.15</p>
+			<button type="button" class="grid-column-3 btn btn-info stock-text" id="sellOil">Sell</button>
+		</div>
+	</div>
+</div>
+

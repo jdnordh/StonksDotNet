@@ -1,0 +1,146 @@
+﻿/* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
+for details on configuring this project to bundle and minify static web assets. */
+
+.scrollviewer-vertical{
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.overlay{
+    z-index: 1;
+}
+
+.center-relative {
+    width: 70px;
+    height: 70px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin: -35px 0 0 -35px;
+}
+
+.fill{
+    width: 100%;
+    height: 100%;
+}
+
+.stock-banner{
+    border: solid 2px;
+    display: grid;
+    grid-template-columns: 33% 33% 33%;
+    margin: 1vh;
+}
+
+.buy-sell-buttons{
+    display: grid;
+    grid-template-columns: 30% 20% 20%;
+}
+
+.buy-sell-text {
+    font-weight: 900;
+    font-size: 5vh;
+    margin: 1vh;
+}
+
+.stock-text {
+    font-weight: 700;
+    font-size: 4vh;
+    margin: 1vh;
+}
+
+.center-absolute {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+}
+
+.grid-fill {
+    display: grid;
+    width: 100%;
+    height: 100%;
+}
+
+.grid-player-main{
+   grid-template-rows: 20% 80%;
+}
+
+.grid-row-1 {
+   grid-row-start: 1;
+   grid-row-end: 2;
+   max-height: 100%;
+   max-width: 100%;
+}
+
+.grid-row-2 {
+   grid-row-start: 2;
+   grid-row-end: 3;
+   max-height: 100%;
+   max-width: 100%;
+}
+
+.grid-row-3 {
+   grid-row-start: 3;
+   grid-row-end: 4;
+   max-height: 100%;
+   max-width: 100%;
+}
+
+.grid-row-4 {
+   grid-row-start: 4;
+   grid-row-end: 5;
+   max-height: 100%;
+   max-width: 100%;
+}
+
+.grid-column-1 {
+    grid-column-start: 1;
+    grid-column-end: 2;
+    max-height: 100%;
+    max-width: 100%;
+}
+
+.grid-column-2 {
+    grid-column-start: 2;
+    grid-column-end: 3;
+    max-height: 100%;
+    max-width: 100%;
+}
+
+.grid-column-3 {
+    grid-column-start: 3;
+    grid-column-end: 4;
+    max-height: 100%;
+    max-width: 100%;
+}
+
+html {
+   font-size: 14px;
+   position: relative;
+   height: 100%;
+   width: 100%;
+   margin: 0;
+   padding: 0;
+}
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
+
+
+#money{
+   font-size: 8vh;
+   text-align: center;
+   font-weight: 700;
+   color: green;
+}
