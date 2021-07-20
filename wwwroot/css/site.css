@@ -28,6 +28,33 @@ for details on configuring this project to bundle and minify static web assets. 
     height: 100%;
 }
 
+.buy-sell-control{
+   display: grid;
+   grid-template-columns: 9% 40% 40%;
+   grid-template-rows: 50% 50%;
+   grid-column-gap: 1vh;
+   grid-row-gap: 3vh;
+}
+
+.buy-sell-button {
+   font-size: 4vh;
+}
+
+.buy-sell-cancel{
+   display: grid;
+   grid-template-columns: 24% 50%;
+   grid-column-start: 2;
+   grid-column-end: 4;
+   margin: 1vh;
+}
+
+.buy-sell-prompt{
+   text-align: center;
+   font-size: 6vh;
+   font-weight: 700;
+   align-content: center;
+}
+
 .stock-banner {
     border: solid 2px;
     display: grid;
