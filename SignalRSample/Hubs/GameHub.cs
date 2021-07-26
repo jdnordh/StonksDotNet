@@ -1,56 +1,47 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Models.DataTransferObjects;
-using Models.Game;
-using StonkTrader.Hubs;
 using StonkTrader.Models.Connection;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace SignalRSample.Hubs
+namespace Hubs
 {
-    public class GameHub : Hub
-    {
-		private string CurrentUserId
-		{ 
-			get 
+	public class GameHub : Hub
+	{
+		private string CurrentUserConnectionId
+		{
+			get
 			{
 				return Context.ConnectionId;
 			}
 		}
 
-        public async Task SendMessage(string user, string message)
-        {
-            await Clients.All.SendAsync("ReceiveMessage", user, message);
-        }
-
 		#region Game Creation and Joining
 
 		public async Task CreateGame()
 		{
-			if (GameInstance.OberserverConnectionId != null)
-            {
+			if (GameManager.Instance.Game != null)
+			{
 				await Clients.Caller.SendAsync(ClientMethods.CreateGameUnavailable);
 				return;
-            }
-			GameInstance.OberserverConnectionId = CurrentUserId;
-
+			}
+			GameManager.Instance.CreateNewGame();
 			await Clients.Caller.SendAsync(ClientMethods.GameCreated);
 		}
 
-        public async Task JoinGame(string username)
+		public async Task JoinGame(string username)
 		{
 			// Add player to game
-			var safeUsername = Regex.Replace(username, "[^0-9a-zA-Z]+", "");
-			var inventory = GameInstance.Game.AddPlayer(CurrentUserId, safeUsername);
+			var safeUsername = GetSafeUsername(username);
+			var inventory = GameManager.Instance.Game.AddPlayer(CurrentUserConnectionId, safeUsername);
 			inventory.Username = safeUsername;
 			await Clients.Caller.SendAsync(ClientMethods.GameJoined, inventory);
 		}
 
 		public async Task StartGame()
 		{
-			GameInstance.Game.StartGame();
-			await Clients.All.SendAsync(ClientMethods.GameStarted, GameInstance.Game.Stocks);
+			GameManager.Instance.Game.StartGame();
+			await Clients.All.SendAsync(ClientMethods.GameStarted, GameManager.Instance.Game.Stocks);
 		}
 
 		#endregion
@@ -63,17 +54,17 @@ namespace SignalRSample.Hubs
 			PlayerInventoryDto inventory = null;
 			if (isBuy)
 			{
-				if (GameInstance.Game.IsBuyOkay(CurrentUserId, stockName, amount))
+				if (GameManager.Instance.Game.IsBuyOkay(CurrentUserConnectionId, stockName, amount))
 				{
-					inventory = GameInstance.Game.BuyStock(CurrentUserId, stockName, amount);
+					inventory = GameManager.Instance.Game.BuyStock(CurrentUserConnectionId, stockName, amount);
 					transactionWasSuccessful = true;
 				}
 			}
 			else
 			{
-				if (GameInstance.Game.IsSellOkay(CurrentUserId, stockName, amount))
+				if (GameManager.Instance.Game.IsSellOkay(CurrentUserConnectionId, stockName, amount))
 				{
-					inventory = GameInstance.Game.SellStock(CurrentUserId, stockName, amount);
+					inventory = GameManager.Instance.Game.SellStock(CurrentUserConnectionId, stockName, amount);
 					transactionWasSuccessful = true;
 				}
 			}
@@ -88,6 +79,15 @@ namespace SignalRSample.Hubs
 			}
 		}
 
-        #endregion
-    }
+		#endregion
+
+		#region Utilities
+
+		private string GetSafeUsername(string submittedUsername)
+		{
+			return Regex.Replace(submittedUsername, "[^0-9a-zA-Z]+", "");
+		}
+
+		#endregion
+	}
 }

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using SignalRSample.Hubs;
+using Hubs;
 using StonkTrader.Models.Connection;
 using System;
 using System.Collections.Generic;
@@ -18,7 +18,7 @@ namespace SignalRSample
         {
             var host = CreateHostBuilder(args).Build();
             var hubConext = host.Services.GetService(typeof(IHubContext<GameHub>));
-            GameInstance.SetHubContext(hubConext);
+            GameManager.SetHubContext(hubConext);
             host.Run();
         }
 

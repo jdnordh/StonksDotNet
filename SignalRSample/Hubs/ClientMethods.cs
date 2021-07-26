@@ -1,5 +1,5 @@
 ﻿
-namespace StonkTrader.Hubs
+namespace Hubs
 {
     public static class ClientMethods
     {

@@ -16,40 +16,14 @@ namespace Models.Game
 		private readonly int m_startingMoney;
 		private readonly int m_marketOpenTimeInSeconds;
 		private readonly int m_rollTimeInSeconds;
+		private readonly IGameEventCommunicator m_gameEventCommunicator;
 
-		// Dice
+		// Rolling
 		private readonly Die<string> m_stockDie;
 		private readonly Die<decimal> m_amountDie;
-		private readonly Die<Action<string, decimal>> m_actionDie;
+		private readonly Die<Func<string, decimal, string>> m_funcDie;
 
-		// Keeping track of place in game
-		private int m_currentRoundNumber = 0;
-		private int m_currentRollNumber = 0;
 		private bool m_gameStarted = false;
-
-		#endregion
-
-		#region Events
-
-		/// <summary>
-		/// Fires when any player inventories are updated.
-		/// </summary>
-		public event Action<StonkTraderGame, List<(string id, PlayerInventoryDto inventory)>> PlayerInventoriesUpdated;
-
-		/// <summary>
-		/// Fires when markets open. 
-		/// </summary>
-		public event Action<StonkTraderGame, MarketDto> MarketUpdated;
-
-		/// <summary>
-		/// Fires when the game ends.
-		/// </summary>
-		public event Action<StonkTraderGame, List<(string playerName, int money)>> GameEnded;
-
-		/// <summary>
-		/// Fires when a roll happens
-		/// </summary>
-		public event Action<StonkTraderGame, MarketDto> Rolled;
 
 		#endregion
 
@@ -59,16 +33,13 @@ namespace Models.Game
 
 		public bool IsMarketOpen { get; private set; }
 
-
 		public Dictionary<string, Player> Players;
-
-		public string LastRollActionName { get; private set; }
 
 		#endregion
 
 		#region Constructor 
 
-		public StonkTraderGame(GameInitializer initializer)
+		public StonkTraderGame(GameInitializer initializer, IGameEventCommunicator gameEventCommunicator)
 		{
 			Players = new Dictionary<string, Player>();
 			m_numberOfRounds = initializer.NumberOfRounds;
@@ -76,6 +47,8 @@ namespace Models.Game
 			m_startingMoney = initializer.StartingMoney;
 			m_marketOpenTimeInSeconds = initializer.MarketOpenTimeInSeconds;
 			m_rollTimeInSeconds = initializer.RollTimeInSeconds;
+
+			m_gameEventCommunicator = gameEventCommunicator;
 
 			m_stockDie = new Die<string>() { Results = initializer.Stocks.Select(stock => stock.stockName).ToList() };
 			m_amountDie = new Die<decimal>
@@ -87,26 +60,26 @@ namespace Models.Game
 					.2M
 				}
 			};
-			m_actionDie = new Die<Action<string, decimal>>
+			m_funcDie = new Die<Func<string, decimal, string>>
 			{
-				Results = new List<Action<string, decimal>>
+				Results = new List<Func<string, decimal, string>>
 				{
 					(stock, amount) =>
 					{
 						Stocks[stock].IncreaseValue(amount);
-						LastRollActionName = "UP";
 						ResolveSplitOrCrash();
+						return "UP";
 					},
 					(stock, amount) =>
 					{
 						Stocks[stock].DecreaseValue(amount);
-						LastRollActionName = "DOWN";
 						ResolveSplitOrCrash();
+						return  "DOWN";
 					},
 					(stock, amount) =>
 					{
-						LastRollActionName = "DIVIDEND";
 						PayDividends(stock, amount);
+						return "DIVIDEND";
 					}
 				}
 			};
@@ -119,84 +92,62 @@ namespace Models.Game
 			IsMarketOpen = false;
 		}
 
-		public PlayerInventoryDto AddPlayer(string id, string username)
-		{
-            var player = new Player(id, username, Stocks.Values.Select(stock => stock.Name).ToList())
-            {
-                Money = m_startingMoney
-            };
-            Players.Add(id, player);
-			return player.GetPlayerInvetory();
-		}
 		#endregion
 
-		#region Gameplay
+		#region Initialization
+		public PlayerInventoryDto AddPlayer(string id, string username)
+		{
+			var player = new Player(id, username, Stocks.Values.Select(stock => stock.Name).ToList())
+			{
+				Money = m_startingMoney
+			};
+			Players.Add(id, player);
+			return player.GetPlayerInvetory();
+		}
 
 		public async void StartGame()
 		{
 			m_gameStarted = true;
 
-			for(int round = 0; round < m_numberOfRounds; round++)
-            {
+			for (int round = 0; round < m_numberOfRounds; round++)
+			{
 				await OpenAndCloseMarket();
 
-				for(int roll = 0; roll < m_numberOfRollsPerRound; roll++)
-                {
+				for (int roll = 0; roll < m_numberOfRollsPerRound; roll++)
+				{
 					Roll();
 
 					await Task.Delay(m_rollTimeInSeconds * 1000);
-                }
-            }
+				}
+			}
 			EndGame();
 		}
 
-		public void EndGame()
-		{
-			m_gameStarted = false;
-			var playerWallets = new List<(string id, int wallet)>();
-			SellAllShares();
-			foreach(var player in Players.Values)
-            {
-				playerWallets.Add((player.Name, player.Money));
-            }
-			GameEnded?.Invoke(this, playerWallets);
-		}
+		#endregion
 
-		/// <summary>
-		/// Get a market dto.
-		/// </summary>
-		/// <returns>The dto.</returns>
-		public MarketDto GetMarketDto()
-		{
-			var stocksDto = new Dictionary<string, StockDto>();
-			foreach(var kvp in Stocks)
-            {
-				stocksDto.Add(kvp.Key, new StockDto(kvp.Value.Name, kvp.Value.Value) { Color = kvp.Value.Color });
-            }
-			return new MarketDto(IsMarketOpen, m_marketOpenTimeInSeconds, stocksDto) 
-			{
-				RollNumber = m_currentRollNumber,
-				RoundNumber = m_currentRoundNumber
-			};
-		}
+		#region Dice Rolling
 
 		/// <summary>
 		/// Opens the market.
 		/// </summary>
 		private async Task OpenAndCloseMarket()
-        {
-            if (IsMarketOpen)
-            {
+		{
+			if (IsMarketOpen)
+			{
+				throw new InvalidOperationException("Market is already open. What are you doing. Look at stack trace.");
+			}
+			IsMarketOpen = true;
 
-				return;
-            }
-            IsMarketOpen = true;
-			MarketUpdated?.Invoke(this, GetMarketDto());
+			var marketMiliseconds = m_marketOpenTimeInSeconds * 1000;
+			var marketEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + marketMiliseconds;
+			var marketDto = GetMarketDto();
+			marketDto.MarketCloseTimeInMilliseconds = marketEndTime;
+			await m_gameEventCommunicator.GameMarketChanged(marketDto);
 
 			await Task.Delay(m_marketOpenTimeInSeconds * 1000);
 
 			IsMarketOpen = false;
-			MarketUpdated?.Invoke(this, GetMarketDto());
+			await m_gameEventCommunicator.GameMarketChanged(GetMarketDto());
 		}
 
 		/// <summary>
@@ -206,14 +157,19 @@ namespace Models.Game
 		{
 			var stock = m_stockDie.Roll();
 			var amount = m_amountDie.Roll();
-			var action = m_actionDie.Roll();
-			action(stock, amount);
+			var stockFunc = m_funcDie.Roll();
+			string funcName = stockFunc(stock, amount);
 
-			m_currentRollNumber++;
-
-			Rolled?.Invoke(this, GetMarketDto());
+			var marketDto = GetMarketDto();
+			marketDto.RollDto = new RollDto(stock, funcName, (int)(amount * 100));
+			m_gameEventCommunicator.GameRolled(marketDto);
 		}
 
+		/// <summary>
+		/// Pay divideds to the holders of given stock based on the given percentage.
+		/// </summary>
+		/// <param name="stock">The stock paying dividends.</param>
+		/// <param name="percentage">The percentage to pay out.</param>
 		private void PayDividends(string stock, decimal percentage)
 		{
 			var updatedPlayerInvectories = new List<(string id, PlayerInventoryDto)>();
@@ -226,9 +182,12 @@ namespace Models.Game
 					player.Money += (int)(holdings * percentage);
 				}
 			}
-			PlayerInventoriesUpdated?.Invoke(this, updatedPlayerInvectories);
+			m_gameEventCommunicator.PlayerInventoriesUpdated(updatedPlayerInvectories);
 		}
 
+		/// <summary>
+		/// Resolves any stocks that have split or crashed.
+		/// </summary>
 		private void ResolveSplitOrCrash()
 		{
 			var updatedPlayerInvectories = new List<(string id, PlayerInventoryDto)>();
@@ -245,7 +204,7 @@ namespace Models.Game
 					stock.ResetValue();
 				}
 				// If stock splits, double all shares
-				if (stock.Value >= 2)
+				else if (stock.Value >= 2)
 				{
 					foreach (var player in Players.Values)
 					{
@@ -255,8 +214,10 @@ namespace Models.Game
 					stock.ResetValue();
 				}
 			}
-			PlayerInventoriesUpdated?.Invoke(this, updatedPlayerInvectories);
+			m_gameEventCommunicator.PlayerInventoriesUpdated(updatedPlayerInvectories);
 		}
+
+		#endregion
 
 		#region Buy and Sell
 
@@ -279,14 +240,14 @@ namespace Models.Game
 			}
 			if (!Stocks.ContainsKey(stockName))
 			{
-				throw new InvalidOperationException($"The stock '{stockName}' was not present in the game.");
+				return false;
 			}
 			if (amountToBuy % 500 != 0)
 			{
-				throw new InvalidOperationException($"The amount '{amountToBuy}' was not a multiple of 500.");
+				return false;
 			}
 			var player = Players[userId];
-			int cost = (int)Stocks[stockName].Value * amountToBuy;
+			int cost = Stocks[stockName].GetValueOfAmount(amountToBuy);
 			return player.Money >= cost;
 		}
 
@@ -299,12 +260,12 @@ namespace Models.Game
 		/// <returns>Updated player money.</returns>
 		public PlayerInventoryDto BuyStock(string userId, string stockName, int amountToBuy)
 		{
+			var player = Players[userId];
 			if (!IsBuyOkay(userId, stockName, amountToBuy))
 			{
-				return null;
+				return player.GetPlayerInvetory();
 			}
-			var player = Players[userId];
-			int cost = (int)Stocks[stockName].Value * amountToBuy;
+			int cost = Stocks[stockName].GetValueOfAmount(amountToBuy);
 			player.Money -= cost;
 			player.Holdings[stockName] += amountToBuy;
 			return player.GetPlayerInvetory();
@@ -329,11 +290,11 @@ namespace Models.Game
 			}
 			if (!Stocks.ContainsKey(stockName))
 			{
-				throw new InvalidOperationException($"The stock '{stockName}' was not present in the game.");
+				return false;
 			}
 			if (amountToSell % 500 != 0)
 			{
-				throw new InvalidOperationException($"The amount '{amountToSell}' was not a multiple of 500.");
+				return false;
 			}
 			var player = Players[userId];
 			return player.Holdings[stockName] >= amountToSell;
@@ -348,22 +309,35 @@ namespace Models.Game
 		/// <returns>Updated player money.</returns>
 		public PlayerInventoryDto SellStock(string userId, string stockName, int amountToSell)
 		{
+			var player = Players[userId];
 			if (!IsSellOkay(userId, stockName, amountToSell))
 			{
-				return null;
+				return player.GetPlayerInvetory();
 			}
-			var player = Players[userId];
-			int cost = (int)Stocks[stockName].Value * amountToSell;
+			int soldFor = Stocks[stockName].GetValueOfAmount(amountToSell);
 			player.Holdings[stockName] -= amountToSell;
-			player.Money += cost;
+			player.Money += soldFor;
 			return player.GetPlayerInvetory();
 		}
 
 		#endregion
 
-		#endregion
-
 		#region Game End
+
+		private void EndGame()
+		{
+			m_gameStarted = false;
+			var playerWallets = new List<(string id, int wallet)>();
+			var updatedPlayerInvectories = new List<(string id, PlayerInventoryDto)>();
+			SellAllShares();
+			foreach (var player in Players.Values)
+			{
+				updatedPlayerInvectories.Add((player.Id, player.GetPlayerInvetory()));
+				playerWallets.Add((player.Name, player.Money));
+			}
+			m_gameEventCommunicator.PlayerInventoriesUpdated(updatedPlayerInvectories);
+			m_gameEventCommunicator.GameEnded(playerWallets);
+		}
 
 		/// <summary>
 		/// Convert all player holdings to money.
@@ -374,17 +348,30 @@ namespace Models.Game
 			{
 				foreach (var holding in player.Holdings)
 				{
-					player.Money += (int)Stocks[holding.Key].Value * holding.Value;
+					player.Money += Stocks[holding.Key].GetValueOfAmount(holding.Value);
 				}
 				player.ClearAllShares();
 			}
 		}
 
-        #endregion
+		#endregion
 
-        #region Utilities
+		#region Utilities
 
+		/// <summary>
+		/// Get a market dto.
+		/// </summary>
+		/// <returns>The dto.</returns>
+		public MarketDto GetMarketDto()
+		{
+			var stocksDto = new Dictionary<string, StockDto>();
+			foreach (var kvp in Stocks)
+			{
+				stocksDto.Add(kvp.Key, new StockDto(kvp.Value.Name, kvp.Value.Value) { Color = kvp.Value.Color });
+			}
+			return new MarketDto(IsMarketOpen, stocksDto);
+		}
 
-        #endregion
-    }
+		#endregion
+	}
 }

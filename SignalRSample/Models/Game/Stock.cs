@@ -30,5 +30,10 @@ namespace Models.Game
 		{
 			Value = 1;
 		}
+
+		public int GetValueOfAmount(int amount)
+		{
+			return (int)(Value * (decimal)amount);
+		}
 	}
 }

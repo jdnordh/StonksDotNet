@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "f49PlK8c1KFEYSVZnF/18OYlB6W6XSVbVVkupEcm3e61HO2ZrjFHAE2ikp6CoWu4mbVknY7fkKgY/XJYDnOl3A==",
+  "dgSpecHash": "7SXUL7yDiHh97fchNy8PSG/E5Px9sJN+5driKKgMNiY6pzZQ/DtxM8G5cBXCMBl/6j9hVdza1hkb0Wtez8ooJQ==",
   "success": true,
-  "projectFilePath": "D:\\Repos\\SignalRSample\\SignalRSample\\SignalRSample\\StonkTrader.csproj",
+  "projectFilePath": "D:\\Repos\\Stonks\\SignalRSample\\StonkTrader.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }

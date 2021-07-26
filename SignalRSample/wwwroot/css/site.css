@@ -6,10 +6,6 @@ for details on configuring this project to bundle and minify static web assets. 
     overflow-x: hidden;
 }
 
-.overlay-2 {
-    z-index: 2;
-}
-
 .margin-small{
     margin:5px;
 }
@@ -19,20 +15,30 @@ for details on configuring this project to bundle and minify static web assets. 
     height: 100%;
 }
 
-#presenter{
-   display: grid;
-   grid-template-columns: 15% 70%;
-   grid-template-rows: 15% 70%;
+.roll-text{
+	text-align: center;
+	font-size: 7vh;
 }
 
-.chart-div {
-   width: 70%;
-   height: 70%;
+.roll-display {
+	width: 100%;
+	height: 100%;
+	display: grid;
+	grid-template-columns: 20% 20% 20% 20% 20%;
+}
+
+.chart-grid {
+	width: 100%;
+	height: 100%;
+	display: grid;
+	grid-template-rows: 85% 15%;
+	overflow: hidden;
 }
 
 .menu-text {
-   font-size: 6vh;
+   font-size: 7vh;
    text-align: center;
+	margin: auto;
 }
 
 .menu-sub-grid {
@@ -135,6 +141,13 @@ for details on configuring this project to bundle and minify static web assets. 
     grid-template-rows: 25% 75%;
 }
 
+.grid-observer-main {
+	display: grid;
+	width: 100%;
+	height: 100%;
+	grid-template-rows: 10% 90%;
+}
+
 .grid-row-1 {
     grid-row-start: 1;
     grid-row-end: 2;
@@ -193,11 +206,11 @@ html {
     padding: 0;
 }
 
-@media (min-width: 768px) {
+/*@media (min-width: 768px) {
     html {
         font-size: 16px;
     }
-}
+}*/
 
 body {
     margin: 0;
@@ -205,8 +218,6 @@ body {
     height: 100%;
     width: 100%;
 }
-
-
 
 #money {
     font-size: 8vh;
