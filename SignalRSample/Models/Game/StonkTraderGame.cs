@@ -57,10 +57,9 @@ namespace Models.Game
 			{
 				Results = new List<decimal>
 				{
-					//0.05M,
-					//.1M,
-					//.2M
-					1.0M
+					0.05M,
+					.1M,
+					.2M,
 				}
 			};
 			m_funcDie = new Die<Func<string, decimal, StockFunc>>
@@ -159,8 +158,6 @@ namespace Models.Game
 			var amountResult = m_amountDie.Roll();
 			var stockFuncResult = m_funcDie.Roll();
 			var rollResult = stockFuncResult(stockResult, amountResult);
-
-
 
 			var marketDto = GetMarketDto();
 			marketDto.RollDto = new RollDto(rollResult.StockName, rollResult.Type.ToString(), 

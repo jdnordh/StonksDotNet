@@ -10,28 +10,13 @@
 
 <body>
 <div class="grid-player-main grid-fill" id="mainGrid">
-	<div class="grid-row-1 grid-fill buy-sell-div">
-		<div class="grid-row-1 buy-sell-buttons" id="buySell">
-			<button type="button" class="grid-column-2 buy-sell-text btn btn-primary" id="buyTab">Buy</button>
-			<button type="button" class="grid-column-3 buy-sell-text btn btn-outline-primary" id="sellTab">Sell</button>
+	<div class="grid-player-main grid-fill" id="mainGrid">
+		<div class="center-absolute menu-grid">
+			<div class="menu-sub-grid"> 
+				<label for="username" class="menu-text">Username:</label>
+				<input autocomplete="off" type="text" class="menu-text" id="username">
 			</div>
-		<div class="grid-row-2">
-			<p id="money">$1250</p>
-		</div>
-	</div>
-	<div class="grid-row-2 scrollviewer-vertical" id="stockList">
-		<div class="fill grid-row-2">
-			<p class="buy-sell-prompt">How much Gold (market value 1.15) would you like to buy?</p>
-			<div class="buy-sell-control">
-				<select class="buy-sell-prompt grid-column-2 grid-row-1 fill" name="amount" id="buyAmount">
-					<option value="0">0</option>
-					<option value="500">500</option>
-					<option value="1200">1000</option>
-					<option value="1500">1500</option>
-				</select>
-				<button class="btn btn-success buy-sell-button fill grid-column-2 grid-row-2" id="buy">Buy for $1500</button>
-				<button class="btn btn-danger buy-sell-button fill grid-column-2 grid-row-3" id="cancel">Cancel</button>
-			</div>
+			<button id="joinGame" class="btn btn-primary grid-row-2 menu-button">Join Game</button>
 		</div>
 	</div>
 </div>

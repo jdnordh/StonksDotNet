@@ -20,6 +20,7 @@ var Unit = {
 var Connection = {
 	ClientType: -1,
 	ClientTypes: {
+		None: -1,
 		Player: 1,
 		Observer: 2,
 	},
@@ -84,7 +85,7 @@ var Connection = {
 					Presenter.SetMarketClosed();
 				}
 			}
-			else {
+			else if (Connection.ClientType === Connection.ClientTypes.Player) {
 				if (marketDto.isOpen) {
 					ScreenOps.SwitchToOpenMarket(true);
 				}
@@ -126,7 +127,6 @@ var Connection = {
 		}
 	},
 	UpdateInventory: function (playerInventoryDto) {
-		// TODO Verify updating the current screen cause it doesn't work
 		for (let stockName in playerInventoryDto.holdings) {
 			if (playerInventoryDto.holdings.hasOwnProperty(stockName)) {
 				let amount = playerInventoryDto.holdings[stockName];
@@ -211,13 +211,14 @@ var ConstHtmlIds =
 
 var HtmlGeneration =
 {
-	// TODO Add cost
 	MakePreBuyScreen: function (stockName) {
-		let html = '<div class="fill grid-row-2"><p class="buy-sell-prompt">How much ';
-		html += stockName;
-		html += ' would you like to buy?</p><div class="buy-sell-control"><select class="buy-sell-prompt grid-column-2 grid-row-1 fill" name="amount" id="buyAmount">';
 		let stockValue = Connection.CurrentData.StockValues[stockName];
 		let money = Connection.CurrentData.Money;
+		let html = '<div class="fill grid-row-2"><p class="buy-sell-prompt">How much ';
+		html += stockName;
+		html += ' (';
+		html += Unit.PercentToDecimalString(stockValue);
+		html += ') would you like to buy?</p><div class="buy-sell-control"><select class="buy-sell-prompt grid-column-2 grid-row-1 fill" name="amount" id="buyAmount">';
 		for (let i = 0; i <= (money / (stockValue / 100)); i += 500) {
 			html += '<option value="';
 			html += i;
@@ -225,15 +226,17 @@ var HtmlGeneration =
 			html += i;
 			html += '</option>';
 		}
-		html += '</select><button class="btn btn-success buy-sell-button fill grid-column-3 grid-row-1" id="buy">Buy</button><div class="buy-sell-cancel fill"><button class="btn btn-danger buy-sell-button fill grid-column-2" id="cancel">Cancel</button></div></div></div >';
+		html += '</select><button class="btn btn-success buy-sell-button fill grid-column-2 grid-row-2" id="buy">Buy for $0</button><button class="btn btn-danger buy-sell-button fill grid-column-2 grid-row-3" id="cancel">Cancel</button></div></div>';
 		return html;
 	},
-	// TODO Add sell amount
 	MakePreSellScreen: function (stockName) {
+		let stockAmount = Connection.CurrentData.Holdings[stockName];
+		let stockValue = Connection.CurrentData.StockValues[stockName];
 		let html = '<div class="fill grid-row-2"><p class="buy-sell-prompt">How much ';
 		html += stockName;
-		html += ' would you like to sell?</p><div class="buy-sell-control"><select class="buy-sell-prompt grid-column-2 grid-row-1 fill" name="amount" id="sellAmount">';
-		let stockAmount = Connection.CurrentData.Holdings[stockName];
+		html += ' (';
+		html += Unit.PercentToDecimalString(stockValue);
+		html += ') would you like to sell?</p><div class="buy-sell-control"><select class="buy-sell-prompt grid-column-2 grid-row-1 fill" name="amount" id="sellAmount">';
 		for (let i = 0; i <= stockAmount; i += 500) {
 			html += '<option value="';
 			html += i;
@@ -241,7 +244,7 @@ var HtmlGeneration =
 			html += i;
 			html += '</option>';
 		}
-		html += '</select><button class="btn btn-info buy-sell-button fill grid-column-3 grid-row-1" id="sell">Sell</button><div class="buy-sell-cancel fill"><button class="btn btn-danger buy-sell-button fill grid-column-2" id="cancel">Cancel</button></div></div></div>';
+		html += '</select><button class="btn btn-info buy-sell-button fill grid-column-2 grid-row-2" id="sell">Sell for $0</button><button class="btn btn-danger buy-sell-button fill grid-column-2 grid-row-3" id="cancel">Cancel</button></div></div>';
 		return html;
 	},
 	MakeWaitingScreen: function (username, money) {
@@ -258,8 +261,14 @@ var HtmlGeneration =
 		html += '</p></div></div><div class="grid-row-2 scrollviewer-vertical" id="stockList"></div>';
 		return html;
 	},
-	MakeMarketScreen: function (money) {
-		let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1 buy-sell-buttons" id ="buySell"><button type="button" class="grid-column-2 buy-sell-text btn btn-primary" id="buyTab">Buy</button><button type="button" class="grid-column-3 buy-sell-text btn btn-outline-primary" id="sellTab">Sell</button></div><div class="grid-row-2"><p id="money">$';
+	MakeMarketScreen: function (money, isBuy) {
+		let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1 buy-sell-buttons" id ="buySell"><button type="button" class="grid-column-2 buy-sell-text btn ';
+		if (isBuy) {
+			html += 'btn-primary" id="buyTab">Buy</button><button type="button" class="grid-column-3 buy-sell-text btn btn-outline-primary" id="sellTab">Sell</button></div><div class="grid-row-2"><p id="money">$';
+		}
+		else {
+			html += 'btn-outline-primary" id="buyTab">Buy</button><button type="button" class="grid-column-3 buy-sell-text btn btn-primary" id="sellTab">Sell</button></div><div class="grid-row-2"><p id="money">$';
+		}
 		html += money;
 		html += '</p></div></div><div class="grid-row-2 scrollviewer-vertical" id="stockList"></div>';
 		return html;
@@ -270,7 +279,7 @@ var HtmlGeneration =
 		html += stockName;
 		html += '</p ><p class="grid-column-2 stock-text">';
 		html += Unit.PercentToDecimalString(stockValue);
-		html += '</p > <button type="button" class="grid-column-3 btn btn-success stock-text" id="';
+		html += '</p > <button type="button" class="grid-column-3 btn btn-success stock-text buy-sell-banner-button" id="';
 		html += id;
 		html += '">Buy</button></div >';
 		return {
@@ -282,9 +291,9 @@ var HtmlGeneration =
 		let id = stockName + 'sell';
 		let html = '<div class="stock-banner"><p class="grid-column-1 stock-text">';
 		html += stockName;
-		html += '</p ><p class="grid-column-2 stock-text">';
+		html += '</p><p class="grid-column-2 stock-text">';
 		html += amountHeld;
-		html += '</p > <button type="button" class="grid-column-3 btn btn-info stock-text" id="';
+		html += '</p><button type="button" class="grid-column-3 btn btn-info stock-text buy-sell-banner-button" id="';
 		html += id;
 		html += '">Sell</button></div >';
 		return {
@@ -365,7 +374,7 @@ var ScreenOps = {
 	SwitchToOpenMarket: function (isBuy) {
 		let mainGrid = $(ConstHtmlIds.MainGrid);
 		mainGrid.empty();
-		mainGrid.append(HtmlGeneration.MakeMarketScreen(Connection.CurrentData.Money));
+		mainGrid.append(HtmlGeneration.MakeMarketScreen(Connection.CurrentData.Money, isBuy));
 		mainGrid.append(HtmlGeneration.MakeBuyStockBanner());
 
 		ScreenOps.AttachOpenMarketTabHandlers();
@@ -444,6 +453,11 @@ var ScreenOps = {
 		list.append(HtmlGeneration.MakePreBuyScreen(stockName));
 
 		// Add handlers
+		$(ConstHtmlIds.BuyAmount).change(function () {
+			let stockAmount = $(ConstHtmlIds.BuyAmount).find(":selected").text();
+			let cost = (Connection.CurrentData.StockValues[stockName] * stockAmount) / 100;
+			$(ConstHtmlIds.Buy).text('Buy for $' + cost);
+		});
 		$(ConstHtmlIds.Buy).on(clickHandler, function () {
 			let stockAmount = $(ConstHtmlIds.BuyAmount).find(":selected").text();
 			if (stockAmount === '0') {
@@ -463,6 +477,11 @@ var ScreenOps = {
 		list.append(HtmlGeneration.MakePreSellScreen(stockName));
 
 		// Add handlers
+		$(ConstHtmlIds.SellAmount).change(function () {
+			let stockAmount = $(ConstHtmlIds.SellAmount).find(":selected").text();
+			let cost = (Connection.CurrentData.StockValues[stockName] * stockAmount) / 100;
+			$(ConstHtmlIds.Sell).text('Sell for $' + cost);
+		});
 		$(ConstHtmlIds.Sell).on(clickHandler, function () {
 			let stockAmount = $(ConstHtmlIds.SellAmount).find(":selected").text();
 			if (stockAmount === '0') {
@@ -483,6 +502,7 @@ var ScreenOps = {
 			let username = $(ConstHtmlIds.Username).val();
 			Connection.JoinGame(username);
 		});
+		$(ConstHtmlIds.Username).focus();
 	},
 	SwitchToWaitingMenu: function () {
 		ScreenOps.State = ScreenOps.States.Waiting;
@@ -494,8 +514,14 @@ var ScreenOps = {
 };
 
 var Presenter = {
+	IsInitialized: false,
+	OneTimeInit: function () {
+		if (Presenter.IsInitialized) {
+			return;
+		}
+		Chart.defaults.font.size = 36;
+	},
 	Chart: undefined,
-	MarketTimerIntervalId: -1,
 	GetChartData: function () {
 		let stockNames = [];
 		let stockValues = [];
@@ -513,7 +539,53 @@ var Presenter = {
 			stockColors: stockColors,
 		}
 	},
+	GetChartConfig: function (data, isGameEnd) {
+		let config = {
+			type: 'bar',
+			data: data,
+			options: {
+				showToolTips: false,
+				//animation: {
+				//	onComplete: function () {
+				//		log('Animation complete');
+				//		var ctx = Presenter.Chart.ctx;
+				//		ctx.font = "30px Arial";
+				//		ctx.fillStyle = '#0e0e0e';
+				//		ctx.textAlign = "center";
+				//		ctx.textBaseline = "bottom";
+				//		log(Presenter.Chart);
+				//		Presenter.Chart.data.datasets.forEach(function (dataset) {
+				//			dataset.bars.forEach(function (bar) {
+				//				ctx.fillText(bar.value, bar.x, bar.y - 5);
+				//			});
+				//		})
+				//	},
+				//},
+				plugins: {
+					legend: {
+						display: false
+					}
+				},
+				tooltips: {
+					enabled: false
+				},
+				responsive: true,
+				maintainAspectRatio: true,
+			}
+		};
+
+		if (!isGameEnd) {
+			config.options.scales = {
+				yAxes: {
+					min: 0,
+					max: 200
+				}
+			};
+		}
+		return config;
+	},
 	CreateChart: function () {
+		Presenter.OneTimeInit();
 		if (Presenter.Chart) {
 			return;
 		}
@@ -525,42 +597,16 @@ var Presenter = {
 		let canvas = document.getElementById(ConstHtmlIds.PresenterChart);
 		let ctx = canvas.getContext('2d');
 
-		Chart.defaults.font.size = 36;
 		let data = {
 			labels: stockData.stockNames,
 			datasets: [
 				{
-					label: "Stonks",
 					data: stockData.stockValues,
 					backgroundColor: stockData.stockColors
 				}
 			]
 		};
-
-		let config = {
-			type: 'bar',
-			data: data,
-			options: {
-				plugins: {
-					legend: {
-						display: false
-					}
-				},
-				tooltips: {
-					enabled: false
-				},
-				responsive: true,
-				maintainAspectRatio: true,
-				scales: {
-					yAxes: {
-						min: 0,
-						max: 200
-					}
-
-				}
-			}
-		};
-
+		let config = Presenter.GetChartConfig(data);
 		Presenter.Chart = new Chart(ctx, config);
 	},
 	UpdateChart: function () {
@@ -574,14 +620,15 @@ var Presenter = {
 		Presenter.Chart.update();
 	},
 	StartTimer: function (endTime, displayFunc) {
+		let intervalId = -1;
 		let intervalFunc = function () {
 			let now = (new Date()).getTime();
 			if (now >= endTime) {
-				clearInterval(Presenter.MarketTimerIntervalId);
+				clearInterval(intervalId);
 			}
 			displayFunc(Math.ceil((endTime - now) / 1000));
 		};
-		Presenter.MarketTimerIntervalId = setInterval(intervalFunc, 1000);
+		intervalId = setInterval(intervalFunc, 1000);
 	},
 	SetMarketOpen: function (endTime) {
 		let timerFunc = function (secondsRemaining) {
@@ -595,11 +642,10 @@ var Presenter = {
 		Presenter.StartTimer(endTime, timerFunc);
 	},
 	SetMarketClosed: function () {
-		clearInterval(Presenter.MarketTimerIntervalId);
 		$(ConstHtmlIds.PresenterText).text("Market Closed");
 	},
 	SetGameOver: function (gameEndDto) {
-		log(wallets);
+		log(gameEndDto.wallets);
 		$(ConstHtmlIds.PresenterText).text("Game Over");
 		let comparer = function (lhs, rhs) {
 			if (lhs.money < rhs.money) {
@@ -612,28 +658,49 @@ var Presenter = {
 		};
 		gameEndDto.wallets.sort(comparer);
 
-		Presenter.Chart.data.labels = [];
-		Presenter.Chart.data.datasets.data = [];
-		log(Presenter.Chart.data.datasets.data);
+		let canvas = document.getElementById(ConstHtmlIds.PresenterChart);
+		let ctx = canvas.getContext('2d');
+
+		let labels = [];
+		let walletAmounts = [];
+		let userColors = [];
 		for (let i = 0; i < gameEndDto.wallets.length; i++) {
-			Presenter.Chart.data.labels.push(gameEndDto.wallets[i].username);
-			Presenter.Chart.data.datasets.data.push(gameEndDto.wallets[i].money);
+			labels.push(gameEndDto.wallets[i].username);
+			walletAmounts.push(gameEndDto.wallets[i].money);
+			userColors.push('#' + Math.floor(Math.random() * 16777215).toString(16));
 		}
-		log(Presenter.Chart.data.datasets.data);
-		Presenter.Chart.update();
+
+		let data = {
+			labels: labels,
+			datasets: [
+				{
+					data: walletAmounts,
+					backgroundColor: userColors
+				}
+			]
+		};
+
+		let config = Presenter.GetChartConfig(data);
+		Presenter.Chart.destroy();
+		Presenter.Chart = new Chart(ctx, config);
 	},
 	ShowRoll: function (rollDto) {
+		// TODO These are showing updates 1 cycle behind.
 		let state = 0;
 		let intervalId = -1;
 		$(ConstHtmlIds.RollName).text(rollDto.stockName);
+		log('Showing Roll Stock');
 		let intervalFunc = function () {
 			if (state === 0) {
+				log('Showing Roll Func');
 				$(ConstHtmlIds.RollFunc).text(rollDto.func);
 			}
 			else if (state === 1) {
+				log('Showing Roll Amount');
 				$(ConstHtmlIds.RollAmount).text(rollDto.amount);
 			}
 			else if (state === 2) {
+				log('Updating Chart');
 				Presenter.UpdateChart();
 			}
 			else {

@@ -32,6 +32,12 @@ namespace Hubs
 
 		public async Task JoinGame(string username)
 		{
+			if (GameManager.Instance.Game == null) 
+			{
+				await Clients.Caller.SendAsync(ClientMethods.GameNotJoined);
+				return;
+			}
+
 			// Add player to game
 			var safeUsername = GetSafeUsername(username);
 			var inventory = GameManager.Instance.Game.AddPlayer(CurrentUserConnectionId, safeUsername);
