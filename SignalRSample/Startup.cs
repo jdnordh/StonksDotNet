@@ -25,7 +25,11 @@ namespace SignalRSample
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddRazorPages();
-            services.AddSignalR();
+            services.AddSignalR(hubOptions => {
+					hubOptions.EnableDetailedErrors = true;
+					hubOptions.ClientTimeoutInterval = TimeSpan.FromMinutes(30);
+					hubOptions.KeepAliveInterval = TimeSpan.FromMinutes(15);
+				});
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

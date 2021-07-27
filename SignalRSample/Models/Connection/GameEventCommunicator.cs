@@ -41,9 +41,9 @@ namespace Models.Connection
 		}
 
 		/// <inheritdoc/>
-		public async Task GameEnded(List<(string playerName, int money)> wallets)
+		public async Task GameEnded(GameEndDto gameEndDto)
 		{
-			await m_hubContext.Clients.All.SendAsync(ClientMethods.GameEnded, wallets);
+			await m_hubContext.Clients.All.SendAsync(ClientMethods.GameEnded, gameEndDto);
 		}
 	}
 }

@@ -1,26 +1,40 @@
 ﻿<html lang="en"><head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stonk Trader</title>
-  <link rel="stylesheet" href="../../wwwroot/lib/bootstrap/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="../../wwwroot/css/site.css">
-<style id="plotly.js-style-global"></style><style id="plotly.js-style-modebar-edcc0a"></style><style id="plotly.js-style-modebar-78f9cf"></style><style id="plotly.js-style-modebar-54a346"></style><style id="plotly.js-style-modebar-dfd077"></style><style id="plotly.js-style-modebar-bee20b"></style><style id="plotly.js-style-modebar-c4cb16"></style><style id="plotly.js-style-modebar-df1b03"></style><style id="plotly.js-style-modebar-97dd17"></style><style id="plotly.js-style-modebar-8b3d96"></style><style id="plotly.js-style-modebar-b5c3e7"></style><style id="plotly.js-style-modebar-e2894f"></style><style id="plotly.js-style-modebar-7133ff"></style><style id="plotly.js-style-modebar-f92e09"></style><style id="plotly.js-style-modebar-73875e"></style><style id="plotly.js-style-modebar-824034"></style><style id="plotly.js-style-modebar-52b458"></style><style id="plotly.js-style-modebar-881018"></style><style id="plotly.js-style-modebar-cdd484"></style><style id="plotly.js-style-modebar-4b6b8f"></style><style id="plotly.js-style-modebar-e7c888"></style><style id="plotly.js-style-modebar-654b8c"></style><style id="plotly.js-style-modebar-fe246c"></style><style id="plotly.js-style-modebar-091046"></style><style id="plotly.js-style-modebar-a3aae6"></style><style id="plotly.js-style-modebar-3f344d"></style><style id="plotly.js-style-modebar-79b2f3"></style><style id="plotly.js-style-modebar-b8d3c1"></style><style id="plotly.js-style-modebar-26a5ef"></style><style id="plotly.js-style-modebar-20e10a"></style><style id="plotly.js-style-modebar-adc747"></style><style id="plotly.js-style-modebar-9a7260"></style><style id="plotly.js-style-modebar-b83efc"></style><style id="plotly.js-style-modebar-32ef9f"></style></head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Stonk Trader</title>
+	<link rel="stylesheet" href="../../wwwroot/lib/bootstrap/dist/css/bootstrap.min.css">
+	<link rel="stylesheet" href="../../wwwroot/css/site.css">
+	<script src="../../wwwroot/lib/jquery/dist/jquery.min.js"></script>
+	<script src="test.js"></script>
+</head>
 
 <body>
-	<div class="grid-observer-main grid-fill" id="mainGrid">
-		<div id="presenter" class="fill">
-			<h1 id="presenterText" class="grid-column-2 grid-row-1 menu-text">Market Open</h1>
-		</div>
-		<div class="chart-grid grid-row-2">
-			<div class="fill grid-row-1" id="presenterChart">
-				<div class="fill" style="background: #ff0000"><span>Chart</span></div>
+<div class="grid-player-main grid-fill" id="mainGrid">
+	<div class="grid-row-1 grid-fill buy-sell-div">
+		<div class="grid-row-1 buy-sell-buttons" id="buySell">
+			<button type="button" class="grid-column-2 buy-sell-text btn btn-primary" id="buyTab">Buy</button>
+			<button type="button" class="grid-column-3 buy-sell-text btn btn-outline-primary" id="sellTab">Sell</button>
 			</div>
-			<div class="roll-display grid-row-2">
-				<h1 class="grid-column-2 roll-text" id="rollName"></h1>
-				<h1 class="grid-column-3 roll-text" id="rollFunc"></h1>
-				<h1 class="grid-column-4 roll-text" id="rollAmount"></h1>
+		<div class="grid-row-2">
+			<p id="money">$1250</p>
+		</div>
+	</div>
+	<div class="grid-row-2 scrollviewer-vertical" id="stockList">
+		<div class="fill grid-row-2">
+			<p class="buy-sell-prompt">How much Gold (market value 1.15) would you like to buy?</p>
+			<div class="buy-sell-control">
+				<select class="buy-sell-prompt grid-column-2 grid-row-1 fill" name="amount" id="buyAmount">
+					<option value="0">0</option>
+					<option value="500">500</option>
+					<option value="1200">1000</option>
+					<option value="1500">1500</option>
+				</select>
+				<button class="btn btn-success buy-sell-button fill grid-column-2 grid-row-2" id="buy">Buy for $1500</button>
+				<button class="btn btn-danger buy-sell-button fill grid-column-2 grid-row-3" id="cancel">Cancel</button>
 			</div>
 		</div>
 	</div>
+</div>
+
 </body>
 </html>

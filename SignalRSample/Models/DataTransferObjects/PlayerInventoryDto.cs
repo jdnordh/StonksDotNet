@@ -11,10 +11,11 @@ namespace Models.DataTransferObjects
 
 		public Dictionary<string, int> Holdings { get; }
 
-		public PlayerInventoryDto(int money, Dictionary<string, int> holdings)
+		public PlayerInventoryDto(int money, Dictionary<string, int> holdings, string username)
 		{
 			Money = money;
 			Holdings = holdings;
+			Username = username;
 		}
 	}
 }

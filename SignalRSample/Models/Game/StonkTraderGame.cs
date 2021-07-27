@@ -16,20 +16,22 @@ namespace Models.Game
 		private readonly int m_startingMoney;
 		private readonly int m_marketOpenTimeInSeconds;
 		private readonly int m_rollTimeInSeconds;
+		private readonly int m_timeBetweenRollsInSeconds;
 		private readonly IGameEventCommunicator m_gameEventCommunicator;
 
 		// Rolling
 		private readonly Die<string> m_stockDie;
 		private readonly Die<decimal> m_amountDie;
-		private readonly Die<Func<string, decimal, string>> m_funcDie;
+		private readonly Die<Func<string, decimal, StockFunc>> m_funcDie;
 
-		private bool m_gameStarted = false;
 
 		#endregion
 
 		#region Properties
 
 		public Dictionary<string, Stock> Stocks;
+
+		public bool IsStarted { get; private set; }
 
 		public bool IsMarketOpen { get; private set; }
 
@@ -47,7 +49,7 @@ namespace Models.Game
 			m_startingMoney = initializer.StartingMoney;
 			m_marketOpenTimeInSeconds = initializer.MarketOpenTimeInSeconds;
 			m_rollTimeInSeconds = initializer.RollTimeInSeconds;
-
+			m_timeBetweenRollsInSeconds = initializer.TimeBetweenRollsInSeconds;
 			m_gameEventCommunicator = gameEventCommunicator;
 
 			m_stockDie = new Die<string>() { Results = initializer.Stocks.Select(stock => stock.stockName).ToList() };
@@ -55,31 +57,27 @@ namespace Models.Game
 			{
 				Results = new List<decimal>
 				{
-					0.05M,
-					.1M,
-					.2M
+					//0.05M,
+					//.1M,
+					//.2M
+					1.0M
 				}
 			};
-			m_funcDie = new Die<Func<string, decimal, string>>
+			m_funcDie = new Die<Func<string, decimal, StockFunc>>
 			{
-				Results = new List<Func<string, decimal, string>>
+				Results = new List<Func<string, decimal, StockFunc>>
 				{
-					(stock, amount) =>
+					(stock, percentAmount) =>
 					{
-						Stocks[stock].IncreaseValue(amount);
-						ResolveSplitOrCrash();
-						return "UP";
+						return new StockFunc(StockFuncType.Up, stock, percentAmount);
 					},
-					(stock, amount) =>
+					(stock, percentAmount) =>
 					{
-						Stocks[stock].DecreaseValue(amount);
-						ResolveSplitOrCrash();
-						return  "DOWN";
+						return new StockFunc(StockFuncType.Down, stock, percentAmount);
 					},
-					(stock, amount) =>
+					(stock, percentAmount) =>
 					{
-						PayDividends(stock, amount);
-						return "DIVIDEND";
+						return new StockFunc(StockFuncType.Dividend, stock, percentAmount);
 					}
 				}
 			};
@@ -90,24 +88,26 @@ namespace Models.Game
 				Stocks.Add(stockName, new Stock(stockName, color));
 			}
 			IsMarketOpen = false;
+			IsStarted = false;
 		}
 
 		#endregion
 
 		#region Initialization
-		public PlayerInventoryDto AddPlayer(string id, string username)
+		public PlayerInventoryDto AddPlayer(string connectionId, string username)
 		{
-			var player = new Player(id, username, Stocks.Values.Select(stock => stock.Name).ToList())
+			var player = new Player(connectionId, username, Stocks.Values.Select(stock => stock.Name).ToList())
 			{
 				Money = m_startingMoney
 			};
-			Players.Add(id, player);
-			return player.GetPlayerInvetory();
+			Players.Add(connectionId, player);
+			var inventory = player.GetPlayerInvetory();
+			return inventory;
 		}
 
 		public async void StartGame()
 		{
-			m_gameStarted = true;
+			IsStarted = true;
 
 			for (int round = 0; round < m_numberOfRounds; round++)
 			{
@@ -115,9 +115,9 @@ namespace Models.Game
 
 				for (int roll = 0; roll < m_numberOfRollsPerRound; roll++)
 				{
-					Roll();
+					await Roll();
 
-					await Task.Delay(m_rollTimeInSeconds * 1000);
+					await Task.Delay(m_timeBetweenRollsInSeconds * 1000);
 				}
 			}
 			EndGame();
@@ -134,7 +134,7 @@ namespace Models.Game
 		{
 			if (IsMarketOpen)
 			{
-				throw new InvalidOperationException("Market is already open. What are you doing. Look at stack trace.");
+				return;
 			}
 			IsMarketOpen = true;
 
@@ -153,16 +153,46 @@ namespace Models.Game
 		/// <summary>
 		/// Roll the dice.
 		/// </summary>
-		private void Roll()
+		private async Task Roll()
 		{
-			var stock = m_stockDie.Roll();
-			var amount = m_amountDie.Roll();
-			var stockFunc = m_funcDie.Roll();
-			string funcName = stockFunc(stock, amount);
+			var stockResult = m_stockDie.Roll();
+			var amountResult = m_amountDie.Roll();
+			var stockFuncResult = m_funcDie.Roll();
+			var rollResult = stockFuncResult(stockResult, amountResult);
+
+
 
 			var marketDto = GetMarketDto();
-			marketDto.RollDto = new RollDto(stock, funcName, (int)(amount * 100));
-			m_gameEventCommunicator.GameRolled(marketDto);
+			marketDto.RollDto = new RollDto(rollResult.StockName, rollResult.Type.ToString(), 
+				(int)(rollResult.PercentageAmount * 100), m_rollTimeInSeconds);
+
+			// Show roll on presenter
+			await m_gameEventCommunicator.GameRolled(marketDto);
+
+			// Wait for display to complete
+			await Task.Delay(m_rollTimeInSeconds * 1000);
+
+			// Do roll action after the presenter has shown it so clients don't get the update before it's on screen.
+			switch (rollResult.Type)
+			{
+				case StockFuncType.Up:
+					{
+						Stocks[rollResult.StockName].IncreaseValue(rollResult.PercentageAmount);
+						await ResolveSplitOrCrash();
+						break;
+					}
+				case StockFuncType.Down:
+					{
+						Stocks[rollResult.StockName].DecreaseValue(rollResult.PercentageAmount);
+						await ResolveSplitOrCrash();
+						break;
+					}
+				case StockFuncType.Dividend:
+					{
+						await PayDividends(rollResult.StockName, rollResult.PercentageAmount);
+						break;
+					}
+			}
 		}
 
 		/// <summary>
@@ -170,7 +200,7 @@ namespace Models.Game
 		/// </summary>
 		/// <param name="stock">The stock paying dividends.</param>
 		/// <param name="percentage">The percentage to pay out.</param>
-		private void PayDividends(string stock, decimal percentage)
+		private async Task PayDividends(string stock, decimal percentage)
 		{
 			var updatedPlayerInvectories = new List<(string id, PlayerInventoryDto)>();
 			foreach (var player in Players.Values)
@@ -182,13 +212,13 @@ namespace Models.Game
 					player.Money += (int)(holdings * percentage);
 				}
 			}
-			m_gameEventCommunicator.PlayerInventoriesUpdated(updatedPlayerInvectories);
+			await m_gameEventCommunicator.PlayerInventoriesUpdated(updatedPlayerInvectories);
 		}
 
 		/// <summary>
 		/// Resolves any stocks that have split or crashed.
 		/// </summary>
-		private void ResolveSplitOrCrash()
+		private async Task ResolveSplitOrCrash()
 		{
 			var updatedPlayerInvectories = new List<(string id, PlayerInventoryDto)>();
 			foreach (var stock in Stocks.Values)
@@ -214,7 +244,7 @@ namespace Models.Game
 					stock.ResetValue();
 				}
 			}
-			m_gameEventCommunicator.PlayerInventoriesUpdated(updatedPlayerInvectories);
+			await m_gameEventCommunicator.PlayerInventoriesUpdated(updatedPlayerInvectories);
 		}
 
 		#endregion
@@ -230,7 +260,7 @@ namespace Models.Game
 		/// <returns>True if the operation is okay.</returns>
 		public bool IsBuyOkay(string userId, string stockName, int amountToBuy)
 		{
-			if (!m_gameStarted)
+			if (!IsStarted)
 			{
 				return false;
 			}
@@ -280,7 +310,7 @@ namespace Models.Game
 		/// <returns>True if the operation is okay.</returns>
 		public bool IsSellOkay(string userId, string stockName, int amountToSell)
 		{
-			if (!m_gameStarted)
+			if (!IsStarted)
 			{
 				return false;
 			}
@@ -324,19 +354,19 @@ namespace Models.Game
 
 		#region Game End
 
-		private void EndGame()
+		private async void EndGame()
 		{
-			m_gameStarted = false;
 			var playerWallets = new List<(string id, int wallet)>();
 			var updatedPlayerInvectories = new List<(string id, PlayerInventoryDto)>();
 			SellAllShares();
 			foreach (var player in Players.Values)
 			{
 				updatedPlayerInvectories.Add((player.Id, player.GetPlayerInvetory()));
-				playerWallets.Add((player.Name, player.Money));
+				playerWallets.Add((player.Username, player.Money));
 			}
-			m_gameEventCommunicator.PlayerInventoriesUpdated(updatedPlayerInvectories);
-			m_gameEventCommunicator.GameEnded(playerWallets);
+			await m_gameEventCommunicator.PlayerInventoriesUpdated(updatedPlayerInvectories);
+			await m_gameEventCommunicator.GameEnded(new GameEndDto(Players.Values.Select(p => p.GetPlayerInvetory()).ToList()));
+			IsStarted = false;
 		}
 
 		/// <summary>

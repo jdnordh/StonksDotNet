@@ -25,7 +25,7 @@ namespace Models.Game
 		/// Send a game ended update.
 		/// </summary>
 		/// <param name="wallets">Player connection ID's connected to their money amount.</param>
-		Task GameEnded(List<(string playerName, int money)> wallets);
+		Task GameEnded(GameEndDto gameEndDto);
 
 		/// <summary>
 		/// Send a game rolled update.

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Server.HttpSys;
+using Microsoft.AspNetCore.SignalR;
 using Models.DataTransferObjects;
 using StonkTrader.Models.Connection;
 using System.Text.RegularExpressions;
@@ -34,14 +35,23 @@ namespace Hubs
 			// Add player to game
 			var safeUsername = GetSafeUsername(username);
 			var inventory = GameManager.Instance.Game.AddPlayer(CurrentUserConnectionId, safeUsername);
-			inventory.Username = safeUsername;
 			await Clients.Caller.SendAsync(ClientMethods.GameJoined, inventory);
+
+			// If game is already started, notify caller.
+			if (GameManager.Instance.Game.IsStarted)
+			{
+				await Clients.Caller.SendAsync(ClientMethods.MarketUpdated, GameManager.Instance.Game.GetMarketDto());
+			}
 		}
 
 		public async Task StartGame()
 		{
+			if (GameManager.Instance.Game.IsStarted)
+			{
+				return;
+			}
 			GameManager.Instance.Game.StartGame();
-			await Clients.All.SendAsync(ClientMethods.GameStarted, GameManager.Instance.Game.Stocks);
+			await Clients.All.SendAsync(ClientMethods.GameStarted);
 		}
 
 		#endregion

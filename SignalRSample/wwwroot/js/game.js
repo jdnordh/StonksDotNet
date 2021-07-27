@@ -20,8 +20,8 @@ var Unit = {
 var Connection = {
 	ClientType: -1,
 	ClientTypes: {
-		Player: 0,
-		Observer: 1,
+		Player: 1,
+		Observer: 2,
 	},
 	ClientMethods: {
 		GameCreated: "gameCreated",
@@ -42,20 +42,14 @@ var Connection = {
 	},
 	Init: function (onConnectionStarted) {
 		Connection.Hub = new signalR.HubConnectionBuilder().withUrl("/gameHub").build();
+		Connection.Hub.serverTimeoutInMilliseconds = 1800000;
 
 		Connection.Hub.on(Connection.ClientMethods.GameCreated, function () {
-			log('Game created');
 			Connection.ClientType = Connection.ClientTypes.Observer;
 			ScreenOps.SwitchToStartGameMenu();
-
-			window.addEventListener('resize', function (args) {
-				Presenter.CreatePlot();
-			}, true);
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.GameJoined, function (playerInventoryDto) {
-			log('Game joined');
-			log(playerInventoryDto);
 			Connection.ClientType = Connection.ClientTypes.Player;
 			Connection.UpdateInventory(playerInventoryDto);
 			Connection.CurrentData.Username = playerInventoryDto.username;
@@ -63,36 +57,27 @@ var Connection = {
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.CreateGameUnavailable, function () {
-			log('Game has already started');
 			$(ConstHtmlIds.CreateGame).prop('disabled', true);
 		});
 
-		Connection.Hub.on(Connection.ClientMethods.GameStarted, function (marketDto) {
-			log('Game started');
-			Connection.UpdateStockValues(marketDto);
+		Connection.Hub.on(Connection.ClientMethods.GameStarted, function () {
 			if (Connection.ClientType === Connection.ClientTypes.Observer) {
-				Presenter.CreatePlot();
+				Presenter.CreateChart();
 			}
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.InventoryUpdated, function (playerInventoryDto) {
-			log('Inventory updated');
-			log(playerInventoryDto);
 			if (Connection.ClientType === Connection.ClientTypes.Player) {
 				Connection.UpdateInventory(playerInventoryDto);
 			}
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.MarketUpdated, function (marketDto) {
-			let state = marketDto.isOpen ? 'open' : 'closed';
-			log('Market updated: market is ' + state);
-			log(marketDto);
 			Connection.UpdateStockValues(marketDto);
 			if (Connection.ClientType === Connection.ClientTypes.Observer) {
-				Presenter.CreatePlot();
+				Presenter.UpdateChart();
 				if (marketDto.isOpen) {
 					let marketEndTime = Number(marketDto.marketCloseTimeInMilliseconds);
-					log("Market end time: " + marketEndTime);
 					Presenter.SetMarketOpen(marketEndTime);
 				}
 				else {
@@ -110,17 +95,15 @@ var Connection = {
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.Rolled, function (marketDto) {
-			log('Rolled');
-			log(marketDto);
 			if (Connection.ClientType === Connection.ClientTypes.Observer) {
 				Connection.UpdateStockValues(marketDto);
 				Presenter.ShowRoll(marketDto.rollDto);
 			}
 		});
 
-		Connection.Hub.on(Connection.ClientMethods.GameEnded, function (wallets) {
+		Connection.Hub.on(Connection.ClientMethods.GameEnded, function (gameEndDto) {
 			if (Connection.ClientType === Connection.ClientTypes.Observer) {
-				// TODO Show leaderboard
+				Presenter.SetGameOver(gameEndDto);
 			}
 			else {
 				$(ConstHtmlIds.MarketOpenClosedHeader).text("Game Over");
@@ -143,6 +126,7 @@ var Connection = {
 		}
 	},
 	UpdateInventory: function (playerInventoryDto) {
+		// TODO Verify updating the current screen cause it doesn't work
 		for (let stockName in playerInventoryDto.holdings) {
 			if (playerInventoryDto.holdings.hasOwnProperty(stockName)) {
 				let amount = playerInventoryDto.holdings[stockName];
@@ -158,27 +142,22 @@ var Connection = {
 		});
 	},
 	BuyStock: function (stockName, amount) {
-		log('Bought ' + amount + ' ' + stockName);
 		Connection.RequestTransaction(stockName, true, amount);
 	},
 	SellStock: function (stockName, amount) {
-		log('Sold ' + amount + ' ' + stockName);
 		Connection.RequestTransaction(stockName, false, amount);
 	},
 	CreateGame: function () {
-		log('Trying to created game.');
 		Connection.Hub.invoke(Connection.ServerMethods.CreateGame).catch(function (err) {
 			return console.error(err.toString());
 		});
 	},
 	JoinGame: function (username) {
-		log('Joined game with username ' + username + '.');
 		Connection.Hub.invoke(Connection.ServerMethods.JoinGame, username).catch(function (err) {
 			return console.error(err.toString());
 		});
 	},
 	StartGame: function () {
-		console.log('Started game.');
 		Connection.Hub.invoke(Connection.ServerMethods.StartGame).catch(function (err) {
 			return console.error(err.toString());
 		});
@@ -189,16 +168,16 @@ var Connection = {
 			updateMethod();
 		}
 	},
+	SetMoney: function (money) {
+		Connection.CurrentData.Money = money;
+		$(ConstHtmlIds.Money).text('$' + money);
+	},
 	CurrentData: {
 		Username: "StonkMaster",
 		Holdings: {},
 		StockValues: {},
 		StockColors: {},
 		Money: 0,
-	},
-	SetMoney: function (money) {
-		Connection.CurrentData.Money = money;
-		$(ConstHtmlIds.Money).text('$' + money);
 	},
 };
 
@@ -223,11 +202,11 @@ var ConstHtmlIds =
 	JoinGame: "#joinGame",
 	Username: "#username",
 	StartGame: "#startGame",
-	PresenterChart: "presenterChart", // No hash in front because it's used by plotly, not jquery
+	PresenterChart: "presenterChart", // No hash in front because it's used by chartjs, not jquery
 	PresenterText: "#presenterText",
-	RollName: "rollName",
-	RollFunc: "rollFunc",
-	RollAmount: "rollAmount",
+	RollName: "#rollName",
+	RollFunc: "#rollFunc",
+	RollAmount: "#rollAmount",
 }
 
 var HtmlGeneration =
@@ -331,8 +310,7 @@ var HtmlGeneration =
 		return '<div class="center-absolute menu-grid"> <button id="startGame" class="btn btn-primary menu-button">Start Game</button></div>';
 	},
 	MakePresenter: function () {
-		// TODO Switch out plotly for chartjs
-		return '<div class="grid-observer-main grid-fill" id="mainGrid"><div id="presenter" class="fill"><h1 id="presenterText" class="grid-column-2 grid-row-1 menu-text">Market Open</h1></div><div class="chart-grid grid-row-2"><div class="fill grid-row-1" id="presenterChart"></div><div class="roll-display grid-row-2"><h1 class="grid-column-2 roll-text" id="rollName"></h1><h1 class="grid-column-3 roll-text" id="rollFunc"></h1><h1 class="grid-column-4 roll-text" id="rollAmount"></h1></div></div></div>';
+		return '<div class="grid-observer-main grid-fill" id="mainGrid"><div id="presenter" class="fill"><h1 id="presenterText" class="grid-column-2 grid-row-1 menu-text">Market Open</h1></div><div class="chart-grid grid-row-2"><div class="chart-fill grid-row-1"><canvas id="presenterChart"></canvas></div><div class="roll-display grid-row-2"><h1 class="grid-column-1 roll-text" id="rollName"></h1><h1 class="grid-column-2 roll-text" id="rollFunc"></h1><h1 class="grid-column-3 roll-text" id="rollAmount"></h1></div></div></div>';
 	},
 }
 
@@ -516,87 +494,158 @@ var ScreenOps = {
 };
 
 var Presenter = {
-	CreatePlot: function () {
-		let body = $('body');
-		body.empty();
-		body.append(HtmlGeneration.MakePresenter());
-
+	Chart: undefined,
+	MarketTimerIntervalId: -1,
+	GetChartData: function () {
 		let stockNames = [];
-		let values = [];
+		let stockValues = [];
 		let stockColors = [];
 		for (let stockName in Connection.CurrentData.StockValues) {
 			if (Connection.CurrentData.StockValues.hasOwnProperty(stockName)) {
 				stockNames.push(stockName);
-				values.push(Connection.CurrentData.StockValues[stockName]);
+				stockValues.push(Connection.CurrentData.StockValues[stockName]);
 				stockColors.push(Connection.CurrentData.StockColors[stockName]);
 			}
 		}
-		var trace1 = {
-			x: stockNames,
-			y: values,
-			text: values.map(String),
-			marker: {
-				color: stockColors
-			},
-			type: 'bar'
+		return {
+			stockNames: stockNames,
+			stockValues: stockValues,
+			stockColors: stockColors,
+		}
+	},
+	CreateChart: function () {
+		if (Presenter.Chart) {
+			return;
+		}
+		let body = $('body');
+		body.empty();
+		body.append(HtmlGeneration.MakePresenter());
+
+		let stockData = Presenter.GetChartData();
+		let canvas = document.getElementById(ConstHtmlIds.PresenterChart);
+		let ctx = canvas.getContext('2d');
+
+		Chart.defaults.font.size = 36;
+		let data = {
+			labels: stockData.stockNames,
+			datasets: [
+				{
+					label: "Stonks",
+					data: stockData.stockValues,
+					backgroundColor: stockData.stockColors
+				}
+			]
 		};
 
-		var data = [trace1];
-		var layout = {
-			title: '',
-			font: {
-				family: 'var(--bs-font-sans-serif)',
-				size: 36,
-				color: '#7f7f7f'
-			},
-			yaxis: { range: [0, 200] },
-			showlegend: false,
+		let config = {
+			type: 'bar',
+			data: data,
+			options: {
+				plugins: {
+					legend: {
+						display: false
+					}
+				},
+				tooltips: {
+					enabled: false
+				},
+				responsive: true,
+				maintainAspectRatio: true,
+				scales: {
+					yAxes: {
+						min: 0,
+						max: 200
+					}
+
+				}
+			}
 		};
 
-		Plotly.newPlot(ConstHtmlIds.PresenterChart, data, layout);
+		Presenter.Chart = new Chart(ctx, config);
+	},
+	UpdateChart: function () {
+		if (!Presenter.Chart) {
+			Presenter.CreateChart();
+		}
+		let stockData = Presenter.GetChartData();
+		for (let i = 0; i < stockData.stockValues.length; i++) {
+			Presenter.Chart.data.datasets[0].data[i] = stockData.stockValues[i];
+		}
+		Presenter.Chart.update();
 	},
 	StartTimer: function (endTime, displayFunc) {
-		let intervalId = -1;
 		let intervalFunc = function () {
 			let now = (new Date()).getTime();
-			if (now > endTime) {
-				clearInterval(intervalId);
+			if (now >= endTime) {
+				clearInterval(Presenter.MarketTimerIntervalId);
 			}
 			displayFunc(Math.ceil((endTime - now) / 1000));
 		};
-		intervalId = setInterval(intervalFunc, 1000);
+		Presenter.MarketTimerIntervalId = setInterval(intervalFunc, 1000);
 	},
 	SetMarketOpen: function (endTime) {
 		let timerFunc = function (secondsRemaining) {
-			$(ConstHtmlIds.PresenterText).text('Market Open (' + secondsRemaining + 's)');
+			if (secondsRemaining >= 0) {
+				$(ConstHtmlIds.PresenterText).text('Market Open for ' + secondsRemaining + 's');
+			}
+			else {
+				$(ConstHtmlIds.PresenterText).text("Market Closed");
+			}
 		};
 		Presenter.StartTimer(endTime, timerFunc);
 	},
 	SetMarketClosed: function () {
+		clearInterval(Presenter.MarketTimerIntervalId);
 		$(ConstHtmlIds.PresenterText).text("Market Closed");
+	},
+	SetGameOver: function (gameEndDto) {
+		log(wallets);
+		$(ConstHtmlIds.PresenterText).text("Game Over");
+		let comparer = function (lhs, rhs) {
+			if (lhs.money < rhs.money) {
+				return 1;
+			}
+			if (lhs.money > rhs.money) {
+				return -1;
+			}
+			return 0;
+		};
+		gameEndDto.wallets.sort(comparer);
+
+		Presenter.Chart.data.labels = [];
+		Presenter.Chart.data.datasets.data = [];
+		log(Presenter.Chart.data.datasets.data);
+		for (let i = 0; i < gameEndDto.wallets.length; i++) {
+			Presenter.Chart.data.labels.push(gameEndDto.wallets[i].username);
+			Presenter.Chart.data.datasets.data.push(gameEndDto.wallets[i].money);
+		}
+		log(Presenter.Chart.data.datasets.data);
+		Presenter.Chart.update();
 	},
 	ShowRoll: function (rollDto) {
 		let state = 0;
 		let intervalId = -1;
+		$(ConstHtmlIds.RollName).text(rollDto.stockName);
 		let intervalFunc = function () {
 			if (state === 0) {
-				$(ConstHtmlIds.RollName).text(rollDto.stockName);
-			}
-			else if (state === 1) {
 				$(ConstHtmlIds.RollFunc).text(rollDto.func);
 			}
-			else if (state === 2) {
-				$(ConstHtmlIds.RollFunc).text(rollDto.amount);
+			else if (state === 1) {
+				$(ConstHtmlIds.RollAmount).text(rollDto.amount);
 			}
-			else if (state === 3) {
-				Presenter.CreatePlot();
+			else if (state === 2) {
+				Presenter.UpdateChart();
 			}
 			else {
+				$(ConstHtmlIds.RollName).text('');
+				$(ConstHtmlIds.RollFunc).text('');
+				$(ConstHtmlIds.RollAmount).text('');
 				clearInterval(intervalId);
 			}
 			state++;
 		};
-		intervalId = setInterval(intervalFunc, 500);
+		let intervalTime = (rollDto.rollTimeInSeconds * 1000) / 4;
+		intervalId = setInterval(intervalFunc, intervalTime);
 	},
 };
 

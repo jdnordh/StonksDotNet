@@ -11,11 +11,14 @@ namespace Models.DataTransferObjects
 
 		public int Amount { get; }
 
-		public RollDto(string stockName, string func, int amount)
+		public int RollTimeInSeconds { get; }
+
+		public RollDto(string stockName, string func, int amount, int rollTimeInSeconds)
 		{
 			StockName = stockName;
 			Func = func;
 			Amount = amount;
+			RollTimeInSeconds = rollTimeInSeconds;
 		}
 	}
 }

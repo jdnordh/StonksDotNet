@@ -7,7 +7,7 @@ namespace Models.Game
 	{
 		public string Id { get; }
 
-		public string Name { get;  }
+		public string Username { get;  }
 
 		public int Money { get; set; }
 
@@ -15,10 +15,10 @@ namespace Models.Game
 
 		private List<string> m_stocks;
 
-		public Player(string id, string name, List<string> stocks)
+		public Player(string id, string username, List<string> stocks)
 		{
 			Id = id;
-			Name = name;
+			Username = username;
 			m_stocks = stocks;
 			ClearAllShares();
 		}
@@ -34,7 +34,7 @@ namespace Models.Game
 
 		public PlayerInventoryDto GetPlayerInvetory()
 		{
-			return new PlayerInventoryDto(Money, Holdings);
+			return new PlayerInventoryDto(Money, Holdings, Username);
 		}
 	}
 }
