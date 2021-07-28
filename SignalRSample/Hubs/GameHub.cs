@@ -34,7 +34,6 @@ namespace Hubs
 		{
 			if (GameManager.Instance.Game == null) 
 			{
-				await Clients.Caller.SendAsync(ClientMethods.GameNotJoined);
 				return;
 			}
 
@@ -66,6 +65,10 @@ namespace Hubs
 
 		public async Task RequestTransaction(string stockName, bool isBuy, int amount)
 		{
+			if (GameManager.Instance.Game == null)
+			{
+				return;
+			}
 			bool transactionWasSuccessful = false;
 			PlayerInventoryDto inventory = null;
 			if (isBuy)

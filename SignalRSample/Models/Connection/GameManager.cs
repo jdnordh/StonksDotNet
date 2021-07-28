@@ -82,11 +82,11 @@ namespace StonkTrader.Models.Connection
 		{
 			return new GameInitializer()
 			{
-				MarketOpenTimeInSeconds = 10,
+				MarketOpenTimeInSeconds = 60,
 				RollTimeInSeconds = 2,
 				TimeBetweenRollsInSeconds = 2,
 				NumberOfRounds = 2,
-				RollsPerRound = 20,
+				RollsPerRound = 12,
 				StartingMoney = 5000,
 				Stocks = new (string stockName, string color)[]
 				{
