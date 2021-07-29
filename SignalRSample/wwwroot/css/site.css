@@ -98,6 +98,7 @@ p {
    font-size: 5vh;
    text-align: center;
    width: 100%;
+   max-width: 100%;
 }
 
 .buy-sell-control {
@@ -246,11 +247,14 @@ html {
     padding: 0;
 }
 
-/*@media (min-width: 768px) {
-    html {
-        font-size: 16px;
-    }
-}*/
+#endGameButton{
+   position: absolute;
+   top: 90%;
+   left: 50%;
+   margin-left: -20%;
+   width: 40%;
+   height: 8%;
+}
 
 body {
     margin: 0;
@@ -260,7 +264,7 @@ body {
 }
 
 #money {
-    font-size: 8vh;
+    font-size: 6vh;
     text-align: center;
     font-weight: 700;
     color: green;

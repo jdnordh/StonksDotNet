@@ -9,6 +9,7 @@ namespace Models.Game
 		public int TimeBetweenRollsInSeconds { get; set; }
 		public int RollsPerRound { get; set; }
 		public int StartingMoney { get; set; }
-		public (string stockName, string color) [] Stocks { get; set; }
+		public bool IsPrototype { get; set; }
+		public (string stockName, string color, bool isHalved) [] Stocks { get; set; }
 	}
 }

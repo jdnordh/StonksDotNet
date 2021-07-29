@@ -18,12 +18,12 @@ namespace Models.Game
 		private readonly int m_rollTimeInSeconds;
 		private readonly int m_timeBetweenRollsInSeconds;
 		private readonly IGameEventCommunicator m_gameEventCommunicator;
+		private readonly bool m_isPrototype;
 
 		// Rolling
 		private readonly Die<string> m_stockDie;
 		private readonly Die<decimal> m_amountDie;
 		private readonly Die<Func<string, decimal, StockFunc>> m_funcDie;
-
 
 		#endregion
 
@@ -51,6 +51,7 @@ namespace Models.Game
 			m_rollTimeInSeconds = initializer.RollTimeInSeconds;
 			m_timeBetweenRollsInSeconds = initializer.TimeBetweenRollsInSeconds;
 			m_gameEventCommunicator = gameEventCommunicator;
+			m_isPrototype = initializer.IsPrototype;
 
 			m_stockDie = new Die<string>() { Results = initializer.Stocks.Select(stock => stock.stockName).ToList() };
 			m_amountDie = new Die<decimal>
@@ -82,9 +83,9 @@ namespace Models.Game
 			};
 
 			Stocks = new Dictionary<string, Stock>();
-			foreach (var (stockName, color) in initializer.Stocks)
+			foreach ((var stockName, var color, var isHalved) in initializer.Stocks)
 			{
-				Stocks.Add(stockName, new Stock(stockName, color));
+				Stocks.Add(stockName, new Stock(stockName, color, isHalved));
 			}
 			IsMarketOpen = false;
 			IsStarted = false;
@@ -93,6 +94,7 @@ namespace Models.Game
 		#endregion
 
 		#region Initialization
+
 		public PlayerInventoryDto AddPlayer(string connectionId, string username)
 		{
 			var player = new Player(connectionId, username, Stocks.Values.Select(stock => stock.Name).ToList())
@@ -100,7 +102,7 @@ namespace Models.Game
 				Money = m_startingMoney
 			};
 			Players.Add(connectionId, player);
-			var inventory = player.GetPlayerInvetory();
+			PlayerInventoryDto inventory = player.GetPlayerInvetory();
 			return inventory;
 		}
 
@@ -108,11 +110,11 @@ namespace Models.Game
 		{
 			IsStarted = true;
 
-			for (int round = 0; round < m_numberOfRounds; round++)
+			for (var round = 0; round < m_numberOfRounds; round++)
 			{
 				await OpenAndCloseMarket();
 
-				for (int roll = 0; roll < m_numberOfRollsPerRound; roll++)
+				for (var roll = 0; roll < m_numberOfRollsPerRound; roll++)
 				{
 					await Roll();
 
@@ -139,7 +141,7 @@ namespace Models.Game
 
 			var marketMiliseconds = m_marketOpenTimeInSeconds * 1000;
 			var marketEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + marketMiliseconds;
-			var marketDto = GetMarketDto();
+			MarketDto marketDto = GetMarketDto();
 			marketDto.MarketCloseTimeInMilliseconds = marketEndTime;
 			await m_gameEventCommunicator.GameMarketChanged(marketDto);
 
@@ -154,13 +156,10 @@ namespace Models.Game
 		/// </summary>
 		private async Task Roll()
 		{
-			var stockResult = m_stockDie.Roll();
-			var amountResult = m_amountDie.Roll();
-			var stockFuncResult = m_funcDie.Roll();
-			var rollResult = stockFuncResult(stockResult, amountResult);
+			StockFunc rollResult = GetRollFunc();
 
-			var marketDto = GetMarketDto();
-			marketDto.RollDto = new RollDto(rollResult.StockName, rollResult.Type.ToString(), 
+			MarketDto marketDto = GetMarketDto();
+			marketDto.RollDto = new RollDto(rollResult.StockName, rollResult.Type.ToString(),
 				(int)(rollResult.PercentageAmount * 100), m_rollTimeInSeconds);
 
 			// Show roll on presenter
@@ -170,26 +169,45 @@ namespace Models.Game
 			await Task.Delay(m_rollTimeInSeconds * 1000);
 
 			// Do roll action after the presenter has shown it so clients don't get the update before it's on screen.
+			Func<Task> rollMethod = null;
 			switch (rollResult.Type)
 			{
 				case StockFuncType.Up:
-					{
-						Stocks[rollResult.StockName].IncreaseValue(rollResult.PercentageAmount);
-						await ResolveSplitOrCrash();
-						break;
-					}
+				{
+					Stocks[rollResult.StockName].IncreaseValue(rollResult.PercentageAmount);
+					rollMethod = ResolveSplitOrCrash;
+					break;
+				}
 				case StockFuncType.Down:
-					{
-						Stocks[rollResult.StockName].DecreaseValue(rollResult.PercentageAmount);
-						await ResolveSplitOrCrash();
-						break;
-					}
+				{
+					Stocks[rollResult.StockName].DecreaseValue(rollResult.PercentageAmount);
+					rollMethod = ResolveSplitOrCrash;
+					break;
+				}
 				case StockFuncType.Dividend:
-					{
-						await PayDividends(rollResult.StockName, rollResult.PercentageAmount);
-						break;
-					}
+				{
+					rollMethod = () => {
+						return PayDividends(rollResult.StockName, rollResult.PercentageAmount);
+					};
+					break;
+				}
 			}
+			await rollMethod();
+		}
+
+		private StockFunc GetRollFunc()
+		{
+			var stockResult = m_stockDie.Roll();
+			var amountResult = m_amountDie.Roll();
+			if (m_isPrototype)
+			{
+				if (Stocks[stockResult].IsHalved && amountResult == 0.2M)
+				{
+					amountResult = 0.05M;
+				}
+			}
+			Func<string, decimal, StockFunc> stockFuncResult = m_funcDie.Roll();
+			return stockFuncResult(stockResult, amountResult);
 		}
 
 		/// <summary>
@@ -199,14 +217,18 @@ namespace Models.Game
 		/// <param name="percentage">The percentage to pay out.</param>
 		private async Task PayDividends(string stock, decimal percentage)
 		{
-			var updatedPlayerInvectories = new List<(string id, PlayerInventoryDto)>();
-			foreach (var player in Players.Values)
+			if (!Stocks[stock].IsPayingDividends())
 			{
-				int holdings = player.Holdings[stock];
+				return;
+			}
+			var updatedPlayerInvectories = new List<(string id, PlayerInventoryDto)>();
+			foreach (Player player in Players.Values)
+			{
+				var holdings = player.Holdings[stock];
 				if (holdings > 0)
 				{
-					updatedPlayerInvectories.Add((player.Id, player.GetPlayerInvetory()));
 					player.Money += (int)(holdings * percentage);
+					updatedPlayerInvectories.Add((player.Id, player.GetPlayerInvetory()));
 				}
 			}
 			await m_gameEventCommunicator.PlayerInventoriesUpdated(updatedPlayerInvectories);
@@ -218,25 +240,25 @@ namespace Models.Game
 		private async Task ResolveSplitOrCrash()
 		{
 			var updatedPlayerInvectories = new List<(string id, PlayerInventoryDto)>();
-			foreach (var stock in Stocks.Values)
+			foreach (Stock stock in Stocks.Values)
 			{
 				// If stock crashes, remove all shares
 				if (stock.Value <= 0)
 				{
-					foreach (var player in Players.Values)
+					foreach (Player player in Players.Values)
 					{
-						updatedPlayerInvectories.Add((player.Id, player.GetPlayerInvetory()));
 						player.Holdings[stock.Name] = 0;
+						updatedPlayerInvectories.Add((player.Id, player.GetPlayerInvetory()));
 					}
 					stock.ResetValue();
 				}
 				// If stock splits, double all shares
 				else if (stock.Value >= 2)
 				{
-					foreach (var player in Players.Values)
+					foreach (Player player in Players.Values)
 					{
-						updatedPlayerInvectories.Add((player.Id, player.GetPlayerInvetory()));
 						player.Holdings[stock.Name] = player.Holdings[stock.Name] * 2;
+						updatedPlayerInvectories.Add((player.Id, player.GetPlayerInvetory()));
 					}
 					stock.ResetValue();
 				}
@@ -273,8 +295,8 @@ namespace Models.Game
 			{
 				return false;
 			}
-			var player = Players[userId];
-			int cost = Stocks[stockName].GetValueOfAmount(amountToBuy);
+			Player player = Players[userId];
+			var cost = Stocks[stockName].GetValueOfAmount(amountToBuy);
 			return player.Money >= cost;
 		}
 
@@ -287,12 +309,12 @@ namespace Models.Game
 		/// <returns>Updated player money.</returns>
 		public PlayerInventoryDto BuyStock(string userId, string stockName, int amountToBuy)
 		{
-			var player = Players[userId];
+			Player player = Players[userId];
 			if (!IsBuyOkay(userId, stockName, amountToBuy))
 			{
 				return player.GetPlayerInvetory();
 			}
-			int cost = Stocks[stockName].GetValueOfAmount(amountToBuy);
+			var cost = Stocks[stockName].GetValueOfAmount(amountToBuy);
 			player.Money -= cost;
 			player.Holdings[stockName] += amountToBuy;
 			return player.GetPlayerInvetory();
@@ -323,7 +345,7 @@ namespace Models.Game
 			{
 				return false;
 			}
-			var player = Players[userId];
+			Player player = Players[userId];
 			return player.Holdings[stockName] >= amountToSell;
 		}
 
@@ -336,12 +358,12 @@ namespace Models.Game
 		/// <returns>Updated player money.</returns>
 		public PlayerInventoryDto SellStock(string userId, string stockName, int amountToSell)
 		{
-			var player = Players[userId];
+			Player player = Players[userId];
 			if (!IsSellOkay(userId, stockName, amountToSell))
 			{
 				return player.GetPlayerInvetory();
 			}
-			int soldFor = Stocks[stockName].GetValueOfAmount(amountToSell);
+			var soldFor = Stocks[stockName].GetValueOfAmount(amountToSell);
 			player.Holdings[stockName] -= amountToSell;
 			player.Money += soldFor;
 			return player.GetPlayerInvetory();
@@ -356,13 +378,13 @@ namespace Models.Game
 			var playerWallets = new List<(string id, int wallet)>();
 			var updatedPlayerInvectories = new List<(string id, PlayerInventoryDto)>();
 			SellAllShares();
-			foreach (var player in Players.Values)
+			foreach (Player player in Players.Values)
 			{
-				updatedPlayerInvectories.Add((player.Id, player.GetPlayerInvetory()));
 				playerWallets.Add((player.Username, player.Money));
+				updatedPlayerInvectories.Add((player.Id, player.GetPlayerInvetory()));
 			}
 			await m_gameEventCommunicator.PlayerInventoriesUpdated(updatedPlayerInvectories);
-			await m_gameEventCommunicator.GameEnded(new GameEndDto(Players.Values.Select(p => p.GetPlayerInvetory()).ToList()));
+			await m_gameEventCommunicator.GameOver(new GameOverDto(Players.Values.Select(p => p.GetPlayerInvetory()).ToList()));
 			IsStarted = false;
 		}
 
@@ -371,9 +393,9 @@ namespace Models.Game
 		/// </summary>
 		private void SellAllShares()
 		{
-			foreach (var player in Players.Values)
+			foreach (Player player in Players.Values)
 			{
-				foreach (var holding in player.Holdings)
+				foreach (KeyValuePair<string, int> holding in player.Holdings)
 				{
 					player.Money += Stocks[holding.Key].GetValueOfAmount(holding.Value);
 				}
@@ -392,9 +414,9 @@ namespace Models.Game
 		public MarketDto GetMarketDto()
 		{
 			var stocksDto = new Dictionary<string, StockDto>();
-			foreach (var kvp in Stocks)
+			foreach (KeyValuePair<string, Stock> kvp in Stocks)
 			{
-				stocksDto.Add(kvp.Key, new StockDto(kvp.Value.Name, kvp.Value.Value) { Color = kvp.Value.Color });
+				stocksDto.Add(kvp.Key, new StockDto(kvp.Value.Name, kvp.Value.Value, kvp.Value.IsHalved, kvp.Value.Color));
 			}
 			return new MarketDto(IsMarketOpen, stocksDto);
 		}

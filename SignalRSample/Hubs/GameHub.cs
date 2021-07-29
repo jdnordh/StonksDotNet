@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Server.HttpSys;
-using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
 using Models.DataTransferObjects;
 using StonkTrader.Models.Connection;
 using System.Text.RegularExpressions;
@@ -11,35 +10,44 @@ namespace Hubs
 	{
 		private string CurrentUserConnectionId
 		{
-			get
-			{
+			get {
 				return Context.ConnectionId;
 			}
 		}
 
 		#region Game Creation and Joining
 
-		public async Task CreateGame()
+		public async Task CreateGame(bool isPrototype)
 		{
 			if (GameManager.Instance.Game != null)
 			{
 				await Clients.Caller.SendAsync(ClientMethods.CreateGameUnavailable);
 				return;
 			}
-			GameManager.Instance.CreateNewGame();
+			GameManager.Instance.CreateNewGame(isPrototype);
 			await Clients.Caller.SendAsync(ClientMethods.GameCreated);
+		}
+
+		public async Task EndGame()
+		{
+			if (GameManager.Instance.Game != null)
+			{
+				GameManager.Instance.EndGame();
+				await Clients.All.SendAsync(ClientMethods.GameEnded);
+				return;
+			}
 		}
 
 		public async Task JoinGame(string username)
 		{
-			if (GameManager.Instance.Game == null) 
+			if (GameManager.Instance.Game == null)
 			{
 				return;
 			}
 
 			// Add player to game
 			var safeUsername = GetSafeUsername(username);
-			var inventory = GameManager.Instance.Game.AddPlayer(CurrentUserConnectionId, safeUsername);
+			PlayerInventoryDto inventory = GameManager.Instance.Game.AddPlayer(CurrentUserConnectionId, safeUsername);
 			await Clients.Caller.SendAsync(ClientMethods.GameJoined, inventory);
 
 			// If game is already started, notify caller.
@@ -51,7 +59,7 @@ namespace Hubs
 
 		public async Task StartGame()
 		{
-			if (GameManager.Instance.Game.IsStarted)
+			if (GameManager.Instance.Game == null || GameManager.Instance.Game.IsStarted)
 			{
 				return;
 			}
@@ -65,11 +73,11 @@ namespace Hubs
 
 		public async Task RequestTransaction(string stockName, bool isBuy, int amount)
 		{
-			if (GameManager.Instance.Game == null)
+			if (GameManager.Instance.Game == null || !GameManager.Instance.Game.IsStarted || !GameManager.Instance.Game.IsMarketOpen)
 			{
 				return;
 			}
-			bool transactionWasSuccessful = false;
+			var transactionWasSuccessful = false;
 			PlayerInventoryDto inventory = null;
 			if (isBuy)
 			{

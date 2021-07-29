@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.SignalR;
-using Models.Game;
-using Hubs;
+﻿using Hubs;
+using Microsoft.AspNetCore.SignalR;
 using Models.Connection;
+using Models.Game;
 
 namespace StonkTrader.Models.Connection
 {
@@ -10,12 +10,11 @@ namespace StonkTrader.Models.Connection
 		#region Singleton Logic
 
 		private static GameManager s_instance;
-		private static object s_initializerLock = new object();
+		private static readonly object s_initializerLock = new object();
 		private static IHubContext<GameHub> s_hubContext;
 		public static GameManager Instance
 		{
-			get
-			{
+			get {
 				if (s_instance == null)
 				{
 					lock (s_initializerLock)
@@ -57,21 +56,29 @@ namespace StonkTrader.Models.Connection
 
 		#region Properties
 
-		public StonkTraderGame Game 
-		{ 
-			get 
-			{
+		public StonkTraderGame Game
+		{
+			get {
 				return m_game;
-			} 
+			}
 		}
 
 		#endregion
 
 		#region Methods
 
-		public void CreateNewGame()
+		public void CreateNewGame(bool isPrototype)
 		{
-			m_game = new StonkTraderGame(GetDefaultGameInitializer(), new GameEventCommunicator(s_hubContext));
+			GameInitializer initializer = isPrototype ? GetPrototypeGameInitializer() : GetDefaultGameInitializer();
+			m_game = new StonkTraderGame(initializer, new GameEventCommunicator(s_hubContext));
+		}
+
+		public void EndGame()
+		{
+			if (m_game != null)
+			{
+				m_game = null;
+			}
 		}
 
 		#endregion
@@ -85,17 +92,48 @@ namespace StonkTrader.Models.Connection
 				MarketOpenTimeInSeconds = 60,
 				RollTimeInSeconds = 2,
 				TimeBetweenRollsInSeconds = 2,
-				NumberOfRounds = 2,
+				NumberOfRounds = 7,
 				RollsPerRound = 12,
 				StartingMoney = 5000,
-				Stocks = new (string stockName, string color)[]
+				IsPrototype = false,
+				Stocks = new (string stockName, string color, bool isHalved)[]
 				{
-					("Gold", "#FFD700"),
-					("Silver", "#C0C0C0"),
-					("Oil", "#4682B4"),
-					("Bonds", "#228B22"),
-					("Industrial", "#DA70D6"),
-					("Grain", "#F0E68C"),
+					("Gold", "#FFD700", false),
+					("Silver", "#C0C0C0", false),
+					("Oil", "#4682B4", false),
+					("Bonds", "#228B22", false),
+					("Industrial", "#DA70D6", false),
+					("Grain", "#F0E68C", false),
+				}
+			};
+		}
+
+		public static GameInitializer GetPrototypeGameInitializer()
+		{
+			return new GameInitializer()
+			{
+				MarketOpenTimeInSeconds = 90,
+				RollTimeInSeconds = 2,
+				TimeBetweenRollsInSeconds = 2,
+				NumberOfRounds = 7,
+				RollsPerRound = 12,
+				StartingMoney = 7500,
+				IsPrototype = true,
+				Stocks = new (string stockName, string color, bool isHalved)[]
+				{
+					("Tech", "#5cc3f7", false),
+					("Crypto", "#0df20d", false),
+					("Oil", "#005cb3", false),
+					("Grain", "#F0E68C", false),
+					("Art", "#9a9ae5", false),
+					("Industrial", "#DA70D6", false),
+
+					("Gold", "#FFD700", true),
+					("Silver", "#C0C0C0", true),
+					("Bonds", "#4aad18", true),
+					("Food", "#ff944d", true),
+					("Transport", "#66ffff", true),
+					("Power", "	#e61919", true),
 				}
 			};
 		}

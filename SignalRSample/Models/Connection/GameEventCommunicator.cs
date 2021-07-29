@@ -22,7 +22,7 @@ namespace Models.Connection
 		/// <inheritdoc/>
 		public async Task PlayerInventoriesUpdated(List<(string connectionId, PlayerInventoryDto inventory)> inventories)
 		{
-			foreach (var (id, inventory) in inventories)
+			foreach ((string id, PlayerInventoryDto inventory) in inventories)
 			{
 				await m_hubContext.Clients.Client(id).SendAsync(ClientMethods.InventoryUpdated, inventory);
 			}
@@ -41,9 +41,9 @@ namespace Models.Connection
 		}
 
 		/// <inheritdoc/>
-		public async Task GameEnded(GameEndDto gameEndDto)
+		public async Task GameOver(GameOverDto gameOverDto)
 		{
-			await m_hubContext.Clients.All.SendAsync(ClientMethods.GameEnded, gameEndDto);
+			await m_hubContext.Clients.All.SendAsync(ClientMethods.GameOver, gameOverDto);
 		}
 	}
 }

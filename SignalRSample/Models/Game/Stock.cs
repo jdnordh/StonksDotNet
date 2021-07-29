@@ -9,11 +9,14 @@ namespace Models.Game
 
 		public string Color { get; }
 
-		public Stock(string name, string color)
+		public bool IsHalved { get; }
+
+		public Stock(string name, string color, bool isHalved)
 		{
 			Name = name;
 			Value = 1;
 			Color = color;
+			IsHalved = isHalved;
 		}
 
 		public void IncreaseValue(decimal increment)
@@ -29,6 +32,11 @@ namespace Models.Game
 		public void ResetValue()
 		{
 			Value = 1;
+		}
+
+		public bool IsPayingDividends()
+		{
+			return Value >= 1M;
 		}
 
 		public int GetValueOfAmount(int amount)

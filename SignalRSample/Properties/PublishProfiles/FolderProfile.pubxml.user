@@ -4,7 +4,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
 -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <_PublishTargetUrl>D:\Repos\Stonks\SignalRSample\bin\Release\netcoreapp3.1\publish\</_PublishTargetUrl>
-    <History>True|2021-07-28T19:11:22.1200312Z;</History>
+    <_PublishTargetUrl>C:\inetpub\wwwroot\StonkTrader</_PublishTargetUrl>
+    <History>True|2021-07-29T16:59:39.2971299Z;False|2021-07-29T10:58:53.0151609-06:00;False|2021-07-29T10:58:31.1569429-06:00;True|2021-07-28T13:11:22.1200312-06:00;</History>
   </PropertyGroup>
 </Project>

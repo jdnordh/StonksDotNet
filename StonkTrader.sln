@@ -5,7 +5,12 @@ VisualStudioVersion = 16.0.31424.327
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StonkTrader", "SignalRSample\StonkTrader.csproj", "{FF7FE4E8-A633-4BA0-88A0-F25657E55D03}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StonkTrader.Tests", "StonkTrader.Tests\StonkTrader.Tests.csproj", "{A52B9A59-3389-451F-BABC-1B8EF26EB3BE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StonkTrader.Tests", "StonkTrader.Tests\StonkTrader.Tests.csproj", "{A52B9A59-3389-451F-BABC-1B8EF26EB3BE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{91666700-D020-44FF-8AF7-A83BACEE1461}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -8,6 +8,7 @@ namespace Hubs
 		public const string GameJoined = "gameJoined";
 		public const string GameNotJoined = "gameNotJoined";
 		public const string GameStarted = "gameStarted";
+		public const string GameOver = "gameOver";
 		public const string GameEnded = "gameEnded";
 		public const string InventoryUpdated = "inventoryUpdated";
 		public const string MarketUpdated = "marketUpdated";

@@ -4,6 +4,7 @@
 "use strict";
 
 var clickHandler;
+var globalIsPrototype = false;
 
 var log = function (msg) {
 	console.log(msg);
@@ -30,6 +31,7 @@ var Connection = {
 		CreateGameUnavailable: "createGameUnavailable",
 		GameJoined: "gameJoined",
 		GameStarted: "gameStarted",
+		GameOver: "gameOver",
 		GameEnded: "gameEnded",
 		InventoryUpdated: "inventoryUpdated",
 		MarketUpdated: "marketUpdated",
@@ -40,6 +42,7 @@ var Connection = {
 		CreateGame: "CreateGame",
 		JoinGame: "JoinGame",
 		StartGame: "StartGame",
+		EndGame: "EndGame",
 		RequestTransaction: "RequestTransaction",
 	},
 	Init: function (onConnectionStarted) {
@@ -99,12 +102,15 @@ var Connection = {
 		Connection.Hub.on(Connection.ClientMethods.Rolled, function (marketDto) {
 			if (Connection.ClientType === Connection.ClientTypes.Observer) {
 				Connection.UpdateStockValuesFromRoll(marketDto.rollDto);
-				//Connection.UpdateStockValues(marketDto);
 				Presenter.ShowRoll(marketDto.rollDto);
 			}
 		});
 
-		Connection.Hub.on(Connection.ClientMethods.GameEnded, function (gameEndDto) {
+		Connection.Hub.on(Connection.ClientMethods.GameEnded, function () {
+			ScreenOps.SwitchToMainMenu();
+		});
+
+		Connection.Hub.on(Connection.ClientMethods.GameOver, function (gameEndDto) {
 			if (Connection.ClientType === Connection.ClientTypes.Observer) {
 				Presenter.SetGameOver(gameEndDto);
 			}
@@ -114,7 +120,7 @@ var Connection = {
 		});
 
 		Connection.Hub.start().then(function () {
-			onConnectionStarted();
+			ScreenOps.SwitchToMainMenu();
 		}).catch(function (err) {
 			return console.error(err.toString());
 		});
@@ -125,11 +131,11 @@ var Connection = {
 				let stockDto = marketDto.stocks[stockName];
 				Connection.CurrentData.StockValues[stockName] = stockDto.value;
 				Connection.CurrentData.StockColors[stockName] = stockDto.color;
+				Connection.CurrentData.StockHalves[stockName] = stockDto.isHalved;
 			}
 		}
 	},
 	UpdateStockValuesFromRoll: function (rollDto) {
-		log('Roll: ' + rollDto.stockName + ' ' + rollDto.func + ' ' + rollDto.amount);
 		if (rollDto.func === 'Up') {
 			Connection.CurrentData.StockValues[rollDto.stockName] += rollDto.amount;
 		}
@@ -158,8 +164,8 @@ var Connection = {
 	SellStock: function (stockName, amount) {
 		Connection.RequestTransaction(stockName, false, amount);
 	},
-	CreateGame: function () {
-		Connection.Hub.invoke(Connection.ServerMethods.CreateGame).catch(function (err) {
+	CreateGame: function (isPrototype) {
+		Connection.Hub.invoke(Connection.ServerMethods.CreateGame, isPrototype).catch(function (err) {
 			return console.error(err.toString());
 		});
 	},
@@ -170,6 +176,11 @@ var Connection = {
 	},
 	StartGame: function () {
 		Connection.Hub.invoke(Connection.ServerMethods.StartGame).catch(function (err) {
+			return console.error(err.toString());
+		});
+	},
+	EndGame: function () {
+		Connection.Hub.invoke(Connection.ServerMethods.EndGame).catch(function (err) {
 			return console.error(err.toString());
 		});
 	},
@@ -188,6 +199,7 @@ var Connection = {
 		Holdings: {},
 		StockValues: {},
 		StockColors: {},
+		StockHalves: {},
 		Money: 0,
 	},
 };
@@ -218,6 +230,7 @@ var ConstHtmlIds =
 	RollName: "#rollName",
 	RollFunc: "#rollFunc",
 	RollAmount: "#rollAmount",
+	EndGameButton: '#endGameButton',
 }
 
 var HtmlGeneration =
@@ -332,6 +345,12 @@ var HtmlGeneration =
 	MakePresenter: function () {
 		return '<div class="grid-observer-main grid-fill" id="mainGrid"><div id="presenter" class="fill"><h1 id="presenterText" class="grid-column-2 grid-row-1 menu-text">Market Open</h1></div><div class="chart-grid grid-row-2"><div class="chart-fill grid-row-1"><canvas id="presenterChart"></canvas></div><div class="roll-display grid-row-2"><h1 class="grid-column-1 roll-text" id="rollName"></h1><h1 class="grid-column-2 roll-text" id="rollFunc"></h1><h1 class="grid-column-3 roll-text" id="rollAmount"></h1></div></div></div>';
 	},
+	MakeEndGameButton: function () {
+		return '<button class="btn btn-primary menu-button" id="endGameButton">End Game</button>';
+	},
+	MakeMainMenu: function () {
+		return '<div class="grid-player-main grid-fill" id="mainGrid"> <div class="center-absolute menu-grid"> <button id="createGame" class="btn btn-primary grid-row-1 menu-button" disabled>Create Game</button> <button id="joinGame" class="btn btn-primary grid-row-2 menu-button" disabled>Join Game</button></div></div>';
+	},
 }
 
 var ScreenOps = {
@@ -357,6 +376,24 @@ var ScreenOps = {
 		Waiting: function () {
 			ScreenOps.SwitchToWaitingMenu();
 		},
+	},
+	SwitchToMainMenu: function () {
+		let body = $('body');
+		body.empty();
+		body.append(HtmlGeneration.MakeMainMenu());
+		let createGameButton = $(ConstHtmlIds.CreateGame);
+		let joinGameButton = $(ConstHtmlIds.JoinGame);
+
+		// Attach menu handlers
+		createGameButton.on(clickHandler, function () {
+			Connection.CreateGame(globalIsPrototype);
+		});
+		createGameButton.prop('disabled', false);
+		joinGameButton.on(clickHandler, function () {
+			ScreenOps.SwitchToJoinMenu(false);
+		});
+		joinGameButton.prop('disabled', false);
+		
 	},
 	SwitchToClosedMarket: function () {
 		ScreenOps.State = ScreenOps.States.MarketClosed;
@@ -509,10 +546,23 @@ var ScreenOps = {
 		let mainGrid = $(ConstHtmlIds.MainGrid);
 		mainGrid.empty();
 		mainGrid.append(HtmlGeneration.MakeJoinMenu());
+		$(ConstHtmlIds.Username).keyup(function () {
+			// Make sure username is not blank
+			let username = $(ConstHtmlIds.Username).val();
+			username = username.replace(/\W/g, '');
+			let shouldDisable = true;
+			if (username) {
+				shouldDisable = false;
+			}
+			let validText = shouldDisable ? 'not valid' : 'valid';
+			log('Input ' + username + ' is ' + validText);
+			$(ConstHtmlIds.JoinGame).prop('disabled', shouldDisable);
+		});
 		$(ConstHtmlIds.JoinGame).on(clickHandler, function () {
 			let username = $(ConstHtmlIds.Username).val();
 			Connection.JoinGame(username);
 		});
+		$(ConstHtmlIds.JoinGame).prop('disabled', true);
 		$(ConstHtmlIds.Username).focus();
 	},
 	SwitchToWaitingMenu: function () {
@@ -538,17 +588,25 @@ var Presenter = {
 		let stockNames = [];
 		let stockValues = [];
 		let stockColors = [];
+		let stockBorderColors = [];
 		for (let stockName in Connection.CurrentData.StockValues) {
 			if (Connection.CurrentData.StockValues.hasOwnProperty(stockName)) {
 				stockNames.push(stockName);
 				stockValues.push(Connection.CurrentData.StockValues[stockName]);
-				stockColors.push(Connection.CurrentData.StockColors[stockName]);
+				let backgroundColor = Connection.CurrentData.StockColors[stockName];
+				let borderColor = backgroundColor;
+				stockColors.push(backgroundColor + 'B0');
+				if (Connection.CurrentData.StockHalves[stockName]) {
+					borderColor = "#4d4d4d";
+				}
+				stockBorderColors.push(borderColor);
 			}
 		}
 		return {
 			stockNames: stockNames,
 			stockValues: stockValues,
 			stockColors: stockColors,
+			stockBorderColors: stockBorderColors,
 		}
 	},
 	GetChartConfig: function (data, isGameEnd) {
@@ -598,7 +656,9 @@ var Presenter = {
 			datasets: [
 				{
 					data: stockData.stockValues,
-					backgroundColor: stockData.stockColors
+					backgroundColor: stockData.stockColors,
+					borderColor: stockData.stockBorderColors,
+					borderWidth: 5
 				}
 			]
 		};
@@ -640,9 +700,15 @@ var Presenter = {
 	SetMarketClosed: function () {
 		$(ConstHtmlIds.PresenterText).text("Market Closed");
 	},
-	SetGameOver: function (gameEndDto) {
-		log(gameEndDto.wallets);
+	SetGameOver: function (gameOverDto) {
+		log(gameOverDto.wallets);
 		$(ConstHtmlIds.PresenterText).text("Game Over");
+		$('body').append(HtmlGeneration.MakeEndGameButton());
+		$(ConstHtmlIds.EndGameButton).on(clickHandler, function () {
+			Connection.EndGame();
+			ScreenOps.SwitchToMainMenu();
+		});
+
 		let comparer = function (lhs, rhs) {
 			if (lhs.money < rhs.money) {
 				return 1;
@@ -652,7 +718,7 @@ var Presenter = {
 			}
 			return 0;
 		};
-		gameEndDto.wallets.sort(comparer);
+		gameOverDto.wallets.sort(comparer);
 
 		let canvas = document.getElementById(ConstHtmlIds.PresenterChart);
 		let ctx = canvas.getContext('2d');
@@ -660,9 +726,9 @@ var Presenter = {
 		let labels = [];
 		let walletAmounts = [];
 		let userColors = [];
-		for (let i = 0; i < gameEndDto.wallets.length; i++) {
-			labels.push(gameEndDto.wallets[i].username);
-			walletAmounts.push(gameEndDto.wallets[i].money);
+		for (let i = 0; i < gameOverDto.wallets.length; i++) {
+			labels.push(gameOverDto.wallets[i].username);
+			walletAmounts.push(gameOverDto.wallets[i].money);
 			userColors.push('#' + Math.floor(Math.random() * 16777215).toString(16));
 		}
 
@@ -714,22 +780,11 @@ var Presenter = {
 $(document).ready(function () {
 	clickHandler = ("ontouchstart" in window ? "touchend" : "click");
 
-	let onConnectionStarted = function () {
-		let createGameButton = $(ConstHtmlIds.CreateGame);
-		let joinGameButton = $(ConstHtmlIds.JoinGame);
+	// Disable buttons until server connection is established
+	$(ConstHtmlIds.CreateGame).prop('disabled', true);
+	$(ConstHtmlIds.JoinGame).prop('disabled', true);
 
-		// Attach menu handlers
-		createGameButton.on(clickHandler, function () {
-			Connection.CreateGame();
-		});
-		createGameButton.prop('disabled', false);
-		joinGameButton.on(clickHandler, function () {
-			ScreenOps.SwitchToJoinMenu(false);
-		});
-		joinGameButton.prop('disabled', false);
-	};
-
-	Connection.Init(onConnectionStarted);
+	Connection.Init();
 });
 
 //#region Cookies

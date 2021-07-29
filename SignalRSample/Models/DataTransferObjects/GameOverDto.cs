@@ -4,11 +4,11 @@ using System.Collections.Generic;
 namespace Models.DataTransferObjects
 {
 	[Serializable]
-	public class GameEndDto
+	public class GameOverDto
 	{
 		public List<PlayerInventoryDto> Wallets { get; set; }
 
-		public GameEndDto(List<PlayerInventoryDto> wallets)
+		public GameOverDto(List<PlayerInventoryDto> wallets)
 		{
 			Wallets = wallets;
 		}

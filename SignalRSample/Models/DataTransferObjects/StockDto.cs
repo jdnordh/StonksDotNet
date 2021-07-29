@@ -9,13 +9,16 @@ namespace Models.DataTransferObjects
 
 		public string Name { get; }
 
-		public string Color { get; set; }
+		public string Color { get;}
 
-		public StockDto(string name, Decimal value, string color = null)
+		public bool IsHalved { get; }
+
+		public StockDto(string name, decimal value, bool isHalved, string color)
 		{
 			Value = (int)(value * 100);
 			Name = name;
 			Color = color;
+			IsHalved = isHalved;
 		}
 	}
 }
