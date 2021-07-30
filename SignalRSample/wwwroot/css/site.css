@@ -15,6 +15,21 @@ for details on configuring this project to bundle and minify static web assets. 
     margin:5px;
 }
 
+.grid-input-parameters {
+   display: grid;
+   margin-left: 20%;
+   width: 60%;
+   max-width: 60%;
+   grid-row-gap: 1vh;
+}
+
+.big-checkbox {
+   width: 6vh;
+   height: 6vh;
+   text-align: center;
+   margin-top: 2vh;
+}
+
 .fill {
     width: 100%;
     height: 100%;
@@ -142,13 +157,22 @@ p {
 
 .buy-sell-buttons {
     display: grid;
-    grid-template-columns: 20% 30% 30%;
+    grid-template-columns: 5% 30% 30% 30%;
 }
 
 .buy-sell-text {
     font-weight: 900;
     font-size: 3vh;
     margin: 1vh;
+    text-align: center;
+}
+
+.buy-sell-timer {
+   font-weight: 900;
+   font-size: 3vh;
+   margin: 1vh;
+   padding: 1vh;
+   text-align: center;
 }
 
 .stock-text {

@@ -74,3 +74,7 @@ D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\StonkTrader.dll
 D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\StonkTrader.pdb
 D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\StonkTrader.genruntimeconfig.cache
 D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\StonkTrader.csproj.CopyComplete
+D:\Repos\Stonks\SignalRSample\bin\Release\netcoreapp3.1\Newtonsoft.Json.dll
+D:\Repos\Stonks\SignalRSample\bin\Release\netcoreapp3.1\System.Runtime.CompilerServices.Unsafe.dll
+D:\Repos\Stonks\SignalRSample\bin\Release\netcoreapp3.1\System.Text.Encodings.Web.dll
+D:\Repos\Stonks\SignalRSample\bin\Release\netcoreapp3.1\System.Text.Json.dll

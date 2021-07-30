@@ -19,6 +19,15 @@ var Unit = {
 	},
 };
 
+var CurrentData = {
+	Username: "StonkMaster",
+	Holdings: { },
+	StockValues: { },
+	StockColors: { },
+	StockHalves: { },
+	Money: 0,
+};
+
 var Connection = {
 	ClientType: -1,
 	ClientTypes: {
@@ -44,6 +53,12 @@ var Connection = {
 		StartGame: "StartGame",
 		EndGame: "EndGame",
 		RequestTransaction: "RequestTransaction",
+		Reset: "Reset",
+	},
+	Reset: function () {
+		Connection.Hub.invoke(Connection.ServerMethods.Reset).catch(function (err) {
+			return console.error(err.toString());
+		});
 	},
 	Init: function (onConnectionStarted) {
 		Connection.Hub = new signalR.HubConnectionBuilder().withUrl("/gameHub").build();
@@ -57,7 +72,7 @@ var Connection = {
 		Connection.Hub.on(Connection.ClientMethods.GameJoined, function (playerInventoryDto) {
 			Connection.ClientType = Connection.ClientTypes.Player;
 			Connection.UpdateInventory(playerInventoryDto);
-			Connection.CurrentData.Username = playerInventoryDto.username;
+			CurrentData.Username = playerInventoryDto.username;
 			ScreenOps.SwitchToWaitingMenu();
 		});
 
@@ -91,7 +106,7 @@ var Connection = {
 			}
 			else if (Connection.ClientType === Connection.ClientTypes.Player) {
 				if (marketDto.isOpen) {
-					ScreenOps.SwitchToOpenMarket(true);
+					ScreenOps.SwitchToOpenMarket(marketDto);
 				}
 				else {
 					ScreenOps.SwitchToClosedMarket();
@@ -107,6 +122,19 @@ var Connection = {
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.GameEnded, function () {
+			Presenter.IsInitialized = false;
+			if (Presenter.Chart) {
+				Presenter.Chart.destroy();
+				Presenter.Chart = undefined;
+			}
+			CurrentData = {
+				Username: "StonkMaster",
+				Holdings: {},
+				StockValues: {},
+				StockColors: {},
+				StockHalves: {},
+				Money: 0,
+			};
 			ScreenOps.SwitchToMainMenu();
 		});
 
@@ -129,25 +157,25 @@ var Connection = {
 		for (let stockName in marketDto.stocks) {
 			if (marketDto.stocks.hasOwnProperty(stockName)) {
 				let stockDto = marketDto.stocks[stockName];
-				Connection.CurrentData.StockValues[stockName] = stockDto.value;
-				Connection.CurrentData.StockColors[stockName] = stockDto.color;
-				Connection.CurrentData.StockHalves[stockName] = stockDto.isHalved;
+				CurrentData.StockValues[stockName] = stockDto.value;
+				CurrentData.StockColors[stockName] = stockDto.color;
+				CurrentData.StockHalves[stockName] = stockDto.isHalved;
 			}
 		}
 	},
 	UpdateStockValuesFromRoll: function (rollDto) {
 		if (rollDto.func === 'Up') {
-			Connection.CurrentData.StockValues[rollDto.stockName] += rollDto.amount;
+			CurrentData.StockValues[rollDto.stockName] += rollDto.amount;
 		}
 		else if (rollDto.func === 'Down') {
-			Connection.CurrentData.StockValues[rollDto.stockName] -= rollDto.amount;
+			CurrentData.StockValues[rollDto.stockName] -= rollDto.amount;
 		}
 	},
 	UpdateInventory: function (playerInventoryDto) {
 		for (let stockName in playerInventoryDto.holdings) {
 			if (playerInventoryDto.holdings.hasOwnProperty(stockName)) {
 				let amount = playerInventoryDto.holdings[stockName];
-				Connection.CurrentData.Holdings[stockName] = amount;
+				CurrentData.Holdings[stockName] = amount;
 			}
 		}
 		Connection.SetMoney(playerInventoryDto.money);
@@ -164,8 +192,8 @@ var Connection = {
 	SellStock: function (stockName, amount) {
 		Connection.RequestTransaction(stockName, false, amount);
 	},
-	CreateGame: function (isPrototype) {
-		Connection.Hub.invoke(Connection.ServerMethods.CreateGame, isPrototype).catch(function (err) {
+	CreateGame: function (CreateGameParams) {
+		Connection.Hub.invoke(Connection.ServerMethods.CreateGame, CreateGameParams).catch(function (err) {
 			return console.error(err.toString());
 		});
 	},
@@ -191,16 +219,8 @@ var Connection = {
 		}
 	},
 	SetMoney: function (money) {
-		Connection.CurrentData.Money = money;
+		CurrentData.Money = money;
 		$(ConstHtmlIds.Money).text('$' + money);
-	},
-	CurrentData: {
-		Username: "StonkMaster",
-		Holdings: {},
-		StockValues: {},
-		StockColors: {},
-		StockHalves: {},
-		Money: 0,
 	},
 };
 
@@ -231,19 +251,30 @@ var ConstHtmlIds =
 	RollFunc: "#rollFunc",
 	RollAmount: "#rollAmount",
 	EndGameButton: '#endGameButton',
+	CreateGameWithParameters: "#createGameWithParameters",
+	ParamMarketOpenTime: "#marketOpenTime",
+	ParamStartingMoney: "#startingMoney",
+	ParamRollsPerRound: "#rollsPerRound",
+	ParamRounds: "#rounds",
+	ParamRollTime: "#rollTime",
+	ParamTimeBetweenRolls: "#timeBetweenRolls",
+	ParamUsePrototype: "#usePrototype",
+	BuySellTimer: "#buySellTimer",
 }
 
 var HtmlGeneration =
 {
 	MakePreBuyScreen: function (stockName) {
-		let stockValue = Connection.CurrentData.StockValues[stockName];
-		let money = Connection.CurrentData.Money;
+		let stockValue = CurrentData.StockValues[stockName];
+		let money = CurrentData.Money;
 		let html = '<div class="fill grid-row-2"><p class="buy-sell-prompt">How much ';
 		html += stockName;
 		html += ' (';
 		html += Unit.PercentToDecimalString(stockValue);
 		html += ') would you like to buy?</p><div class="buy-sell-control"><select class="buy-sell-prompt grid-column-2 grid-row-1 fill" name="amount" id="buyAmount">';
-		for (let i = 0; i <= (money / (stockValue / 100)); i += 500) {
+		let maxBuyAmount = (money * 10000) / (stockValue * 100);
+		//log('Max buy amount: ' + maxBuyAmount);
+		for (let i = 0; i <= maxBuyAmount; i += 500) {
 			html += '<option value="';
 			html += i;
 			html += '">'
@@ -254,8 +285,8 @@ var HtmlGeneration =
 		return html;
 	},
 	MakePreSellScreen: function (stockName) {
-		let stockAmount = Connection.CurrentData.Holdings[stockName];
-		let stockValue = Connection.CurrentData.StockValues[stockName];
+		let stockAmount = CurrentData.Holdings[stockName];
+		let stockValue = CurrentData.StockValues[stockName];
 		let html = '<div class="fill grid-row-2"><p class="buy-sell-prompt">How much ';
 		html += stockName;
 		html += ' (';
@@ -288,10 +319,10 @@ var HtmlGeneration =
 	MakeMarketScreen: function (money, isBuy) {
 		let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1 buy-sell-buttons" id ="buySell"><button type="button" class="grid-column-2 buy-sell-text btn ';
 		if (isBuy) {
-			html += 'btn-primary" id="buyTab">Buy</button><button type="button" class="grid-column-3 buy-sell-text btn btn-outline-primary" id="sellTab">Sell</button></div><div class="grid-row-2"><p id="money">$';
+			html += 'btn-primary" id="buyTab">Buy</button><p class="grid-column-3 buy-sell-timer" id="buySellTimer"></p><button type="button" class="grid-column-4 buy-sell-text btn btn-outline-primary" id="sellTab">Sell</button></div><div class="grid-row-2"><p id="money">$';
 		}
 		else {
-			html += 'btn-outline-primary" id="buyTab">Buy</button><button type="button" class="grid-column-3 buy-sell-text btn btn-primary" id="sellTab">Sell</button></div><div class="grid-row-2"><p id="money">$';
+			html += 'btn-outline-primary" id="buyTab">Buy</button><p class="grid-column-3 buy-sell-timer" id="buySellTimer"></p><button type="button" class="grid-column-4 buy-sell-text btn btn-primary" id="sellTab">Sell</button></div><div class="grid-row-2"><p id="money">$';
 		}
 		html += money;
 		html += '</p></div></div><div class="grid-row-2 scrollviewer-vertical" id="stockList"></div>';
@@ -300,10 +331,14 @@ var HtmlGeneration =
 	MakeBuyStockBanner: function (stockName, stockValue) {
 		let id = stockName + 'buy';
 		let html = '<div class="stock-banner"><p class="grid-column-1 stock-text">';
+		let isStockHalved = CurrentData.StockHalves[stockName];
+		let buttonClass = isStockHalved ? 'btn-warning' : 'btn-success';
 		html += stockName;
 		html += '</p ><p class="grid-column-2 stock-text">';
 		html += Unit.PercentToDecimalString(stockValue);
-		html += '</p > <button type="button" class="grid-column-3 btn btn-success stock-text buy-sell-banner-button" id="';
+		html += '</p > <button type="button" class="grid-column-3 btn ';
+		html += buttonClass;
+		html += ' stock-text buy-sell-banner-button" id="';
 		html += id;
 		html += '">Buy</button></div >';
 		return {
@@ -351,6 +386,9 @@ var HtmlGeneration =
 	MakeMainMenu: function () {
 		return '<div class="grid-player-main grid-fill" id="mainGrid"> <div class="center-absolute menu-grid"> <button id="createGame" class="btn btn-primary grid-row-1 menu-button" disabled>Create Game</button> <button id="joinGame" class="btn btn-primary grid-row-2 menu-button" disabled>Join Game</button></div></div>';
 	},
+	MakeParametersMenu: function () {
+		return '<div class="scrollviewer-vertical"><div class="grid-input-parameters"><label for="marketOpenTime" class="menu-text">Market Open Time (s):</label><input id="marketOpenTime" autocomplete="off" type="text" class="menu-text" value="60"/><label for="startingMoney" class="menu-text">Starting Money:</label><input id="startingMoney" autocomplete="off" type="text" class="menu-text" value="5000"/><label for="rollsPerRound" class="menu-text"># of Rolls per Round:</label><input id="rollsPerRound" autocomplete="off" type="text" class="menu-text" value="10"/><label for="rounds" class="menu-text"># of Rounds:</label><input id="rounds" autocomplete="off" type="text" class="menu-text" value="7"/><label for="rollTime" class="menu-text">Roll Time (s):</label><input id="rollTime" autocomplete="off" type="text" class="menu-text" value="2"/><label for="timeBetweenRolls" class="menu-text">Time Between Rolls:</label><input id="timeBetweenRolls" autocomplete="off" type="text" class="menu-text" value="2"/><div class="grid-fill"><label for="usePrototype" class="menu-text grid-column-1">Use Prototype:</label><input id="usePrototype" autocomplete="off" type="checkbox" class="form-check-label big-checkbox grid-column-2"/></div><button id="createGameWithParameters" class="btn btn-primary menu-button">Create Game</button><br/></div></div>';
+	},
 }
 
 var ScreenOps = {
@@ -365,16 +403,13 @@ var ScreenOps = {
 	},
 	StateBuildMethod: {
 		MarketOpenBuy: function () {
-			ScreenOps.SwitchToOpenMarket(true);
+			ScreenOps.SwitchToBuy();
 		},
 		MarketOpenSell: function () {
-			ScreenOps.SwitchToOpenMarket(false);
+			ScreenOps.SwitchToSell();
 		},
 		MarketClosed: function () {
 			ScreenOps.SwitchToClosedMarket();
-		},
-		Waiting: function () {
-			ScreenOps.SwitchToWaitingMenu();
 		},
 	},
 	SwitchToMainMenu: function () {
@@ -386,7 +421,7 @@ var ScreenOps = {
 
 		// Attach menu handlers
 		createGameButton.on(clickHandler, function () {
-			Connection.CreateGame(globalIsPrototype);
+			ScreenOps.SwitchToParametersMenu();
 		});
 		createGameButton.prop('disabled', false);
 		joinGameButton.on(clickHandler, function () {
@@ -399,12 +434,12 @@ var ScreenOps = {
 		ScreenOps.State = ScreenOps.States.MarketClosed;
 		let mainGrid = $(ConstHtmlIds.MainGrid);
 		mainGrid.empty();
-		mainGrid.append(HtmlGeneration.MakeMarketClosedScreen(Connection.CurrentData.Money));
+		mainGrid.append(HtmlGeneration.MakeMarketClosedScreen(CurrentData.Money));
 		let list = $(ConstHtmlIds.StockList);
 
-		for (let stockName in Connection.CurrentData.Holdings) {
-			if (Connection.CurrentData.Holdings.hasOwnProperty(stockName)) {
-				let amountHeld = Connection.CurrentData.Holdings[stockName];
+		for (let stockName in CurrentData.Holdings) {
+			if (CurrentData.Holdings.hasOwnProperty(stockName)) {
+				let amountHeld = CurrentData.Holdings[stockName];
 				if (amountHeld > 0) {
 					list.append(HtmlGeneration.MakeStockBannerMarketClosed(stockName, amountHeld));
 				}
@@ -412,6 +447,10 @@ var ScreenOps = {
 		}
 	},
 	SwitchToStartGameMenu: function () {
+		// TODO This is messy 
+		let body = $('body');
+		body.empty();
+		body.append(HtmlGeneration.MakeMainMenu());
 		let mainGrid = $(ConstHtmlIds.MainGrid);
 		mainGrid.empty();
 		mainGrid.append(HtmlGeneration.MakeStartGameMenu());
@@ -419,19 +458,24 @@ var ScreenOps = {
 			Connection.StartGame();
 		});
 	},
-	SwitchToOpenMarket: function (isBuy) {
+	SwitchToOpenMarket: function (marketDto) {
 		let mainGrid = $(ConstHtmlIds.MainGrid);
 		mainGrid.empty();
-		mainGrid.append(HtmlGeneration.MakeMarketScreen(Connection.CurrentData.Money, isBuy));
+		mainGrid.append(HtmlGeneration.MakeMarketScreen(CurrentData.Money, true));
 		mainGrid.append(HtmlGeneration.MakeBuyStockBanner());
 
+		let timerFunc = function (secondsRemaining) {
+			if (secondsRemaining > 0) {
+				$(ConstHtmlIds.BuySellTimer).text(secondsRemaining + 's');
+			}
+			else {
+				$(ConstHtmlIds.BuySellTimer).text('');
+			}
+		};
+		Presenter.StartTimer(Number(marketDto.marketCloseTimeInMilliseconds), timerFunc);
+
 		ScreenOps.AttachOpenMarketTabHandlers();
-		if (isBuy) {
-			ScreenOps.SwitchToBuy();
-		}
-		else {
-			ScreenOps.SwitchToSell();
-		}
+		ScreenOps.SwitchToBuy();
 	},
 	AttachOpenMarketTabHandlers: function () {
 		$(ConstHtmlIds.BuyTab).on(clickHandler, function () {
@@ -465,14 +509,20 @@ var ScreenOps = {
 		let list = $(ConstHtmlIds.StockList);
 		list.empty();
 
-		for (let stockName in Connection.CurrentData.StockValues) {
-			if (Connection.CurrentData.StockValues.hasOwnProperty(stockName)) {
-				let stockValue = Connection.CurrentData.StockValues[stockName];
+		for (let stockName in CurrentData.StockValues) {
+			if (CurrentData.StockValues.hasOwnProperty(stockName)) {
+				let stockValue = CurrentData.StockValues[stockName];
 				let generated = HtmlGeneration.MakeBuyStockBanner(stockName, stockValue);
 				list.append(generated.html);
-				$(generated.id).on(clickHandler, function () {
-					ScreenOps.PreBuyStock(stockName);
-				});
+				if ((stockValue * 500) / 100 <= CurrentData.Money) {
+					$(generated.id).on(clickHandler, function () {
+						ScreenOps.PreBuyStock(stockName);
+					});
+				}
+				else {
+					// Disable buy button when user doesn't have enough money to buy 500 shares
+					$(generated.id).prop('disabled', true);
+				}
 			}
 		}
 	},
@@ -481,9 +531,9 @@ var ScreenOps = {
 		let list = $(ConstHtmlIds.StockList);
 		list.empty();
 
-		for (let stockName in Connection.CurrentData.Holdings) {
-			if (Connection.CurrentData.Holdings.hasOwnProperty(stockName)) {
-				let amountHeld = Connection.CurrentData.Holdings[stockName];
+		for (let stockName in CurrentData.Holdings) {
+			if (CurrentData.Holdings.hasOwnProperty(stockName)) {
+				let amountHeld = CurrentData.Holdings[stockName];
 				if (amountHeld > 0) {
 					let generated = HtmlGeneration.MakeSellStockBanner(stockName, amountHeld);
 					list.append(generated.html);
@@ -503,7 +553,7 @@ var ScreenOps = {
 		// Add handlers
 		$(ConstHtmlIds.BuyAmount).change(function () {
 			let stockAmount = $(ConstHtmlIds.BuyAmount).find(":selected").text();
-			let cost = (Connection.CurrentData.StockValues[stockName] * stockAmount) / 100;
+			let cost = (CurrentData.StockValues[stockName] * stockAmount) / 100;
 			$(ConstHtmlIds.Buy).text('Buy for $' + cost);
 		});
 		$(ConstHtmlIds.Buy).on(clickHandler, function () {
@@ -527,7 +577,7 @@ var ScreenOps = {
 		// Add handlers
 		$(ConstHtmlIds.SellAmount).change(function () {
 			let stockAmount = $(ConstHtmlIds.SellAmount).find(":selected").text();
-			let cost = (Connection.CurrentData.StockValues[stockName] * stockAmount) / 100;
+			let cost = (CurrentData.StockValues[stockName] * stockAmount) / 100;
 			$(ConstHtmlIds.Sell).text('Sell for $' + cost);
 		});
 		$(ConstHtmlIds.Sell).on(clickHandler, function () {
@@ -554,8 +604,8 @@ var ScreenOps = {
 			if (username) {
 				shouldDisable = false;
 			}
-			let validText = shouldDisable ? 'not valid' : 'valid';
-			log('Input ' + username + ' is ' + validText);
+			//let validText = shouldDisable ? 'not valid' : 'valid';
+			//log('Input ' + username + ' is ' + validText);
 			$(ConstHtmlIds.JoinGame).prop('disabled', shouldDisable);
 		});
 		$(ConstHtmlIds.JoinGame).on(clickHandler, function () {
@@ -570,7 +620,35 @@ var ScreenOps = {
 		let mainGrid = $(ConstHtmlIds.MainGrid);
 		mainGrid.empty();
 
-		mainGrid.append(HtmlGeneration.MakeWaitingScreen(Connection.CurrentData.Username, Connection.CurrentData.Money));
+		mainGrid.append(HtmlGeneration.MakeWaitingScreen(CurrentData.Username, CurrentData.Money));
+	},
+	SwitchToParametersMenu: function () {
+		let body = $('body');
+		body.empty();
+		body.append(HtmlGeneration.MakeParametersMenu());
+
+		// Attach handlers
+		$(ConstHtmlIds.CreateGameWithParameters).on(clickHandler, function () {
+			let marketTime = Number($(ConstHtmlIds.ParamMarketOpenTime).val());
+			let startingMoney = Number($(ConstHtmlIds.ParamStartingMoney).val());
+			let rollsPerRound = Number($(ConstHtmlIds.ParamRollsPerRound).val());
+			let rounds = Number($(ConstHtmlIds.ParamRounds).val());
+			let rollTime = Number($(ConstHtmlIds.ParamRollTime).val());
+			let timeBetweenRolls = Number($(ConstHtmlIds.ParamTimeBetweenRolls).val());
+			let usePrototype = $(ConstHtmlIds.ParamUsePrototype).is(":checked");
+
+			let params = {
+				marketTime: marketTime,
+				startingMoney: startingMoney,
+				rollsPerRound: rollsPerRound,
+				rounds: rounds,
+				rollTime: rollTime,
+				timeBetweenRolls: timeBetweenRolls,
+				usePrototype: usePrototype,
+			};
+
+			Connection.CreateGame(params);
+		});
 	},
 };
 
@@ -589,15 +667,15 @@ var Presenter = {
 		let stockValues = [];
 		let stockColors = [];
 		let stockBorderColors = [];
-		for (let stockName in Connection.CurrentData.StockValues) {
-			if (Connection.CurrentData.StockValues.hasOwnProperty(stockName)) {
+		for (let stockName in CurrentData.StockValues) {
+			if (CurrentData.StockValues.hasOwnProperty(stockName)) {
 				stockNames.push(stockName);
-				stockValues.push(Connection.CurrentData.StockValues[stockName]);
-				let backgroundColor = Connection.CurrentData.StockColors[stockName];
+				stockValues.push(CurrentData.StockValues[stockName]);
+				let backgroundColor = CurrentData.StockColors[stockName];
 				let borderColor = backgroundColor;
 				stockColors.push(backgroundColor + 'B0');
-				if (Connection.CurrentData.StockHalves[stockName]) {
-					borderColor = "#4d4d4d";
+				if (CurrentData.StockHalves[stockName]) {
+					borderColor = "#f0ad4e";
 				}
 				stockBorderColors.push(borderColor);
 			}
@@ -641,6 +719,7 @@ var Presenter = {
 	CreateChart: function () {
 		Presenter.OneTimeInit();
 		if (Presenter.Chart) {
+			log('Chart was already created')
 			return;
 		}
 		let body = $('body');

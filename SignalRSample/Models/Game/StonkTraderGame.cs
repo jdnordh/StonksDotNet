@@ -94,7 +94,6 @@ namespace Models.Game
 		#endregion
 
 		#region Initialization
-
 		public PlayerInventoryDto AddPlayer(string connectionId, string username)
 		{
 			var player = new Player(connectionId, username, Stocks.Values.Select(stock => stock.Name).ToList())

@@ -1,6 +1,12 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Models.DataTransferObjects;
+using Models.Game;
+using Newtonsoft.Json;
 using StonkTrader.Models.Connection;
+using System;
+using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -8,6 +14,11 @@ namespace Hubs
 {
 	public class GameHub : Hub
 	{
+		public static class UserHandler
+		{
+			public static HashSet<string> ConnectedIds = new HashSet<string>();
+		}
+
 		private string CurrentUserConnectionId
 		{
 			get {
@@ -15,22 +26,88 @@ namespace Hubs
 			}
 		}
 
+		#region Connection
+
+		public override Task OnConnectedAsync()
+		{
+			UserHandler.ConnectedIds.Add(CurrentUserConnectionId);
+			return base.OnConnectedAsync();
+		}
+
+		public override Task OnDisconnectedAsync(Exception exception)
+		{
+			UserHandler.ConnectedIds.Remove(CurrentUserConnectionId);
+			if (UserHandler.ConnectedIds.Count == 0)
+			{
+				GameManager.Instance.EndGame();
+			}
+			return base.OnDisconnectedAsync(exception);
+		}
+
+		#endregion
+
 		#region Game Creation and Joining
 
-		public async Task CreateGame(bool isPrototype)
+		[Serializable]
+		public class CreateGameParams
 		{
+			[JsonInclude]
+			[JsonProperty("marketTime")]
+			public int marketTime { get; set; }
+
+			[JsonInclude]
+			[JsonProperty("startingMoney")]
+			public int startingMoney { get; set; }
+
+			[JsonInclude]
+			[JsonProperty("rollsPerRound")]
+			public int rollsPerRound { get; set; }
+
+			[JsonInclude]
+			[JsonProperty("rounds")]
+			public int rounds { get; set; }
+
+			[JsonInclude]
+			[JsonProperty("rollTime")]
+			public int rollTime { get; set; }
+
+			[JsonInclude]
+			[JsonProperty("timeBetweenRolls")]
+			public int timeBetweenRolls { get; set; }
+
+			[JsonInclude]
+			[JsonProperty("usePrototype")]
+			public bool usePrototype { get; set; }
+		}
+
+		public async Task CreateGame(CreateGameParams obj)
+		{
+			CreateGameParams parameters = obj;
+
+			if (parameters == null)
+			{
+				return;
+			}
 			if (GameManager.Instance.Game != null)
 			{
 				await Clients.Caller.SendAsync(ClientMethods.CreateGameUnavailable);
 				return;
 			}
-			GameManager.Instance.CreateNewGame(isPrototype);
+			GameInitializer initializer = parameters.usePrototype ? GameManager.GetPrototypeGameInitializer() : GameManager.GetDefaultGameInitializer();
+			initializer.MarketOpenTimeInSeconds = parameters.marketTime;
+			initializer.StartingMoney = parameters.startingMoney;
+			initializer.RollsPerRound = parameters.rollsPerRound;
+			initializer.NumberOfRounds = parameters.rounds;
+			initializer.RollTimeInSeconds = parameters.rollTime;
+			initializer.TimeBetweenRollsInSeconds = parameters.timeBetweenRolls;
+
+			GameManager.Instance.CreateNewGame(initializer);
 			await Clients.Caller.SendAsync(ClientMethods.GameCreated);
 		}
 
 		public async Task EndGame()
 		{
-			if (GameManager.Instance.Game != null)
+			if (GameManager.Instance.Game != null && !GameManager.Instance.Game.IsStarted)
 			{
 				GameManager.Instance.EndGame();
 				await Clients.All.SendAsync(ClientMethods.GameEnded);
@@ -40,7 +117,7 @@ namespace Hubs
 
 		public async Task JoinGame(string username)
 		{
-			if (GameManager.Instance.Game == null)
+			if (GameManager.Instance.Game == null || GameManager.Instance.Game.IsStarted)
 			{
 				return;
 			}
@@ -63,8 +140,11 @@ namespace Hubs
 			{
 				return;
 			}
+
+			// Make sure observer gets the market before starting to present
+			await Clients.Caller.SendAsync(ClientMethods.MarketUpdated, GameManager.Instance.Game.GetMarketDto());
+			await Clients.Caller.SendAsync(ClientMethods.GameStarted);
 			GameManager.Instance.Game.StartGame();
-			await Clients.All.SendAsync(ClientMethods.GameStarted);
 		}
 
 		#endregion
@@ -116,5 +196,11 @@ namespace Hubs
 		}
 
 		#endregion
+
+		public async Task Reset()
+		{
+			GameManager.Instance.EndGame();
+			await Clients.All.SendAsync(ClientMethods.GameEnded);
+		}
 	}
 }

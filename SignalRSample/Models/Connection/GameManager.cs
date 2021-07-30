@@ -67,9 +67,9 @@ namespace StonkTrader.Models.Connection
 
 		#region Methods
 
-		public void CreateNewGame(bool isPrototype)
+		public void CreateNewGame(GameInitializer initializer)
 		{
-			GameInitializer initializer = isPrototype ? GetPrototypeGameInitializer() : GetDefaultGameInitializer();
+			//GameInitializer initializer = isPrototype ? GetPrototypeGameInitializer() : GetDefaultGameInitializer();
 			m_game = new StonkTraderGame(initializer, new GameEventCommunicator(s_hubContext));
 		}
 
@@ -124,16 +124,16 @@ namespace StonkTrader.Models.Connection
 					("Tech", "#5cc3f7", false),
 					("Crypto", "#0df20d", false),
 					("Oil", "#005cb3", false),
-					("Grain", "#F0E68C", false),
-					("Art", "#9a9ae5", false),
-					("Industrial", "#DA70D6", false),
-
-					("Gold", "#FFD700", true),
-					("Silver", "#C0C0C0", true),
-					("Bonds", "#4aad18", true),
-					("Food", "#ff944d", true),
-					("Transport", "#66ffff", true),
+					("Retail", "#800000", false),
+					("Art", "#98FB98", false),
+					("Industrial", "#8B008B", false),
+					
 					("Power", "	#e61919", true),
+					("Gold", "#FFD700", true),
+					("Bonds", "#4aad18", true),
+					("Silver", "#C0C0C0", true),
+					("Transport", "#66ffff", true),
+					("Grain", "#F0E68C", true),
 				}
 			};
 		}

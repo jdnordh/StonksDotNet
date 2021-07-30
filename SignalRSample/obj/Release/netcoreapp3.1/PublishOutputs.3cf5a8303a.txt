@@ -48,5 +48,9 @@ D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\PubTmp\Out\StonkTrader.d
 D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\PubTmp\Out\StonkTrader.deps.json
 D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\PubTmp\Out\StonkTrader.runtimeconfig.json
 D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\PubTmp\Out\StonkTrader.pdb
+D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\PubTmp\Out\Newtonsoft.Json.dll
+D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\PubTmp\Out\System.Runtime.CompilerServices.Unsafe.dll
+D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\PubTmp\Out\System.Text.Encodings.Web.dll
+D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\PubTmp\Out\System.Text.Json.dll
 D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\PubTmp\Out\StonkTrader.Views.dll
 D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\PubTmp\Out\StonkTrader.Views.pdb
