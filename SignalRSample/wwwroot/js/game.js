@@ -98,7 +98,7 @@ var Connection = {
 				Presenter.UpdateChart();
 				if (marketDto.isOpen) {
 					let marketEndTime = Number(marketDto.marketCloseTimeInMilliseconds);
-					Presenter.SetMarketOpen(marketEndTime);
+					Presenter.SetMarketOpen(marketEndTime, marketDto.currentRound, marketDto.totalRounds);
 				}
 				else {
 					Presenter.SetMarketClosed();
@@ -372,7 +372,7 @@ var HtmlGeneration =
 		return '<div class="center-absolute menu-grid"> <button id="createGame" class="btn btn-primary grid-row-1 menu-button">Create Game</button> <button id="joinGame" class="btn btn-primary grid-row-2 menu-button">Join Game</button></div>';
 	},
 	MakeJoinMenu: function (isCreateGame) {
-		return '<div class="center-absolute menu-grid"><div class="menu-sub-grid"> <label for="username" class="menu-text">Username:</label> <input autocomplete="off" type="text" class="menu-text" id="username" /></div> <button id="joinGame" class="btn btn-primary grid-row-2 menu-button">Join Game</button></div>';
+		return '<div class="center-absolute menu-grid"><div class="menu-sub-grid"> <label for="username" class="menu-text">Username (0/12):</label> <input autocomplete="off" type="text" maxlength="12" class="menu-text" id="username" /></div> <button id="joinGame" class="btn btn-primary grid-row-2 menu-button">Join Game</button></div>';
 	},
 	MakeStartGameMenu: function () {
 		return '<div class="center-absolute menu-grid"> <button id="startGame" class="btn btn-primary menu-button">Start Game</button></div>';
@@ -596,9 +596,34 @@ var ScreenOps = {
 		let mainGrid = $(ConstHtmlIds.MainGrid);
 		mainGrid.empty();
 		mainGrid.append(HtmlGeneration.MakeJoinMenu());
+		$(ConstHtmlIds.Username).keydown(function (e) {
+			let key = e.key;
+			if (key && key !== ' ') {
+				key = key.replace(/\W/g, '');
+				if (!key) {
+					e.preventDefault();
+				}
+			}
+
+			var keyCode = e.which;
+			// Don't allow special characters
+			if (!((keyCode >= 48 && keyCode <= 57)
+				|| (keyCode >= 65 && keyCode <= 90)
+				|| (keyCode >= 97 && keyCode <= 122))
+				&& keyCode != 8 && keyCode != 32) {
+				e.preventDefault();
+			}
+		});
 		$(ConstHtmlIds.Username).keyup(function () {
 			// Make sure username is not blank
 			let username = $(ConstHtmlIds.Username).val();
+			let usernameLength = 0;
+			if (username) {
+				usernameLength = $(ConstHtmlIds.Username).val().length;
+			}
+			$('label[for=username]').text('Username (' + usernameLength + '/12):');
+
+			// Check length of username without illegal characters
 			username = username.replace(/\W/g, '');
 			let shouldDisable = true;
 			if (username) {
@@ -765,10 +790,10 @@ var Presenter = {
 		};
 		intervalId = setInterval(intervalFunc, 1000);
 	},
-	SetMarketOpen: function (endTime) {
+	SetMarketOpen: function (endTime, currentRound, totalRounds) {
 		let timerFunc = function (secondsRemaining) {
 			if (secondsRemaining > 0) {
-				$(ConstHtmlIds.PresenterText).text('Market Open for ' + secondsRemaining + 's');
+				$(ConstHtmlIds.PresenterText).text('Round ' + currentRound + '/' + totalRounds + ' | Market Open for ' + secondsRemaining + 's');
 			}
 			else {
 				$(ConstHtmlIds.PresenterText).text("Market Closed");

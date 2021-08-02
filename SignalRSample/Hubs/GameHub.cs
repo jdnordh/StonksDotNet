@@ -192,7 +192,7 @@ namespace Hubs
 
 		private string GetSafeUsername(string submittedUsername)
 		{
-			return Regex.Replace(submittedUsername, "[^0-9a-zA-Z]+", "");
+			return Regex.Replace(submittedUsername, "[^0-9a-zA-Z ]+", "");
 		}
 
 		#endregion

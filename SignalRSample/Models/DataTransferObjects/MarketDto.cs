@@ -10,6 +10,10 @@ namespace Models.DataTransferObjects
 
 		public RollDto RollDto { get; set; }
 
+		public int CurrentRound { get; set; }
+
+		public int TotalRounds { get; set; }
+
 		public long MarketCloseTimeInMilliseconds { get; set; }
 
 		public Dictionary<string, StockDto> Stocks { get; }

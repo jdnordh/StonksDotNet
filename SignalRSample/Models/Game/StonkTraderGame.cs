@@ -111,7 +111,7 @@ namespace Models.Game
 
 			for (var round = 0; round < m_numberOfRounds; round++)
 			{
-				await OpenAndCloseMarket();
+				await OpenAndCloseMarket(round + 1, m_numberOfRounds);
 
 				for (var roll = 0; roll < m_numberOfRollsPerRound; roll++)
 				{
@@ -130,7 +130,7 @@ namespace Models.Game
 		/// <summary>
 		/// Opens the market.
 		/// </summary>
-		private async Task OpenAndCloseMarket()
+		private async Task OpenAndCloseMarket(int currentReadableRound, int totalRounds)
 		{
 			if (IsMarketOpen)
 			{
@@ -141,6 +141,8 @@ namespace Models.Game
 			var marketMiliseconds = m_marketOpenTimeInSeconds * 1000;
 			var marketEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + marketMiliseconds;
 			MarketDto marketDto = GetMarketDto();
+			marketDto.CurrentRound = currentReadableRound;
+			marketDto.TotalRounds = totalRounds;
 			marketDto.MarketCloseTimeInMilliseconds = marketEndTime;
 			await m_gameEventCommunicator.GameMarketChanged(marketDto);
 
