@@ -17,6 +17,10 @@ var Unit = {
 	PercentToDecimalString: function (percentage) {
 		return (percentage / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
 	},
+	FloatEquals: function (lhs, rhs) {
+		let epsilon = 0.000001;
+		return Math.abs(lhs - rhs) < epsilon;
+	},
 };
 
 var CurrentData = {
@@ -34,11 +38,13 @@ var Connection = {
 		None: -1,
 		Player: 1,
 		Observer: 2,
+		Creator: 3,
 	},
 	ClientMethods: {
 		GameCreated: "gameCreated",
 		CreateGameUnavailable: "createGameUnavailable",
 		GameJoined: "gameJoined",
+		GameJoinedObserver: "gameJoinedObserver",
 		GameStarted: "gameStarted",
 		GameOver: "gameOver",
 		GameEnded: "gameEnded",
@@ -60,12 +66,12 @@ var Connection = {
 			return console.error(err.toString());
 		});
 	},
-	Init: function (onConnectionStarted) {
+	Init: function () {
 		Connection.Hub = new signalR.HubConnectionBuilder().withUrl("/gameHub").build();
 		Connection.Hub.serverTimeoutInMilliseconds = 1800000;
 
 		Connection.Hub.on(Connection.ClientMethods.GameCreated, function () {
-			Connection.ClientType = Connection.ClientTypes.Observer;
+			Connection.ClientType = Connection.ClientTypes.Creator;
 			ScreenOps.SwitchToStartGameMenu();
 		});
 
@@ -76,12 +82,18 @@ var Connection = {
 			ScreenOps.SwitchToWaitingMenu();
 		});
 
+		Connection.Hub.on(Connection.ClientMethods.GameJoinedObserver, function (marketDto) {
+			Connection.ClientType = Connection.ClientTypes.Observer;
+			Connection.UpdateStockValues(marketDto);
+			Presenter.CreateChart();
+		});
+
 		Connection.Hub.on(Connection.ClientMethods.CreateGameUnavailable, function () {
 			$(ConstHtmlIds.CreateGame).prop('disabled', true);
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.GameStarted, function () {
-			if (Connection.ClientType === Connection.ClientTypes.Observer) {
+			if (Connection.ClientType === Connection.ClientTypes.Observer || Connection.ClientType === Connection.ClientTypes.Creator) {
 				Presenter.CreateChart();
 			}
 		});
@@ -94,7 +106,7 @@ var Connection = {
 
 		Connection.Hub.on(Connection.ClientMethods.MarketUpdated, function (marketDto) {
 			Connection.UpdateStockValues(marketDto);
-			if (Connection.ClientType === Connection.ClientTypes.Observer) {
+			if (Connection.ClientType === Connection.ClientTypes.Observer || Connection.ClientType === Connection.ClientTypes.Creator) {
 				Presenter.UpdateChart();
 				if (marketDto.isOpen) {
 					let marketEndTime = Number(marketDto.marketCloseTimeInMilliseconds);
@@ -115,7 +127,7 @@ var Connection = {
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.Rolled, function (marketDto) {
-			if (Connection.ClientType === Connection.ClientTypes.Observer) {
+			if (Connection.ClientType === Connection.ClientTypes.Observer || Connection.ClientType === Connection.ClientTypes.Creator) {
 				Connection.UpdateStockValuesFromRoll(marketDto.rollDto);
 				Presenter.ShowRoll(marketDto.rollDto);
 			}
@@ -139,8 +151,11 @@ var Connection = {
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.GameOver, function (gameEndDto) {
-			if (Connection.ClientType === Connection.ClientTypes.Observer) {
+			if (Connection.ClientType === Connection.ClientTypes.Observer || Connection.ClientType === Connection.ClientTypes.Creator) {
 				Presenter.SetGameOver(gameEndDto);
+				if (Connection.ClientType === Connection.ClientTypes.Creator) {
+					ScreenOps.ShowEndGameButton();
+				}
 			}
 			else {
 				$(ConstHtmlIds.MarketOpenClosedHeader).text("Game Over");
@@ -197,8 +212,9 @@ var Connection = {
 			return console.error(err.toString());
 		});
 	},
-	JoinGame: function (username) {
-		Connection.Hub.invoke(Connection.ServerMethods.JoinGame, username).catch(function (err) {
+	JoinGame: function (username, isPlayer) {
+		log('Joining game as ' + (isPlayer ? 'Player' : 'Observer') + ' ' + username);
+		Connection.Hub.invoke(Connection.ServerMethods.JoinGame, username, isPlayer).catch(function (err) {
 			return console.error(err.toString());
 		});
 	},
@@ -260,6 +276,7 @@ var ConstHtmlIds =
 	ParamTimeBetweenRolls: "#timeBetweenRolls",
 	ParamUsePrototype: "#usePrototype",
 	BuySellTimer: "#buySellTimer",
+	IsPlayer: "#isPlayer",
 }
 
 var HtmlGeneration =
@@ -273,8 +290,7 @@ var HtmlGeneration =
 		html += Unit.PercentToDecimalString(stockValue);
 		html += ') would you like to buy?</p><div class="buy-sell-control"><select class="buy-sell-prompt grid-column-2 grid-row-1 fill" name="amount" id="buyAmount">';
 		let maxBuyAmount = (money * 10000) / (stockValue * 100);
-		//log('Max buy amount: ' + maxBuyAmount);
-		for (let i = 0; i <= maxBuyAmount; i += 500) {
+		for (let i = 0; i < maxBuyAmount || Unit.FloatEquals(i, maxBuyAmount); i += 500) {
 			html += '<option value="';
 			html += i;
 			html += '">'
@@ -372,7 +388,7 @@ var HtmlGeneration =
 		return '<div class="center-absolute menu-grid"> <button id="createGame" class="btn btn-primary grid-row-1 menu-button">Create Game</button> <button id="joinGame" class="btn btn-primary grid-row-2 menu-button">Join Game</button></div>';
 	},
 	MakeJoinMenu: function (isCreateGame) {
-		return '<div class="center-absolute menu-grid"><div class="menu-sub-grid"> <label for="username" class="menu-text">Username (0/12):</label> <input autocomplete="off" type="text" maxlength="12" class="menu-text" id="username" /></div> <button id="joinGame" class="btn btn-primary grid-row-2 menu-button">Join Game</button></div>';
+		return '<div class="center-absolute menu-join-grid"><div class="menu-sub-grid"><label for="username" class="menu-text">Username (0/12):</label><input autocomplete="off" type="text" maxlength="12" class="menu-text" id="username"/></div><div class="grid-fill"><label for="isPlayer" class="menu-text-right grid-column-1">Player:</label><input id="isPlayer" autocomplete="off" type="checkbox" class="form-check-label big-checkbox grid-column-2" checked></div><button id="joinGame" class="btn btn-primary grid-row-3 menu-button">Join Game</button></div>';
 	},
 	MakeStartGameMenu: function () {
 		return '<div class="center-absolute menu-grid"> <button id="startGame" class="btn btn-primary menu-button">Start Game</button></div>';
@@ -596,6 +612,30 @@ var ScreenOps = {
 		let mainGrid = $(ConstHtmlIds.MainGrid);
 		mainGrid.empty();
 		mainGrid.append(HtmlGeneration.MakeJoinMenu());
+		let joinGameUpdateFunc = function () {
+			// Make sure username is not blank
+			let username = $(ConstHtmlIds.Username).val();
+			let usernameLength = 0;
+			if (username) {
+				usernameLength = $(ConstHtmlIds.Username).val().length;
+			}
+			$('label[for=username]').text('Username (' + usernameLength + '/12):');
+
+			// Check length of username without illegal characters
+			username = username.replace(/\W/g, '');
+
+			// Check if client is player
+			let isPlayer = $(ConstHtmlIds.IsPlayer).is(":checked");
+
+			let shouldDisable = true;
+			if (username || !isPlayer) {
+				shouldDisable = false;
+			}
+			//let validText = shouldDisable ? 'not valid' : 'valid';
+			//log('Input ' + username + ' is ' + validText);
+			$(ConstHtmlIds.JoinGame).prop('disabled', shouldDisable);
+		};
+
 		$(ConstHtmlIds.Username).keydown(function (e) {
 			let key = e.key;
 			if (key && key !== ' ') {
@@ -614,28 +654,14 @@ var ScreenOps = {
 				e.preventDefault();
 			}
 		});
-		$(ConstHtmlIds.Username).keyup(function () {
-			// Make sure username is not blank
-			let username = $(ConstHtmlIds.Username).val();
-			let usernameLength = 0;
-			if (username) {
-				usernameLength = $(ConstHtmlIds.Username).val().length;
-			}
-			$('label[for=username]').text('Username (' + usernameLength + '/12):');
+		$(ConstHtmlIds.Username).keyup(joinGameUpdateFunc);
+		$(ConstHtmlIds.IsPlayer).change(joinGameUpdateFunc);
 
-			// Check length of username without illegal characters
-			username = username.replace(/\W/g, '');
-			let shouldDisable = true;
-			if (username) {
-				shouldDisable = false;
-			}
-			//let validText = shouldDisable ? 'not valid' : 'valid';
-			//log('Input ' + username + ' is ' + validText);
-			$(ConstHtmlIds.JoinGame).prop('disabled', shouldDisable);
-		});
+
 		$(ConstHtmlIds.JoinGame).on(clickHandler, function () {
 			let username = $(ConstHtmlIds.Username).val();
-			Connection.JoinGame(username);
+			let isPlayer = $(ConstHtmlIds.IsPlayer).is(":checked");
+			Connection.JoinGame(username, isPlayer);
 		});
 		$(ConstHtmlIds.JoinGame).prop('disabled', true);
 		$(ConstHtmlIds.Username).focus();
@@ -673,6 +699,13 @@ var ScreenOps = {
 			};
 
 			Connection.CreateGame(params);
+		});
+	},
+	ShowEndGameButton: function () {
+		$('body').append(HtmlGeneration.MakeEndGameButton());
+		$(ConstHtmlIds.EndGameButton).on(clickHandler, function () {
+			Connection.EndGame();
+			ScreenOps.SwitchToMainMenu();
 		});
 	},
 };
@@ -806,12 +839,8 @@ var Presenter = {
 	},
 	SetGameOver: function (gameOverDto) {
 		log(gameOverDto.wallets);
+
 		$(ConstHtmlIds.PresenterText).text("Game Over");
-		$('body').append(HtmlGeneration.MakeEndGameButton());
-		$(ConstHtmlIds.EndGameButton).on(clickHandler, function () {
-			Connection.EndGame();
-			ScreenOps.SwitchToMainMenu();
-		});
 
 		let comparer = function (lhs, rhs) {
 			if (lhs.money < rhs.money) {

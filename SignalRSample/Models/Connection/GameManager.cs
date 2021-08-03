@@ -110,6 +110,27 @@ namespace StonkTrader.Models.Connection
 
 		public static GameInitializer GetPrototypeGameInitializer()
 		{
+			// Della config
+			return new GameInitializer()
+			{
+				MarketOpenTimeInSeconds = 90,
+				RollTimeInSeconds = 2,
+				TimeBetweenRollsInSeconds = 2,
+				NumberOfRounds = 7,
+				RollsPerRound = 12,
+				StartingMoney = 7500,
+				IsPrototype = true,
+				Stocks = new (string stockName, string color, bool isHalved)[]
+				{
+					("Dogecoin", "#5cc3f7", false),
+					("Crayola", "#ff33cc", false),
+					("Twitch", "#6441a5", false),
+					("Reddit", "#ff471a", false),
+					("Memes", "#98FB98", false),
+					("YouTube", "#e60000", false),
+				}
+			};
+			/*
 			return new GameInitializer()
 			{
 				MarketOpenTimeInSeconds = 90,
@@ -136,6 +157,7 @@ namespace StonkTrader.Models.Connection
 					("Grain", "#F0E68C", true),
 				}
 			};
+			*/
 		}
 
 		#endregion

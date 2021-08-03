@@ -115,17 +115,25 @@ namespace Hubs
 			}
 		}
 
-		public async Task JoinGame(string username)
+		public async Task JoinGame(string username, bool isPlayer)
 		{
 			if (GameManager.Instance.Game == null || GameManager.Instance.Game.IsStarted)
 			{
 				return;
 			}
 
-			// Add player to game
-			var safeUsername = GetSafeUsername(username);
-			PlayerInventoryDto inventory = GameManager.Instance.Game.AddPlayer(CurrentUserConnectionId, safeUsername);
-			await Clients.Caller.SendAsync(ClientMethods.GameJoined, inventory);
+			if (isPlayer)
+			{
+				// Add player to game
+				var safeUsername = GetSafeUsername(username);
+				PlayerInventoryDto inventory = GameManager.Instance.Game.AddPlayer(CurrentUserConnectionId, safeUsername);
+				await Clients.Caller.SendAsync(ClientMethods.GameJoined, inventory);
+			}
+			else
+			{
+				// Client is observer
+				await Clients.Caller.SendAsync(ClientMethods.GameJoinedObserver, GameManager.Instance.Game.GetMarketDto());
+			}
 
 			// If game is already started, notify caller.
 			if (GameManager.Instance.Game.IsStarted)

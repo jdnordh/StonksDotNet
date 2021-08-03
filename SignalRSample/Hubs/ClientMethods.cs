@@ -6,6 +6,7 @@ namespace Hubs
 		public const string GameCreated = "gameCreated";
 		public const string CreateGameUnavailable = "createGameUnavailable";
 		public const string GameJoined = "gameJoined";
+		public const string GameJoinedObserver = "gameJoinedObserver";
 		public const string GameNotJoined = "gameNotJoined";
 		public const string GameStarted = "gameStarted";
 		public const string GameOver = "gameOver";
