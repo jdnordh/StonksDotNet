@@ -27,7 +27,7 @@ for details on configuring this project to bundle and minify static web assets. 
    width: 6vh;
    height: 6vh;
    text-align: center;
-   margin-top: 2vh;
+   margin-top: 1vh;
    margin-left: 1vh;
 }
 
@@ -70,14 +70,20 @@ for details on configuring this project to bundle and minify static web assets. 
 	position: relative;
 }
 
+#presenterText {
+   font-size: 7vh;
+   text-align: center;
+   margin: 0;
+}
+
 .menu-text {
-   font-size: 5vh;
+   font-size: 4vh;
    text-align: center;
 	margin: 0;
 }
 
 .menu-text-right {
-   font-size: 5vh;
+   font-size: 4vh;
    text-align: right;
    margin: 0;
 }
@@ -287,12 +293,19 @@ p {
 }
 
 html {
-    font-size: 14px;
-    position: relative;
-    height: 100%;
-    width: 100%;
-    margin: 0;
-    padding: 0;
+   font-size: 14px;
+   position: relative;
+   height: 100%;
+   width: 100%;
+   margin: 0;
+   padding: 0;
+   -webkit-touch-callout: none; /* iOS Safari */
+   -webkit-user-select: none; /* Safari */
+   -khtml-user-select: none; /* Konqueror HTML */
+   -moz-user-select: none; /* Old versions of Firefox */
+   -ms-user-select: none; /* Internet Explorer/Edge */
+   user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
 }
 
 #endGameButton{
