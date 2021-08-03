@@ -394,7 +394,7 @@ var HtmlGeneration =
 		return '<div class="center-absolute menu-grid"> <button id="startGame" class="btn btn-primary menu-button">Start Game</button></div>';
 	},
 	MakePresenter: function () {
-		return '<div class="grid-observer-main grid-fill" id="mainGrid"><div id="presenter" class="fill"><h1 id="presenterText" class="grid-column-2 grid-row-1 menu-text">Market Open</h1></div><div class="chart-grid grid-row-2"><div class="chart-fill grid-row-1"><canvas id="presenterChart"></canvas></div><div class="roll-display grid-row-2"><h1 class="grid-column-1 roll-text" id="rollName"></h1><h1 class="grid-column-2 roll-text" id="rollFunc"></h1><h1 class="grid-column-3 roll-text" id="rollAmount"></h1></div></div></div>';
+		return '<div class="grid-observer-main grid-fill" id="mainGrid"><div id="presenter" class="fill"><h1 id="presenterText" class="grid-column-2 grid-row-1 menu-text">Market Closed</h1></div><div class="chart-grid grid-row-2"><div class="chart-fill grid-row-1"><canvas id="presenterChart"></canvas></div><div class="roll-display grid-row-2"><h1 class="grid-column-1 roll-text" id="rollName"></h1><h1 class="grid-column-2 roll-text" id="rollFunc"></h1><h1 class="grid-column-3 roll-text" id="rollAmount"></h1></div></div></div>';
 	},
 	MakeEndGameButton: function () {
 		return '<button class="btn btn-primary menu-button" id="endGameButton">End Game</button>';
