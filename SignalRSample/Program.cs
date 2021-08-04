@@ -24,7 +24,7 @@ namespace SignalRSample
 
       public static IHostBuilder CreateHostBuilder(string[] args) =>
           Host.CreateDefaultBuilder(args)
-              .ConfigureWebHostDefaults(webBuilder =>
+					.ConfigureWebHostDefaults(webBuilder =>
               {
                  webBuilder.UseStartup<Startup>();
                  webBuilder.UseUrls("http://localhost:5000", "http://10.0.0.210:5000", "http://PCJORDAN:5000");

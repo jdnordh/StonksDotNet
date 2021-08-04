@@ -117,7 +117,7 @@ namespace Hubs
 
 		public async Task JoinGame(string username, bool isPlayer)
 		{
-			if (GameManager.Instance.Game == null || GameManager.Instance.Game.IsStarted)
+			if (GameManager.Instance.Game == null)
 			{
 				return;
 			}
@@ -152,7 +152,8 @@ namespace Hubs
 			// Make sure observer gets the market before starting to present
 			await Clients.Caller.SendAsync(ClientMethods.MarketUpdated, GameManager.Instance.Game.GetMarketDto());
 			await Clients.Caller.SendAsync(ClientMethods.GameStarted);
-			GameManager.Instance.Game.StartGame();
+
+			await GameManager.Instance.Game.RunGame();
 		}
 
 		#endregion

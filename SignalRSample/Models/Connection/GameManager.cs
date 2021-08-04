@@ -69,7 +69,6 @@ namespace StonkTrader.Models.Connection
 
 		public void CreateNewGame(GameInitializer initializer)
 		{
-			//GameInitializer initializer = isPrototype ? GetPrototypeGameInitializer() : GetDefaultGameInitializer();
 			m_game = new StonkTraderGame(initializer, new GameEventCommunicator(s_hubContext));
 		}
 
@@ -111,6 +110,7 @@ namespace StonkTrader.Models.Connection
 		public static GameInitializer GetPrototypeGameInitializer()
 		{
 			// Della config
+			/*
 			return new GameInitializer()
 			{
 				MarketOpenTimeInSeconds = 90,
@@ -130,7 +130,7 @@ namespace StonkTrader.Models.Connection
 					("YouTube", "#e60000", false),
 				}
 			};
-			/*
+			*/
 			return new GameInitializer()
 			{
 				MarketOpenTimeInSeconds = 90,
@@ -157,7 +157,6 @@ namespace StonkTrader.Models.Connection
 					("Grain", "#F0E68C", true),
 				}
 			};
-			*/
 		}
 
 		#endregion

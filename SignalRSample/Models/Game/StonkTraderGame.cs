@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Models.Game
 {
+	/// <summary>
+	/// The game.
+	/// </summary>
 	public class StonkTraderGame
 	{
 		#region Fields
@@ -94,6 +97,13 @@ namespace Models.Game
 		#endregion
 
 		#region Initialization
+
+		/// <summary>
+		/// Add a player to the game.
+		/// </summary>
+		/// <param name="connectionId">The connection id.</param>
+		/// <param name="username">The username.</param>
+		/// <returns>The player's inventory.</returns>
 		public PlayerInventoryDto AddPlayer(string connectionId, string username)
 		{
 			var player = new Player(connectionId, username, Stocks.Values.Select(stock => stock.Name).ToList())
@@ -105,7 +115,11 @@ namespace Models.Game
 			return inventory;
 		}
 
-		public async void StartGame()
+		/// <summary>
+		/// Runs the game.
+		/// </summary>
+		/// <returns></returns>
+		public async Task RunGame()
 		{
 			IsStarted = true;
 
@@ -120,7 +134,7 @@ namespace Models.Game
 					await Task.Delay(m_timeBetweenRollsInSeconds * 1000);
 				}
 			}
-			EndGame();
+			await EndGame();
 		}
 
 		#endregion
@@ -374,7 +388,7 @@ namespace Models.Game
 
 		#region Game End
 
-		private async void EndGame()
+		private async Task EndGame()
 		{
 			var playerWallets = new List<(string id, int wallet)>();
 			var updatedPlayerInvectories = new List<(string id, PlayerInventoryDto)>();
