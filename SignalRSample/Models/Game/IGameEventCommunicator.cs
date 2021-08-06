@@ -1,5 +1,4 @@
 ﻿using Models.DataTransferObjects;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Models.Game
@@ -12,8 +11,8 @@ namespace Models.Game
 		/// <summary>
 		/// Send an inventory update.
 		/// </summary>
-		/// <param name="inventories">Player connection ID's connected to their inventory.</param>
-		Task PlayerInventoriesUpdated(List<(string connectionId, PlayerInventoryDto inventory)> inventories);
+		/// <param name="inventoriesDto">Player inventory collection dto.</param>
+		Task PlayerInventoriesUpdated(PlayerInventoryCollectionDto inventoriesDto);
 
 		/// <summary>
 		/// Send a market changed update.

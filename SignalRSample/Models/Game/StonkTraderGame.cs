@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Timer = System.Timers.Timer;
 
 namespace Models.Game
 {
@@ -28,6 +29,16 @@ namespace Models.Game
 		private readonly Die<decimal> m_amountDie;
 		private readonly Die<Func<string, decimal, StockFunc>> m_funcDie;
 
+		// Timers
+		private Timer m_marketTimer;
+		private Timer m_rollTimer;
+		private Timer m_rollPlayerDelayTimer;
+		private StockFunc m_currentStockFunc;
+
+		// Trackers
+		private int m_currentRound;
+		private int m_currentRoll;
+
 		#endregion
 
 		#region Properties
@@ -44,7 +55,7 @@ namespace Models.Game
 
 		#region Constructor 
 
-		public StonkTraderGame(GameInitializer initializer, IGameEventCommunicator gameEventCommunicator)
+		public StonkTraderGame(GameInitializerDto initializer, IGameEventCommunicator gameEventCommunicator)
 		{
 			Players = new Dictionary<string, Player>();
 			m_numberOfRounds = initializer.NumberOfRounds;
@@ -56,7 +67,23 @@ namespace Models.Game
 			m_gameEventCommunicator = gameEventCommunicator;
 			m_isPrototype = initializer.IsPrototype;
 
-			m_stockDie = new Die<string>() { Results = initializer.Stocks.Select(stock => stock.stockName).ToList() };
+			m_currentRound = 0;
+			m_currentRoll = 0;
+
+			// Intialize timers
+			m_marketTimer = new Timer(m_marketOpenTimeInSeconds * 1000);
+			m_marketTimer.Elapsed += MarketTimerElapsed;
+			m_marketTimer.AutoReset = false;
+
+			m_rollTimer = new Timer((m_rollTimeInSeconds + m_timeBetweenRollsInSeconds) * 1000);
+			m_rollTimer.Elapsed += RollTimerElapsed;
+			m_rollTimer.AutoReset = false;
+
+			m_rollPlayerDelayTimer = new Timer(m_rollTimeInSeconds * 1000);
+			m_rollPlayerDelayTimer.Elapsed += RollPlayerDelayTimerElapsed;
+			m_rollPlayerDelayTimer.AutoReset = false;
+
+			m_stockDie = new Die<string>() { Results = initializer.Stocks.Select(stock => stock.Name).ToList() };
 			m_amountDie = new Die<decimal>
 			{
 				Results = new List<decimal>
@@ -86,12 +113,51 @@ namespace Models.Game
 			};
 
 			Stocks = new Dictionary<string, Stock>();
-			foreach ((var stockName, var color, var isHalved) in initializer.Stocks)
+			foreach (StockDto stockDto in initializer.Stocks)
 			{
-				Stocks.Add(stockName, new Stock(stockName, color, isHalved));
+				Stocks.Add(stockDto.Name, new Stock(stockDto));
 			}
 			IsMarketOpen = false;
 			IsStarted = false;
+		}
+
+		private async void RollTimerElapsed(object sender, System.Timers.ElapsedEventArgs e)
+		{
+			await Roll();
+		}
+
+		private async void MarketTimerElapsed(object sender, System.Timers.ElapsedEventArgs e)
+		{
+			await CloseMarket();
+		}
+
+		private async void RollPlayerDelayTimerElapsed(object sender, System.Timers.ElapsedEventArgs e)
+		{
+			// Do roll action after the presenter has shown it so clients don't get the update before it's on screen.
+			Func<Task> rollMethod = null;
+			switch (m_currentStockFunc.Type)
+			{
+				case StockFuncType.Up:
+				{
+					Stocks[m_currentStockFunc.StockName].IncreaseValue(m_currentStockFunc.PercentageAmount);
+					rollMethod = ResolveSplitOrCrash;
+					break;
+				}
+				case StockFuncType.Down:
+				{
+					Stocks[m_currentStockFunc.StockName].DecreaseValue(m_currentStockFunc.PercentageAmount);
+					rollMethod = ResolveSplitOrCrash;
+					break;
+				}
+				case StockFuncType.Dividend:
+				{
+					rollMethod = () => {
+						return PayDividends(m_currentStockFunc.StockName, m_currentStockFunc.PercentageAmount);
+					};
+					break;
+				}
+			}
+			await rollMethod();
 		}
 
 		#endregion
@@ -106,6 +172,10 @@ namespace Models.Game
 		/// <returns>The player's inventory.</returns>
 		public PlayerInventoryDto AddPlayer(string connectionId, string username)
 		{
+			if (Players.ContainsKey(connectionId))
+			{
+				return null;
+			}
 			var player = new Player(connectionId, username, Stocks.Values.Select(stock => stock.Name).ToList())
 			{
 				Money = m_startingMoney
@@ -116,98 +186,86 @@ namespace Models.Game
 		}
 
 		/// <summary>
-		/// Runs the game.
+		/// Starts the game.
 		/// </summary>
 		/// <returns></returns>
-		public async Task RunGame()
+		public async Task StartGame()
 		{
 			IsStarted = true;
+			await OpenMarket();
+		}
 
-			for (var round = 0; round < m_numberOfRounds; round++)
+		#endregion
+
+		#region Market
+
+		private async Task OpenMarket()
+		{
+			if (IsMarketOpen)
 			{
-				await OpenAndCloseMarket(round + 1, m_numberOfRounds);
-
-				for (var roll = 0; roll < m_numberOfRollsPerRound; roll++)
-				{
-					await Roll();
-
-					await Task.Delay(m_timeBetweenRollsInSeconds * 1000);
-				}
+				return;
 			}
-			await EndGame();
+			if (m_currentRound == m_numberOfRounds)
+			{
+				// Game is over
+				await EndGame();
+				return;
+			}
+			++m_currentRound;
+			IsMarketOpen = true;
+
+			m_marketTimer.Start();
+
+			var marketMiliseconds = m_marketOpenTimeInSeconds * 1000;
+			var marketEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + marketMiliseconds;
+			MarketDto marketDto = GetMarketDto();
+			marketDto.CurrentRound = m_currentRound;
+			marketDto.TotalRounds = m_numberOfRounds;
+			marketDto.MarketCloseTimeInMilliseconds = marketEndTime;
+			await m_gameEventCommunicator.GameMarketChanged(marketDto);
+		}
+
+		private async Task CloseMarket()
+		{
+			IsMarketOpen = false;
+			await m_gameEventCommunicator.GameMarketChanged(GetMarketDto());
+			await Roll();
 		}
 
 		#endregion
 
 		#region Dice Rolling
 
-		/// <summary>
-		/// Opens the market.
-		/// </summary>
-		private async Task OpenAndCloseMarket(int currentReadableRound, int totalRounds)
-		{
-			if (IsMarketOpen)
-			{
-				return;
-			}
-			IsMarketOpen = true;
-
-			var marketMiliseconds = m_marketOpenTimeInSeconds * 1000;
-			var marketEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + marketMiliseconds;
-			MarketDto marketDto = GetMarketDto();
-			marketDto.CurrentRound = currentReadableRound;
-			marketDto.TotalRounds = totalRounds;
-			marketDto.MarketCloseTimeInMilliseconds = marketEndTime;
-			await m_gameEventCommunicator.GameMarketChanged(marketDto);
-
-			await Task.Delay(m_marketOpenTimeInSeconds * 1000);
-
-			IsMarketOpen = false;
-			await m_gameEventCommunicator.GameMarketChanged(GetMarketDto());
-		}
 
 		/// <summary>
 		/// Roll the dice.
 		/// </summary>
 		private async Task Roll()
 		{
-			StockFunc rollResult = GetRollFunc();
-
-			MarketDto marketDto = GetMarketDto();
-			marketDto.RollDto = new RollDto(rollResult.StockName, rollResult.Type.ToString(),
-				(int)(rollResult.PercentageAmount * 100), m_rollTimeInSeconds);
-
-			// Show roll on presenter
-			await m_gameEventCommunicator.GameRolled(marketDto);
-
-			// Wait for display to complete
-			await Task.Delay(m_rollTimeInSeconds * 1000);
-
-			// Do roll action after the presenter has shown it so clients don't get the update before it's on screen.
-			Func<Task> rollMethod = null;
-			switch (rollResult.Type)
+			if (m_currentRoll == m_numberOfRollsPerRound)
 			{
-				case StockFuncType.Up:
-				{
-					Stocks[rollResult.StockName].IncreaseValue(rollResult.PercentageAmount);
-					rollMethod = ResolveSplitOrCrash;
-					break;
-				}
-				case StockFuncType.Down:
-				{
-					Stocks[rollResult.StockName].DecreaseValue(rollResult.PercentageAmount);
-					rollMethod = ResolveSplitOrCrash;
-					break;
-				}
-				case StockFuncType.Dividend:
-				{
-					rollMethod = () => {
-						return PayDividends(rollResult.StockName, rollResult.PercentageAmount);
-					};
-					break;
-				}
+				m_currentRoll = 0;
+				await OpenMarket();
 			}
-			await rollMethod();
+			else
+			{
+				// Do rolling
+				++m_currentRoll;
+				m_currentStockFunc = GetRollFunc();
+				MarketDto marketDto = GetMarketDto();
+
+				marketDto.RollDto = new RollDto(m_currentStockFunc.StockName, m_currentStockFunc.Type.ToString(),
+					(int)(m_currentStockFunc.PercentageAmount * 100), m_rollTimeInSeconds);
+
+				// Show roll on presenter
+				await m_gameEventCommunicator.GameRolled(marketDto);
+
+				// Diaplay results of roll to players after the presenter shows the roll
+				m_rollPlayerDelayTimer.Start();
+
+				// Roll again after set amount of time
+				m_rollTimer.Start();
+			}
 		}
 
 		private StockFunc GetRollFunc()
@@ -246,7 +304,8 @@ namespace Models.Game
 					updatedPlayerInvectories.Add((player.Id, player.GetPlayerInvetory()));
 				}
 			}
-			await m_gameEventCommunicator.PlayerInventoriesUpdated(updatedPlayerInvectories);
+			PlayerInventoryCollectionDto inventoryDto = GetInventoryDto();
+			await m_gameEventCommunicator.PlayerInventoriesUpdated(inventoryDto);
 		}
 
 		/// <summary>
@@ -254,7 +313,6 @@ namespace Models.Game
 		/// </summary>
 		private async Task ResolveSplitOrCrash()
 		{
-			var updatedPlayerInvectories = new List<(string id, PlayerInventoryDto)>();
 			foreach (Stock stock in Stocks.Values)
 			{
 				// If stock crashes, remove all shares
@@ -263,7 +321,6 @@ namespace Models.Game
 					foreach (Player player in Players.Values)
 					{
 						player.Holdings[stock.Name] = 0;
-						updatedPlayerInvectories.Add((player.Id, player.GetPlayerInvetory()));
 					}
 					stock.ResetValue();
 				}
@@ -273,12 +330,11 @@ namespace Models.Game
 					foreach (Player player in Players.Values)
 					{
 						player.Holdings[stock.Name] = player.Holdings[stock.Name] * 2;
-						updatedPlayerInvectories.Add((player.Id, player.GetPlayerInvetory()));
 					}
 					stock.ResetValue();
 				}
 			}
-			await m_gameEventCommunicator.PlayerInventoriesUpdated(updatedPlayerInvectories);
+			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryDto());
 		}
 
 		#endregion
@@ -391,14 +447,12 @@ namespace Models.Game
 		private async Task EndGame()
 		{
 			var playerWallets = new List<(string id, int wallet)>();
-			var updatedPlayerInvectories = new List<(string id, PlayerInventoryDto)>();
 			SellAllShares();
 			foreach (Player player in Players.Values)
 			{
 				playerWallets.Add((player.Username, player.Money));
-				updatedPlayerInvectories.Add((player.Id, player.GetPlayerInvetory()));
 			}
-			await m_gameEventCommunicator.PlayerInventoriesUpdated(updatedPlayerInvectories);
+			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryDto());
 			await m_gameEventCommunicator.GameOver(new GameOverDto(Players.Values.Select(p => p.GetPlayerInvetory()).ToList()));
 			IsStarted = false;
 		}
@@ -431,9 +485,25 @@ namespace Models.Game
 			var stocksDto = new Dictionary<string, StockDto>();
 			foreach (KeyValuePair<string, Stock> kvp in Stocks)
 			{
-				stocksDto.Add(kvp.Key, new StockDto(kvp.Value.Name, kvp.Value.Value, kvp.Value.IsHalved, kvp.Value.Color));
+				stocksDto.Add(kvp.Key, kvp.Value.ToStockDto());
 			}
 			return new MarketDto(IsMarketOpen, stocksDto);
+		}
+
+		/// <summary>
+		/// Get the inventory dto.
+		/// </summary>
+		/// <returns>The inventory dto.</returns>
+		public PlayerInventoryCollectionDto GetInventoryDto()
+		{
+			var inventories = new Dictionary<string, PlayerInventoryDto>();
+
+			foreach (KeyValuePair<string, Player> kvp in Players)
+			{
+				inventories.Add(kvp.Key, kvp.Value.GetPlayerInvetory());
+			}
+
+			return new PlayerInventoryCollectionDto(inventories);
 		}
 
 		#endregion

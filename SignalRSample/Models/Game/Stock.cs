@@ -1,8 +1,12 @@
 ﻿
+using Models.DataTransferObjects;
+
 namespace Models.Game
 {
 	public class Stock
 	{
+		private const decimal DefaultStockValue = 1M;
+
 		public decimal Value { get; private set; }
 
 		public string Name { get; }
@@ -11,10 +15,24 @@ namespace Models.Game
 
 		public bool IsHalved { get; }
 
-		public Stock(string name, string color, bool isHalved)
+		/// <summary>
+		/// Create a new stock base on a <see cref="StockDto"/> with the deafult value;
+		/// </summary>
+		/// <param name="stockDto">The <see cref="StockDto"/>.</param>
+		public Stock(StockDto stockDto) : this (stockDto.Name, stockDto.Color, stockDto.IsHalved)
+		{
+		}
+
+		/// <summary>
+		/// Create a new stock.
+		/// </summary>
+		/// <param name="name">The name.</param>
+		/// <param name="color">The color.</param>
+		/// <param name="isHalved">If the stock is halved or not.</param>
+		private Stock(string name, string color, bool isHalved)
 		{
 			Name = name;
-			Value = 1;
+			Value = DefaultStockValue;
 			Color = color;
 			IsHalved = isHalved;
 		}
@@ -42,6 +60,11 @@ namespace Models.Game
 		public int GetValueOfAmount(int amount)
 		{
 			return (int)(Value * (decimal)amount);
+		}
+
+		public StockDto ToStockDto()
+		{
+			return new StockDto(Name, Color, IsHalved, (int)(Value * 100));
 		}
 	}
 }

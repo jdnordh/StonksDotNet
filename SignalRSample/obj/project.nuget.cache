@@ -1,13 +1,30 @@
 {
   "version": 2,
-  "dgSpecHash": "x1XSwx8eGaz7X8mOfiK832KjVvFQXZ1BMI5lMajZs41J05PZXDEeYd5DJN/SbtMzBqXMbOLU36kpkuC4nObNWA==",
+  "dgSpecHash": "GLJOgXMRM0PrK41HC+gNQ7csxcYTVCRsFqeZYIxwMlNUNlcQq+ksn19ePsx7mG0LKJI0ViBIfIMZhIhOJWdeIg==",
   "success": true,
   "projectFilePath": "D:\\Repos\\Stonks\\SignalRSample\\StonkTrader.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\Jordan\\.nuget\\packages\\microsoft.aspnetcore.connections.abstractions\\5.0.8\\microsoft.aspnetcore.connections.abstractions.5.0.8.nupkg.sha512",
+    "C:\\Users\\Jordan\\.nuget\\packages\\microsoft.aspnetcore.http.connections.client\\5.0.8\\microsoft.aspnetcore.http.connections.client.5.0.8.nupkg.sha512",
+    "C:\\Users\\Jordan\\.nuget\\packages\\microsoft.aspnetcore.http.connections.common\\5.0.8\\microsoft.aspnetcore.http.connections.common.5.0.8.nupkg.sha512",
+    "C:\\Users\\Jordan\\.nuget\\packages\\microsoft.aspnetcore.http.features\\5.0.8\\microsoft.aspnetcore.http.features.5.0.8.nupkg.sha512",
+    "C:\\Users\\Jordan\\.nuget\\packages\\microsoft.aspnetcore.signalr.client\\5.0.8\\microsoft.aspnetcore.signalr.client.5.0.8.nupkg.sha512",
+    "C:\\Users\\Jordan\\.nuget\\packages\\microsoft.aspnetcore.signalr.client.core\\5.0.8\\microsoft.aspnetcore.signalr.client.core.5.0.8.nupkg.sha512",
+    "C:\\Users\\Jordan\\.nuget\\packages\\microsoft.aspnetcore.signalr.common\\5.0.8\\microsoft.aspnetcore.signalr.common.5.0.8.nupkg.sha512",
+    "C:\\Users\\Jordan\\.nuget\\packages\\microsoft.aspnetcore.signalr.protocols.json\\5.0.8\\microsoft.aspnetcore.signalr.protocols.json.5.0.8.nupkg.sha512",
+    "C:\\Users\\Jordan\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\5.0.2\\microsoft.extensions.dependencyinjection.5.0.2.nupkg.sha512",
+    "C:\\Users\\Jordan\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\5.0.0\\microsoft.extensions.dependencyinjection.abstractions.5.0.0.nupkg.sha512",
+    "C:\\Users\\Jordan\\.nuget\\packages\\microsoft.extensions.logging\\5.0.0\\microsoft.extensions.logging.5.0.0.nupkg.sha512",
+    "C:\\Users\\Jordan\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\5.0.0\\microsoft.extensions.logging.abstractions.5.0.0.nupkg.sha512",
+    "C:\\Users\\Jordan\\.nuget\\packages\\microsoft.extensions.options\\5.0.0\\microsoft.extensions.options.5.0.0.nupkg.sha512",
+    "C:\\Users\\Jordan\\.nuget\\packages\\microsoft.extensions.primitives\\5.0.1\\microsoft.extensions.primitives.5.0.1.nupkg.sha512",
     "C:\\Users\\Jordan\\.nuget\\packages\\newtonsoft.json\\13.0.1\\newtonsoft.json.13.0.1.nupkg.sha512",
+    "C:\\Users\\Jordan\\.nuget\\packages\\system.diagnostics.diagnosticsource\\5.0.0\\system.diagnostics.diagnosticsource.5.0.0.nupkg.sha512",
+    "C:\\Users\\Jordan\\.nuget\\packages\\system.io.pipelines\\5.0.1\\system.io.pipelines.5.0.1.nupkg.sha512",
     "C:\\Users\\Jordan\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\5.0.0\\system.runtime.compilerservices.unsafe.5.0.0.nupkg.sha512",
     "C:\\Users\\Jordan\\.nuget\\packages\\system.text.encodings.web\\5.0.1\\system.text.encodings.web.5.0.1.nupkg.sha512",
-    "C:\\Users\\Jordan\\.nuget\\packages\\system.text.json\\5.0.2\\system.text.json.5.0.2.nupkg.sha512"
+    "C:\\Users\\Jordan\\.nuget\\packages\\system.text.json\\5.0.2\\system.text.json.5.0.2.nupkg.sha512",
+    "C:\\Users\\Jordan\\.nuget\\packages\\system.threading.channels\\5.0.0\\system.threading.channels.5.0.0.nupkg.sha512"
   ],
   "logs": []
 }

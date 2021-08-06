@@ -1,18 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using System;
+using System.Text.Json.Serialization;
 
 namespace Models.DataTransferObjects
 {
 	[Serializable]
 	public class PlayerTransactionDto
 	{
-		/// <summary>
-		/// True if buying, false if selling.
-		/// </summary>
+		[JsonInclude]
+		[JsonProperty("isBuyTransaction")]
 		public bool IsBuyTransaction { get; }
 
+		[JsonInclude]
+		[JsonProperty("stockAmount")]
 		public int StockAmount { get; }
 
+		[JsonInclude]
+		[JsonProperty("stockName")]
 		public string StockName { get; }
 
 		public PlayerTransactionDto(bool isBuyTransaction, int stockAmount, string stockName)

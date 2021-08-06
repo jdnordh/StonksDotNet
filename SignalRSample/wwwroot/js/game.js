@@ -76,6 +76,7 @@ var Connection = {
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.GameJoined, function (playerInventoryDto) {
+			log('Game Joined');
 			Connection.ClientType = Connection.ClientTypes.Player;
 			Connection.UpdateInventory(playerInventoryDto);
 			CurrentData.Username = playerInventoryDto.username;
@@ -83,28 +84,33 @@ var Connection = {
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.GameJoinedObserver, function (marketDto) {
+			log('Game Joined - Observer');
 			Connection.ClientType = Connection.ClientTypes.Observer;
 			Connection.UpdateStockValues(marketDto);
 			Presenter.CreateChart();
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.CreateGameUnavailable, function () {
+			log('Create game unavailable');
 			$(ConstHtmlIds.CreateGame).prop('disabled', true);
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.GameStarted, function () {
+			log('Game started');
 			if (Connection.ClientType === Connection.ClientTypes.Observer || Connection.ClientType === Connection.ClientTypes.Creator) {
 				Presenter.CreateChart();
 			}
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.InventoryUpdated, function (playerInventoryDto) {
+			log('Inventory updated');
 			if (Connection.ClientType === Connection.ClientTypes.Player) {
 				Connection.UpdateInventory(playerInventoryDto);
 			}
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.MarketUpdated, function (marketDto) {
+			log('Market updated');
 			Connection.UpdateStockValues(marketDto);
 			if (Connection.ClientType === Connection.ClientTypes.Observer || Connection.ClientType === Connection.ClientTypes.Creator) {
 				Presenter.UpdateChart();
@@ -127,6 +133,7 @@ var Connection = {
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.Rolled, function (marketDto) {
+			log('Rolled');
 			if (Connection.ClientType === Connection.ClientTypes.Observer || Connection.ClientType === Connection.ClientTypes.Creator) {
 				Connection.UpdateStockValuesFromRoll(marketDto.rollDto);
 				Presenter.ShowRoll(marketDto.rollDto);
@@ -134,6 +141,7 @@ var Connection = {
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.GameEnded, function () {
+			log('Game ended');
 			Presenter.IsInitialized = false;
 			if (Presenter.Chart) {
 				Presenter.Chart.destroy();
@@ -151,6 +159,7 @@ var Connection = {
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.GameOver, function (gameEndDto) {
+			log('Game Over');
 			if (Connection.ClientType === Connection.ClientTypes.Observer || Connection.ClientType === Connection.ClientTypes.Creator) {
 				Presenter.SetGameOver(gameEndDto);
 				if (Connection.ClientType === Connection.ClientTypes.Creator) {
@@ -686,16 +695,16 @@ var ScreenOps = {
 			let rounds = Number($(ConstHtmlIds.ParamRounds).val());
 			let rollTime = Number($(ConstHtmlIds.ParamRollTime).val());
 			let timeBetweenRolls = Number($(ConstHtmlIds.ParamTimeBetweenRolls).val());
-			let usePrototype = $(ConstHtmlIds.ParamUsePrototype).is(":checked");
+			let isPrototype = $(ConstHtmlIds.ParamUsePrototype).is(":checked");
 
 			let params = {
-				marketTime: marketTime,
+				marketOpenTimeInSeconds: marketTime,
 				startingMoney: startingMoney,
 				rollsPerRound: rollsPerRound,
-				rounds: rounds,
-				rollTime: rollTime,
-				timeBetweenRolls: timeBetweenRolls,
-				usePrototype: usePrototype,
+				numberOfRounds: rounds,
+				rollTimeInSeconds: rollTime,
+				timeBetweenRollsInSeconds: timeBetweenRolls,
+				isPrototype: isPrototype,
 			};
 
 			Connection.CreateGame(params);
