@@ -43,9 +43,15 @@ for details on configuring this project to bundle and minify static web assets. 
 	max-height: 100%;
 }
 
-#presenterChart {
-	max-width: 100%;
-	max-height: 100%;
+#chart-slide-container {
+   max-width: 100%;
+   max-height: 100%;
+   overflow: hidden;
+}
+
+.canvas-chart {
+   max-width: 100%;
+   max-height: 100%;
 }
 
 .roll-text {
@@ -67,7 +73,6 @@ for details on configuring this project to bundle and minify static web assets. 
 	display: grid;
 	grid-template-rows: 85% 15%;
 	overflow: hidden;
-	position: relative;
 }
 
 #presenterText {

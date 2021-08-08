@@ -28,7 +28,8 @@ var CurrentData = {
 	Holdings: { },
 	StockValues: { },
 	StockColors: { },
-	StockHalves: { },
+	StockHalves: {},
+	PlayerInventories: {},
 	Money: 0,
 };
 
@@ -44,6 +45,7 @@ var Connection = {
 		GameCreated: "gameCreated",
 		CreateGameUnavailable: "createGameUnavailable",
 		GameJoined: "gameJoined",
+		GameNotJoined: "gameNotJoined",
 		GameJoinedObserver: "gameJoinedObserver",
 		GameStarted: "gameStarted",
 		GameOver: "gameOver",
@@ -86,19 +88,23 @@ var Connection = {
 		Connection.Hub.on(Connection.ClientMethods.GameJoinedObserver, function (marketDto) {
 			log('Game Joined - Observer');
 			Connection.ClientType = Connection.ClientTypes.Observer;
-			Connection.UpdateStockValues(marketDto);
-			Presenter.CreateChart();
+			Connection.UpdateMarketValues(marketDto);
+			Presenter.CreateCharts();
 		});
 
-		Connection.Hub.on(Connection.ClientMethods.CreateGameUnavailable, function () {
-			log('Create game unavailable');
+		Connection.Hub.on(Connection.ClientMethods.CreateGameUnavailable, function (message) {
+			log('Create game unavailable: ' + message);
 			$(ConstHtmlIds.CreateGame).prop('disabled', true);
+		});
+
+		Connection.Hub.on(Connection.ClientMethods.GameNotJoined, function (message) {
+			log('Join game unavailable: ' + message);
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.GameStarted, function () {
 			log('Game started');
 			if (Connection.ClientType === Connection.ClientTypes.Observer || Connection.ClientType === Connection.ClientTypes.Creator) {
-				Presenter.CreateChart();
+				Presenter.CreateCharts();
 			}
 		});
 
@@ -111,9 +117,11 @@ var Connection = {
 
 		Connection.Hub.on(Connection.ClientMethods.MarketUpdated, function (marketDto) {
 			log('Market updated');
-			Connection.UpdateStockValues(marketDto);
+			Connection.UpdateMarketValues(marketDto);
 			if (Connection.ClientType === Connection.ClientTypes.Observer || Connection.ClientType === Connection.ClientTypes.Creator) {
+				Connection.UpdatePlayerInventories(marketDto.playerInventories);
 				Presenter.UpdateChart();
+				Presenter.UpdateInventoryChart();
 				if (marketDto.isOpen) {
 					let marketEndTime = Number(marketDto.marketCloseTimeInMilliseconds);
 					Presenter.SetMarketOpen(marketEndTime, marketDto.currentRound, marketDto.totalRounds);
@@ -177,13 +185,33 @@ var Connection = {
 			return console.error(err.toString());
 		});
 	},
-	UpdateStockValues: function (marketDto) {
+	UpdateMarketValues: function (marketDto) {
+		// Update stock values
 		for (let stockName in marketDto.stocks) {
 			if (marketDto.stocks.hasOwnProperty(stockName)) {
 				let stockDto = marketDto.stocks[stockName];
 				CurrentData.StockValues[stockName] = stockDto.value;
 				CurrentData.StockColors[stockName] = stockDto.color;
 				CurrentData.StockHalves[stockName] = stockDto.isHalved;
+			}
+		}
+	},
+	UpdatePlayerInventories: function (inventoryDto) {
+		// Update player inventories
+		for (let username in inventoryDto.inventories) {
+			if (inventoryDto.inventories.hasOwnProperty(username)) {
+				let inventory = inventoryDto.inventories[username];
+				CurrentData.PlayerInventories[username] = {
+					money: inventory.money,
+					holdings: {}
+				};
+
+				for (let stockName in inventory.holdings) {
+					if (inventory.holdings.hasOwnProperty(stockName)) {
+						let amountHeld = inventory.holdings[stockName];
+						CurrentData.PlayerInventories[username].holdings[stockName] = amountHeld;
+					}
+				}
 			}
 		}
 	},
@@ -271,6 +299,7 @@ var ConstHtmlIds =
 	Username: "#username",
 	StartGame: "#startGame",
 	PresenterChart: "presenterChart", // No hash in front because it's used by chartjs, not jquery
+	InventoryChart: "inventoryChart", // No hash in front because it's used by chartjs, not jquery
 	PresenterText: "#presenterText",
 	RollName: "#rollName",
 	RollFunc: "#rollFunc",
@@ -286,6 +315,9 @@ var ConstHtmlIds =
 	ParamUsePrototype: "#usePrototype",
 	BuySellTimer: "#buySellTimer",
 	IsPlayer: "#isPlayer",
+	ChartSlideContainer: "#chart-slide-container",
+	PresenterChartSlider: "#presenterChartSlider",
+	InventoryChartSlider: "#inventoryChartSlider",
 }
 
 var HtmlGeneration =
@@ -403,7 +435,8 @@ var HtmlGeneration =
 		return '<div class="center-absolute menu-grid"> <button id="startGame" class="btn btn-primary menu-button">Start Game</button></div>';
 	},
 	MakePresenter: function () {
-		return '<div class="grid-observer-main grid-fill" id="mainGrid"><div id="presenter" class="fill"><h1 id="presenterText" class="grid-column-2 grid-row-1">Market Closed</h1></div><div class="chart-grid grid-row-2"><div class="chart-fill grid-row-1"><canvas id="presenterChart"></canvas></div><div class="roll-display grid-row-2"><h1 class="grid-column-1 roll-text" id="rollName"></h1><h1 class="grid-column-2 roll-text" id="rollFunc"></h1><h1 class="grid-column-3 roll-text" id="rollAmount"></h1></div></div></div>';
+		//return '<div class="grid-observer-main grid-fill" id="mainGrid"><div id="presenter" class="fill"><h1 id="presenterText" class="grid-column-2 grid-row-1">Market Closed</h1></div><div class="chart-grid grid-row-2"><div class="chart-fill grid-row-1"><canvas id="presenterChart"></canvas></div><div class="roll-display grid-row-2"><h1 class="grid-column-1 roll-text" id="rollName"></h1><h1 class="grid-column-2 roll-text" id="rollFunc"></h1><h1 class="grid-column-3 roll-text" id="rollAmount"></h1></div></div></div>';
+		return '<div class="grid-observer-main grid-fill" id="mainGrid"><div id="presenter" class="fill"><h1 id="presenterText" class="grid-column-2 grid-row-1">Market Closed</h1></div><div class="chart-grid grid-row-2"><div id="chart-slide-container" class="grid-row-1"><div id="presenterChartSlider" class="chart-fill"><canvas class="canvas-chart" id="presenterChart"></canvas></div><div id="inventoryChartSlider" class="chart-fill"><canvas class="canvas-chart" id="inventoryChart"></canvas></div></div><div class="roll-display grid-row-2"><h1 class="grid-column-1 roll-text" id="rollName"></h1><h1 class="grid-column-2 roll-text" id="rollFunc"></h1><h1 class="grid-column-3 roll-text" id="rollAmount"></h1></div></div></div>';
 	},
 	MakeEndGameButton: function () {
 		return '<button class="btn btn-primary menu-button" id="endGameButton">End Game</button>';
@@ -497,7 +530,7 @@ var ScreenOps = {
 				$(ConstHtmlIds.BuySellTimer).text('');
 			}
 		};
-		Presenter.StartTimer(Number(marketDto.marketCloseTimeInMilliseconds), timerFunc);
+		Presenter.StartTimer(Number(marketDto.marketCloseTimeInMilliseconds), timerFunc, 1000);
 
 		ScreenOps.AttachOpenMarketTabHandlers();
 		ScreenOps.SwitchToBuy();
@@ -725,10 +758,17 @@ var Presenter = {
 		if (Presenter.IsInitialized) {
 			return;
 		}
+		// Register label plugin
 		Chart.register(ChartDataLabels);
+
+		// Don't show number when zero
+		Chart.defaults.plugins.datalabels.display = function (ctx) {
+			return ctx.dataset.data[ctx.dataIndex] !== 0;
+		}
 		Chart.defaults.font.size = 36;
 	},
 	Chart: undefined,
+	InventoryChart: undefined,
 	GetChartData: function () {
 		let stockNames = [];
 		let stockValues = [];
@@ -783,7 +823,7 @@ var Presenter = {
 		}
 		return config;
 	},
-	CreateChart: function () {
+	CreateCharts: function () {
 		Presenter.OneTimeInit();
 		if (Presenter.Chart) {
 			log('Chart was already created')
@@ -810,10 +850,17 @@ var Presenter = {
 		};
 		let config = Presenter.GetChartConfig(data);
 		Presenter.Chart = new Chart(ctx, config);
+
+		// Create inventory chart
+		let inventoryConfig = Presenter.GetInventoryChartConfig(Presenter.GetInventoryChartData());
+		let inventoryCanvas = document.getElementById(ConstHtmlIds.InventoryChart);
+		let inventoryCtx = inventoryCanvas.getContext('2d');
+		Presenter.InventoryChart = new Chart(inventoryCtx, inventoryConfig);
+
 	},
 	UpdateChart: function () {
 		if (!Presenter.Chart) {
-			Presenter.CreateChart();
+			Presenter.CreateCharts();
 		}
 		let stockData = Presenter.GetChartData();
 		for (let i = 0; i < stockData.stockValues.length; i++) {
@@ -821,7 +868,7 @@ var Presenter = {
 		}
 		Presenter.Chart.update();
 	},
-	StartTimer: function (endTime, displayFunc) {
+	StartTimer: function (endTime, displayFunc, intervalLength) {
 		let intervalId = -1;
 		let intervalFunc = function () {
 			let now = (new Date()).getTime();
@@ -830,7 +877,7 @@ var Presenter = {
 			}
 			displayFunc(Math.ceil((endTime - now) / 1000));
 		};
-		intervalId = setInterval(intervalFunc, 1000);
+		intervalId = setInterval(intervalFunc, intervalLength);
 	},
 	SetMarketOpen: function (endTime, currentRound, totalRounds) {
 		let timerFunc = function (secondsRemaining) {
@@ -841,10 +888,37 @@ var Presenter = {
 				$(ConstHtmlIds.PresenterText).text("Market Closed");
 			}
 		};
-		Presenter.StartTimer(endTime, timerFunc);
+		Presenter.StartTimer(endTime, timerFunc, 1000);
+
+		let isMarketGraph = true;
+		let graphSwitchFunc = function (secondsRemaining) {
+			if (secondsRemaining > 0) {
+				if (isMarketGraph) {
+					// Show user graph
+					log('Switching to user inventories...')
+					isMarketGraph = false;
+					$(ConstHtmlIds.PresenterChartSlider).appendTo('#chart-slide-container');
+				}
+				else {
+					// Show market graph
+					log('Switching to market...')
+					isMarketGraph = true;
+					$(ConstHtmlIds.InventoryChartSlider).appendTo('#chart-slide-container');
+				}
+			}
+			else {
+				// Show market graph
+				log('Switching to market...')
+				$(ConstHtmlIds.InventoryChartSlider).appendTo('#chart-slide-container');
+			}
+		};
+		Presenter.StartTimer(endTime, graphSwitchFunc, 10000);
 	},
 	SetMarketClosed: function () {
 		$(ConstHtmlIds.PresenterText).text("Market Closed");
+
+		// Show market graph
+		$(ConstHtmlIds.InventoryChartSlider).appendTo('#chart-slide-container');
 	},
 	SetGameOver: function (gameOverDto) {
 		log(gameOverDto.wallets);
@@ -916,6 +990,124 @@ var Presenter = {
 		};
 		let intervalTime = (rollDto.rollTimeInSeconds * 1000) / 4;
 		intervalId = setInterval(intervalFunc, intervalTime);
+	},
+	GetInventoryChartData: function () {
+		log('Getting inventory data');
+		let moneyColor = '#79f05d';
+		let moneyKey = 'Money';
+		let datasetObject = {};
+		let labels = [];
+
+		// Initialize datasets - one for money and one for each stock
+		datasetObject[moneyKey] = {
+			label: moneyKey,
+			data: [],
+			borderColor: moneyColor,
+			backgroundColor: moneyColor + 'B0',
+		};
+		for (let stockName in CurrentData.StockValues) {
+			if (CurrentData.StockValues.hasOwnProperty(stockName)) {
+				let backgroundColor = CurrentData.StockColors[stockName];
+				let borderColor = backgroundColor;
+				if (CurrentData.StockHalves[stockName]) {
+					borderColor = "#f0ad4e";
+				}
+				datasetObject[stockName] = {
+					label: stockName,
+					data: [],
+					borderColor: borderColor,
+					backgroundColor: backgroundColor + 'B0',
+				};
+			}
+		}
+
+		// Add user data
+		for (let username in CurrentData.PlayerInventories) {
+			if (CurrentData.PlayerInventories.hasOwnProperty(username)) {
+				let inventory = CurrentData.PlayerInventories[username];
+
+				// Add username to labels
+				labels.push(username);
+
+				// Add money
+				datasetObject[moneyKey].data.push(inventory.money);
+
+				// Add stock holdings as worth, not shares
+				for (let stockName in inventory.holdings) {
+					if (inventory.holdings.hasOwnProperty(stockName)) {
+						let amountHeld = inventory.holdings[stockName];
+						let shareWorth = CurrentData.StockValues[stockName];
+						datasetObject[stockName].data.push((amountHeld * shareWorth) / 100);
+					}
+				}
+			}
+		}
+
+		// Push datasets into an array
+		let datasets = [];
+		for (let assetName in datasetObject) {
+			if (datasetObject.hasOwnProperty(assetName)) {
+				let dataset = datasetObject[assetName];
+				datasets.push(dataset);
+			}
+		}
+		let data = {
+			labels: labels,
+			datasets: datasets
+		};
+		log('Inventory data:');
+		log(data);
+		return data;
+	},
+	GetInventoryChartConfig: function (data) {
+		let config = {
+			type: 'bar',
+			data: data,
+			options: {
+				showToolTips: false,
+				plugins: {
+					legend: {
+						display: false
+					}
+				},
+				tooltips: {
+					enabled: false
+				},
+				responsive: true,
+				maintainAspectRatio: true,
+				scales: {
+					x: {
+						stacked: true,
+					},
+					y: {
+						stacked: true
+					}
+				}
+			}
+		};
+		return config;
+	},
+	UpdateInventoryChart: function () {
+		let inventoryData = Presenter.GetInventoryChartData();
+
+		let chartData = Presenter.InventoryChart.data;
+		if (chartData.labels.length <= inventoryData.labels.length) {
+			// Usernames have been updated
+			chartData.labels = inventoryData.labels;
+		}
+
+		for (let i = 0; i < inventoryData.datasets.length; ++i) {
+			for (let j = 0; j < inventoryData.datasets[i].data.length; ++j) {
+				if (chartData.datasets[i].data.length <= inventoryData.datasets[i].data.length) {
+					chartData.datasets[i].data.push(inventoryData.datasets[i].data[j]);
+				}
+				else {
+					chartData.datasets[i].data[j] = inventoryData.datasets[i].data[j];
+				}
+			}
+		}
+
+		Presenter.InventoryChart.update();
 	},
 };
 

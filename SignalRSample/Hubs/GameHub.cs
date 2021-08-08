@@ -210,6 +210,7 @@ namespace Hubs
 		{
 			if (!WorkerManager.Instance.WorkerExists)
 			{
+				await Clients.Caller.SendAsync(ClientMethods.GameNotJoined, "Game worker is disconnected.");
 				return;
 			}
 
@@ -220,7 +221,7 @@ namespace Hubs
 		{
 			if (!WorkerManager.Instance.WorkerExists)
 			{
-				await Clients.Caller.SendAsync(ClientMethods.CreateGameUnavailable);
+				await Clients.Caller.SendAsync(ClientMethods.CreateGameUnavailable, "Game worker is disconnected.");
 				return;
 			}
 

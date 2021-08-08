@@ -9,16 +9,25 @@
 </head>
 
 <body>
-	<div class="center-absolute menu-join-grid">
-		<div class="menu-sub-grid">
-			<label for="username" class="menu-text">Username (0/12):</label>
-			<input autocomplete="off" type="text" maxlength="12" class="menu-text" id="username" />
+	<div class="grid-observer-main grid-fill" id="mainGrid">
+		<div id="presenter" class="fill">
+			<h1 id="presenterText" class="grid-column-2 grid-row-1">Market Closed</h1>
 		</div>
-		<div class="grid-fill">
-			<label for="isPlayer" class="menu-text-right grid-column-1">Player:</label>
-			<input id="isPlayer" autocomplete="off" type="checkbox" class="form-check-label big-checkbox grid-column-2" checked>
+		<div class="chart-grid grid-row-2">
+			<div id="chart-slide-container" class="grid-row-1">
+				<div class="chart-fill" style="background:red;">
+					<canvas class="canvas-chart" id="presenterChart"></canvas>
+				</div>
+				<div class="chart-fill" style="background:blue;">
+					<canvas class="canvas-chart" id="inventoryChart"></canvas>
+				</div>
+			</div>
+			<div class="roll-display grid-row-2">
+				<h1 class="grid-column-1 roll-text" id="rollName"></h1>
+				<h1 class="grid-column-2 roll-text" id="rollFunc"></h1>
+				<h1 class="grid-column-3 roll-text" id="rollAmount"></h1>
+			</div>
 		</div>
-		<button id="joinGame" class="btn btn-primary grid-row-3 menu-button">Join Game</button>
 	</div>
 
 </body>

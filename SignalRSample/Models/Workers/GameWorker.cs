@@ -23,15 +23,14 @@ namespace StonkTrader.Models.Workers
 		public GameWorker(ILogger<GameWorker> logger)
 		{
 			m_logger = logger;
+			m_game = null;
 		}
 
 		protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 		{
-#if DEBUG
-			m_connection = new HubConnectionBuilder().WithUrl("https://localhost:44378/gamehub").Build();
-#else
-			m_connection = new HubConnectionBuilder().WithUrl("http://localhost:80/gamehub").Build();
-#endif
+			//m_connection = new HubConnectionBuilder().WithUrl("https://localhost:44378/gamehub").Build();
+			//m_connection = new HubConnectionBuilder().WithUrl("http://stonks.com/gamehub").Build();
+			m_connection = new HubConnectionBuilder().WithUrl("http://localhost:5000/gamehub").Build();
 			m_connection.ServerTimeout = TimeSpan.FromMilliseconds(1800000);
 
 			m_connection.On<GameInitializerDto, string>(GameWorkerRequests.CreateGameRequest, CreateGame);
@@ -121,6 +120,10 @@ namespace StonkTrader.Models.Workers
 
 		private async Task StartGame(string creatorConnectionId)
 		{
+			if (m_game.IsStarted)
+			{
+				return;
+			}
 			m_logger.Log(LogLevel.Information, "Starting game.");
 			await m_connection.InvokeAsync(GameWorkerResponses.MarketUpdatedIndividual, creatorConnectionId, m_game.GetMarketDto());
 			await m_connection.InvokeAsync(GameWorkerResponses.GameStarted, creatorConnectionId);
@@ -157,6 +160,7 @@ namespace StonkTrader.Models.Workers
 			}
 
 			await m_connection.InvokeAsync(GameWorkerResponses.TransactionPosted, connectionId, inventory, transactionWasSuccessful);
+			await m_connection.InvokeAsync(GameWorkerResponses.MarketUpdated, m_game.GetMarketDto());
 		}
 
 		public async Task EndGame()

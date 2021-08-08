@@ -304,7 +304,7 @@ namespace Models.Game
 					updatedPlayerInvectories.Add((player.Id, player.GetPlayerInvetory()));
 				}
 			}
-			PlayerInventoryCollectionDto inventoryDto = GetInventoryDto();
+			PlayerInventoryCollectionDto inventoryDto = GetInventoryCollectionDto();
 			await m_gameEventCommunicator.PlayerInventoriesUpdated(inventoryDto);
 		}
 
@@ -334,7 +334,7 @@ namespace Models.Game
 					stock.ResetValue();
 				}
 			}
-			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryDto());
+			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
 		}
 
 		#endregion
@@ -452,7 +452,7 @@ namespace Models.Game
 			{
 				playerWallets.Add((player.Username, player.Money));
 			}
-			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryDto());
+			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
 			await m_gameEventCommunicator.GameOver(new GameOverDto(Players.Values.Select(p => p.GetPlayerInvetory()).ToList()));
 			IsStarted = false;
 		}
@@ -487,20 +487,24 @@ namespace Models.Game
 			{
 				stocksDto.Add(kvp.Key, kvp.Value.ToStockDto());
 			}
-			return new MarketDto(IsMarketOpen, stocksDto);
+			var marketDto = new MarketDto(IsMarketOpen, stocksDto)
+			{
+				PlayerInventories = GetInventoryCollectionDto()
+			};
+			return marketDto;
 		}
 
 		/// <summary>
 		/// Get the inventory dto.
 		/// </summary>
 		/// <returns>The inventory dto.</returns>
-		public PlayerInventoryCollectionDto GetInventoryDto()
+		private PlayerInventoryCollectionDto GetInventoryCollectionDto()
 		{
 			var inventories = new Dictionary<string, PlayerInventoryDto>();
 
 			foreach (KeyValuePair<string, Player> kvp in Players)
 			{
-				inventories.Add(kvp.Key, kvp.Value.GetPlayerInvetory());
+				inventories.Add(kvp.Value.Username, kvp.Value.GetPlayerInvetory());
 			}
 
 			return new PlayerInventoryCollectionDto(inventories);

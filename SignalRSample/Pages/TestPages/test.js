@@ -157,3 +157,9 @@ function showRoll(rollDto) {
 	};
 	intervalId = setInterval(intervalFunc, 500);
 }
+
+$(document).ready(function () {
+	$('.chart-fill').click(function () {
+		$(this).appendTo('#chart-slide-container'); 
+	});
+});
