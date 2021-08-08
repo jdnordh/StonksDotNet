@@ -149,6 +149,16 @@ namespace Hubs
 		}
 
 		/// <summary>
+		/// Called when the player inventories are updated.
+		/// </summary>
+		/// <param name="marketDto">The market dto.</param>
+		/// <returns>A completed task.</returns>
+		public async Task PlayerInventoriesUpdated(MarketDto marketDto)
+		{
+			await Clients.Group(PlayerGroup).SendAsync(ClientMethods.PlayerInventoriesUpdated, marketDto);
+		}
+
+		/// <summary>
 		/// Called when the market is updated for an individual client.
 		/// </summary>
 		/// <param name="connectionId">The connection Id.</param>

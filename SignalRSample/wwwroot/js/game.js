@@ -52,6 +52,7 @@ var Connection = {
 		GameEnded: "gameEnded",
 		InventoryUpdated: "inventoryUpdated",
 		MarketUpdated: "marketUpdated",
+		PlayerInventoriesUpdated: "playerInventoriesUpdated",
 		TransactionFailed: "transactionFailed",
 		Rolled: "rolled",
 	},
@@ -115,6 +116,14 @@ var Connection = {
 			}
 		});
 
+		Connection.Hub.on(Connection.ClientMethods.PlayerInventoriesUpdated, function (marketDto) {
+			log('Player inventories updated');
+			if (Connection.ClientType === Connection.ClientTypes.Observer || Connection.ClientType === Connection.ClientTypes.Creator) {
+				Connection.UpdatePlayerInventories(marketDto.playerInventories);
+				Presenter.UpdateInventoryChart();
+			}
+		});
+
 		Connection.Hub.on(Connection.ClientMethods.MarketUpdated, function (marketDto) {
 			log('Market updated');
 			Connection.UpdateMarketValues(marketDto);
@@ -154,6 +163,10 @@ var Connection = {
 			if (Presenter.Chart) {
 				Presenter.Chart.destroy();
 				Presenter.Chart = undefined;
+			}
+			if (Presenter.InventoryChart) {
+				Presenter.InventoryChart.destroy();
+				Presenter.InventoryChart = undefined;
 			}
 			CurrentData = {
 				Username: "StonkMaster",
@@ -198,10 +211,11 @@ var Connection = {
 	},
 	UpdatePlayerInventories: function (inventoryDto) {
 		// Update player inventories
-		for (let username in inventoryDto.inventories) {
-			if (inventoryDto.inventories.hasOwnProperty(username)) {
-				let inventory = inventoryDto.inventories[username];
-				CurrentData.PlayerInventories[username] = {
+		for (let id in inventoryDto.inventories) {
+			if (inventoryDto.inventories.hasOwnProperty(id)) {
+				let inventory = inventoryDto.inventories[id];
+				CurrentData.PlayerInventories[id] = {
+					username: inventory.username,
 					money: inventory.money,
 					holdings: {}
 				};
@@ -209,7 +223,7 @@ var Connection = {
 				for (let stockName in inventory.holdings) {
 					if (inventory.holdings.hasOwnProperty(stockName)) {
 						let amountHeld = inventory.holdings[stockName];
-						CurrentData.PlayerInventories[username].holdings[stockName] = amountHeld;
+						CurrentData.PlayerInventories[id].holdings[stockName] = amountHeld;
 					}
 				}
 			}
@@ -993,7 +1007,7 @@ var Presenter = {
 	},
 	GetInventoryChartData: function () {
 		log('Getting inventory data');
-		let moneyColor = '#79f05d';
+		let moneyColor = '#8a8a8a';
 		let moneyKey = 'Money';
 		let datasetObject = {};
 		let labels = [];
@@ -1022,12 +1036,12 @@ var Presenter = {
 		}
 
 		// Add user data
-		for (let username in CurrentData.PlayerInventories) {
-			if (CurrentData.PlayerInventories.hasOwnProperty(username)) {
-				let inventory = CurrentData.PlayerInventories[username];
+		for (let id in CurrentData.PlayerInventories) {
+			if (CurrentData.PlayerInventories.hasOwnProperty(id)) {
+				let inventory = CurrentData.PlayerInventories[id];
 
 				// Add username to labels
-				labels.push(username);
+				labels.push(inventory.username);
 
 				// Add money
 				datasetObject[moneyKey].data.push(inventory.money);

@@ -13,6 +13,8 @@ namespace Hubs
 		public const string GameEnded = "gameEnded";
 		public const string InventoryUpdated = "inventoryUpdated";
 		public const string MarketUpdated = "marketUpdated";
+		public const string PlayerInventoriesUpdated = "playerInventoriesUpdated";
+		
 		public const string TransactionFailed = "transactionFailed";
 		public const string Rolled = "rolled";
 	}
@@ -35,6 +37,7 @@ namespace Hubs
 
 		public const string TransactionPosted = "TransactionPosted";
 		public const string MarketUpdated = "MarketUpdated";
+		public const string PlayerInventoriesUpdated = "PlayerInventoriesUpdated";
 		public const string MarketUpdatedIndividual = "MarketUpdatedIndividual";
 		public const string Rolled = "Rolled";
 

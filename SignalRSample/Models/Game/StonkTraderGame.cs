@@ -88,9 +88,11 @@ namespace Models.Game
 			{
 				Results = new List<decimal>
 				{
-					0.05M,
+					// TODO CHange this
+					//0.05M,
 					.1M,
 					.2M,
+					.3M
 				}
 			};
 			m_funcDie = new Die<Func<string, decimal, StockFunc>>
@@ -335,6 +337,7 @@ namespace Models.Game
 				}
 			}
 			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
+			await m_gameEventCommunicator.GameMarketChanged(GetMarketDto());
 		}
 
 		#endregion
@@ -504,7 +507,7 @@ namespace Models.Game
 
 			foreach (KeyValuePair<string, Player> kvp in Players)
 			{
-				inventories.Add(kvp.Value.Username, kvp.Value.GetPlayerInvetory());
+				inventories.Add(kvp.Key, kvp.Value.GetPlayerInvetory());
 			}
 
 			return new PlayerInventoryCollectionDto(inventories);

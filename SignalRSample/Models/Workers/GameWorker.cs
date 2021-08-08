@@ -160,7 +160,7 @@ namespace StonkTrader.Models.Workers
 			}
 
 			await m_connection.InvokeAsync(GameWorkerResponses.TransactionPosted, connectionId, inventory, transactionWasSuccessful);
-			await m_connection.InvokeAsync(GameWorkerResponses.MarketUpdated, m_game.GetMarketDto());
+			await m_connection.InvokeAsync(GameWorkerResponses.PlayerInventoriesUpdated, m_game.GetMarketDto());
 		}
 
 		public async Task EndGame()
@@ -233,8 +233,8 @@ namespace StonkTrader.Models.Workers
 		public static GameInitializerDto GetPrototypeGameInitializer()
 		{
 			// Della config
-			/*
-			return new GameInitializer()
+			
+			return new GameInitializerDto()
 			{
 				MarketOpenTimeInSeconds = 90,
 				RollTimeInSeconds = 2,
@@ -253,7 +253,7 @@ namespace StonkTrader.Models.Workers
 					new StockDto("YouTube", "#e60000"),
 				}
 			};
-			*/
+			/*
 			return new GameInitializerDto()
 			{
 				MarketOpenTimeInSeconds = 90,
@@ -280,6 +280,7 @@ namespace StonkTrader.Models.Workers
 					//new StockDto("Grain", "#5cc3f7", true),
 				}
 			};
+			*/
 		}
 
 		#endregion
