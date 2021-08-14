@@ -1101,10 +1101,10 @@ var Presenter = {
 
 		let comparer = function (lhs, rhs) {
 			if (lhs.NetWorth < rhs.NetWorth) {
-				return -1;
+				return 1;
 			}
 			else if (lhs.NetWorth > rhs.NetWorth) {
-				return 1;
+				return -1;
 			}
 			return 0;
 		};
@@ -1112,7 +1112,7 @@ var Presenter = {
 		for (let id in CurrentData.PlayerInventories) {
 			if (CurrentData.PlayerInventories.hasOwnProperty(id)) {
 				let inventory = CurrentData.PlayerInventories[id];
-				inventory.NetWorth = 0;
+				inventory.NetWorth = inventory.money;
 
 				// Add stock holdings as worth, not shares
 				for (let stockName in inventory.holdings) {

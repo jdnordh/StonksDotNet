@@ -23,32 +23,6 @@ namespace Hubs
 		public static class UserHandler
 		{
 			public static HashSet<string> ConnectedIds = new HashSet<string>();
-			public static ConcurrentDictionary<string, string> ConnectionToPlayerId = new ConcurrentDictionary<string, string>();
-
-			public static string AddNewPlayer(string connectionId)
-			{
-				if (!ConnectionToPlayerId.ContainsKey(connectionId))
-				{
-					var guid = Guid.NewGuid();
-					var guidString = guid.ToString();
-					ConnectionToPlayerId.TryAdd(connectionId, guidString);
-					return guidString;
-				}
-				else
-				{
-					throw new InvalidOperationException($"The connection id {connectionId} was already present in the player dictionary.");
-				}
-			}
-
-			public static bool PlayerIdExists(string playerId)
-			{
-				return ConnectionToPlayerId.Values.Contains(playerId);
-			}
-
-			public static void ClearAllPlayerIds()
-			{
-				ConnectionToPlayerId.Clear();
-			}
 		}
 
 		public override Task OnConnectedAsync()
