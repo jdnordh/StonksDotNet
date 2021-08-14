@@ -150,6 +150,7 @@ var Connection = {
 
 		Connection.Hub.on(Connection.ClientMethods.GameNotJoined, function (message) {
 			log('Join game unavailable: ' + message);
+			Cookie.DeleteCookie(Cookie.Cookies.PlayerId);
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.GameStarted, function () {
@@ -224,6 +225,7 @@ var Connection = {
 				StockValues: {},
 				StockColors: {},
 				StockHalves: {},
+				PlayerInventories: {},
 				Money: 0,
 			};
 			ScreenOps.SwitchToMainMenu();
@@ -245,13 +247,20 @@ var Connection = {
 		});
 
 		Connection.Hub.start().then(function () {
-			Connection.Hub.invoke(Connection.ServerMethods.ReJoin, Cookie.GetCookieValue(Cookie.Cookies.PlayerId)).catch(function (err) {
-				return console.error(err.toString());
-			});
+			Connection.TryReJoinGame();
+			
 			ScreenOps.SwitchToMainMenu();
 		}).catch(function (err) {
 			return console.error(err.toString());
 		});
+	},
+	TryReJoinGame: function () {
+		let playerId = Cookie.GetCookieValue(Cookie.Cookies.PlayerId);
+		if (playerId) {
+			Connection.Hub.invoke(Connection.ServerMethods.ReJoin, playerId).catch(function (err) {
+				return console.error(err.toString());
+			});
+		}
 	},
 	UpdateMarketValues: function (marketDto) {
 		// Update stock values
@@ -1058,10 +1067,6 @@ var Presenter = {
 	},
 	GetInventoryChartData: function () {
 		log('Getting inventory data');
-		// TODO Sort the users that this function outputs
-		//let comparer = function (lhs, rhs) {
-
-		//};
 
 		let moneyColor = '#8a8a8a';
 		let moneyKey = 'Money';
@@ -1091,7 +1096,58 @@ var Presenter = {
 			}
 		}
 
+		// Sort users by net worth
+		let sortedUserInventories = [];
+
+		let comparer = function (lhs, rhs) {
+			if (lhs.NetWorth < rhs.NetWorth) {
+				return -1;
+			}
+			else if (lhs.NetWorth > rhs.NetWorth) {
+				return 1;
+			}
+			return 0;
+		};
+
+		for (let id in CurrentData.PlayerInventories) {
+			if (CurrentData.PlayerInventories.hasOwnProperty(id)) {
+				let inventory = CurrentData.PlayerInventories[id];
+				inventory.NetWorth = 0;
+
+				// Add stock holdings as worth, not shares
+				for (let stockName in inventory.holdings) {
+					if (inventory.holdings.hasOwnProperty(stockName)) {
+						let amountHeld = inventory.holdings[stockName];
+						let shareWorth = CurrentData.StockValues[stockName];
+						inventory.NetWorth += (amountHeld * shareWorth) / 100;
+					}
+				}
+
+				sortedUserInventories.push(inventory);
+			}
+		}
+		sortedUserInventories.sort(comparer);
+
 		// Add user data
+		for (let i = 0; i < sortedUserInventories.length; i++) {
+			let inventory = sortedUserInventories[i];
+
+			// Add username to labels
+			labels.push(inventory.username);
+
+			// Add money
+			datasetObject[moneyKey].data.push(inventory.money);
+
+			// Add stock holdings as worth, not shares
+			for (let stockName in inventory.holdings) {
+				if (inventory.holdings.hasOwnProperty(stockName)) {
+					let amountHeld = inventory.holdings[stockName];
+					let shareWorth = CurrentData.StockValues[stockName];
+					datasetObject[stockName].data.push((amountHeld * shareWorth) / 100);
+				}
+			}
+		}
+		/*
 		for (let id in CurrentData.PlayerInventories) {
 			if (CurrentData.PlayerInventories.hasOwnProperty(id)) {
 				let inventory = CurrentData.PlayerInventories[id];
@@ -1112,7 +1168,7 @@ var Presenter = {
 				}
 			}
 		}
-
+		*/
 		// Push datasets into an array
 		let datasets = [];
 		for (let assetName in datasetObject) {

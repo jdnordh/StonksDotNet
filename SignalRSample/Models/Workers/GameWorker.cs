@@ -210,6 +210,8 @@ namespace StonkTrader.Models.Workers
 			m_logger.Log(LogLevel.Information, "Ending game.");
 			m_game = null;
 			m_creatorConnectionId = null;
+			m_connectionIdToPlayerIdMap.Clear();
+			m_playerIdConnectionIdMap.Clear();
 			await m_connection.InvokeAsync(GameWorkerResponses.GameEnded);
 		}
 
