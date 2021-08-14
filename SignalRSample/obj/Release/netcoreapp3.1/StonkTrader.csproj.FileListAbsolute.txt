@@ -95,3 +95,4 @@ D:\Repos\Stonks\SignalRSample\bin\Release\netcoreapp3.1\Microsoft.Extensions.Pri
 D:\Repos\Stonks\SignalRSample\bin\Release\netcoreapp3.1\System.Diagnostics.DiagnosticSource.dll
 D:\Repos\Stonks\SignalRSample\bin\Release\netcoreapp3.1\System.IO.Pipelines.dll
 D:\Repos\Stonks\SignalRSample\bin\Release\netcoreapp3.1\System.Threading.Channels.dll
+D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\StonkTrader.GeneratedMSBuildEditorConfig.editorconfig

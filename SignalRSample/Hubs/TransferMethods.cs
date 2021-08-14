@@ -23,6 +23,7 @@ namespace Hubs
 	{
 		public const string CreateGameRequest = "createGameRequest";
 		public const string JoinGameRequest = "gameJoinRequest";
+		public const string ReJoinGameRequest = "gameReJoinRequest";
 		public const string StartGameRequest = "startGameRequest";
 		public const string TransactionRequest = "transactionRequest";
 		public const string GameEndRequest = "gameEndRequest";
@@ -30,6 +31,7 @@ namespace Hubs
 
 	public static class GameWorkerResponses
 	{
+		public const string JoinGameFailed = "JoinGameFailed";
 		public const string PlayerJoinedGameResponse = "GameJoinedPlayer";
 		public const string ObserverJoinedGameResponse = "GameJoinedObserver";
 		public const string GameCreatedResponse = "GameCreated";

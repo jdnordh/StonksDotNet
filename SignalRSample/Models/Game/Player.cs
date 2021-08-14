@@ -5,7 +5,12 @@ namespace Models.Game
 {
 	public class Player
 	{
+		/// <summary>
+		/// The globally unique identifier of this player. Allows reconnection.
+		/// </summary>
 		public string Id { get; }
+
+		public string ConnectionId { get; }
 
 		public string Username { get;  }
 
@@ -15,9 +20,10 @@ namespace Models.Game
 
 		private List<string> m_stocks;
 
-		public Player(string id, string username, List<string> stocks)
+		public Player(string id, string connectionId, string username, List<string> stocks)
 		{
 			Id = id;
+			ConnectionId = connectionId;
 			Username = username;
 			m_stocks = stocks;
 			ClearAllShares();
@@ -34,7 +40,7 @@ namespace Models.Game
 
 		public PlayerInventoryDto GetPlayerInvetory()
 		{
-			return new PlayerInventoryDto(Money, Holdings, Username);
+			return new PlayerInventoryDto(Id, Money, Holdings, Username);
 		}
 	}
 }

@@ -10,6 +10,52 @@ var log = function (msg) {
 	console.log(msg);
 };
 
+//#region Cookies
+
+var Cookie = {
+	Cookies: {
+		PlayerId: "playerid",
+	},
+	CreateCookie: function (name, value, days) {
+		if (days) {
+			var date = new Date();
+			date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+			var expires = "; expires=" + date.toGMTString();
+		} else {
+			var expires = "";
+		}
+		document.cookie = name + "=" + value + expires + "; path=/";
+	},
+	GetCookieValue: function (cookieName) {
+		var matched = document.cookie.match("(^|[^;]+)\\s*" + cookieName + "\\s*=\\s*([^;]+)");
+		return matched ? matched.pop() : "";
+	},
+	DeleteCookie: function (cookieName) {
+		createCookie(cookieName, "", -1);
+	},
+};
+
+//#endregion
+
+var Audio = {
+	Up: new Audio('audio/up.mp3'),
+	Down: new Audio('audio/down.mp3'),
+	Div: new Audio('audio/div.mp3'),
+	NoDiv: new Audio('audio/nodiv.mp3'),
+	Split: new Audio('audio/split.mp3'),
+	Crash: new Audio('audio/crash.mp3'),
+	PlayAudio: function (audio) {
+		if (audio.paused) {
+			audio.play();
+		}
+		else {
+			audio.pause();
+			audio.currentTime = 0
+			audio.play();
+		}
+	},
+};
+
 var Unit = {
 	PercentToDecimal: function (percentage) {
 		return percentage / 100;
@@ -63,6 +109,7 @@ var Connection = {
 		EndGame: "EndGame",
 		RequestTransaction: "RequestTransaction",
 		Reset: "Reset",
+		ReJoin: "ReJoin",
 	},
 	Reset: function () {
 		Connection.Hub.invoke(Connection.ServerMethods.Reset).catch(function (err) {
@@ -80,6 +127,9 @@ var Connection = {
 
 		Connection.Hub.on(Connection.ClientMethods.GameJoined, function (playerInventoryDto) {
 			log('Game Joined');
+			// Save player id
+			Cookie.CreateCookie(Cookie.Cookies.PlayerId, playerInventoryDto.playerId, 1);
+
 			Connection.ClientType = Connection.ClientTypes.Player;
 			Connection.UpdateInventory(playerInventoryDto);
 			CurrentData.Username = playerInventoryDto.username;
@@ -179,10 +229,12 @@ var Connection = {
 			ScreenOps.SwitchToMainMenu();
 		});
 
-		Connection.Hub.on(Connection.ClientMethods.GameOver, function (gameEndDto) {
+		Connection.Hub.on(Connection.ClientMethods.GameOver, function (inventoryCollectionDto) {
 			log('Game Over');
 			if (Connection.ClientType === Connection.ClientTypes.Observer || Connection.ClientType === Connection.ClientTypes.Creator) {
-				Presenter.SetGameOver(gameEndDto);
+				Presenter.SetGameOver();
+				Connection.UpdatePlayerInventories(inventoryCollectionDto);
+				Presenter.UpdateInventoryChart();
 				if (Connection.ClientType === Connection.ClientTypes.Creator) {
 					ScreenOps.ShowEndGameButton();
 				}
@@ -193,6 +245,9 @@ var Connection = {
 		});
 
 		Connection.Hub.start().then(function () {
+			Connection.Hub.invoke(Connection.ServerMethods.ReJoin, Cookie.GetCookieValue(Cookie.Cookies.PlayerId)).catch(function (err) {
+				return console.error(err.toString());
+			});
 			ScreenOps.SwitchToMainMenu();
 		}).catch(function (err) {
 			return console.error(err.toString());
@@ -232,9 +287,15 @@ var Connection = {
 	UpdateStockValuesFromRoll: function (rollDto) {
 		if (rollDto.func === 'Up') {
 			CurrentData.StockValues[rollDto.stockName] += rollDto.amount;
+			if (CurrentData.StockValues[rollDto.stockName] > 200) {
+				CurrentData.StockValues[rollDto.stockName] = 200;
+			}
 		}
 		else if (rollDto.func === 'Down') {
 			CurrentData.StockValues[rollDto.stockName] -= rollDto.amount;
+			if (CurrentData.StockValues[rollDto.stockName] < 0) {
+				CurrentData.StockValues[rollDto.stockName] = 0;
+			}
 		}
 	},
 	UpdateInventory: function (playerInventoryDto) {
@@ -808,7 +869,7 @@ var Presenter = {
 			stockBorderColors: stockBorderColors,
 		}
 	},
-	GetChartConfig: function (data, isGameEnd) {
+	GetChartConfig: function (data) {
 		let config = {
 			type: 'bar',
 			data: data,
@@ -824,17 +885,14 @@ var Presenter = {
 				},
 				responsive: true,
 				maintainAspectRatio: true,
+				scales: {
+					yAxes: {
+						min: 0,
+						max: 200
+					}
+				},
 			}
 		};
-
-		if (!isGameEnd) {
-			config.options.scales = {
-				yAxes: {
-					min: 0,
-					max: 200
-				}
-			};
-		}
 		return config;
 	},
 	CreateCharts: function () {
@@ -934,47 +992,12 @@ var Presenter = {
 		// Show market graph
 		$(ConstHtmlIds.InventoryChartSlider).appendTo('#chart-slide-container');
 	},
-	SetGameOver: function (gameOverDto) {
-		log(gameOverDto.wallets);
-
+	SetGameOver: function () {
 		$(ConstHtmlIds.PresenterText).text("Game Over");
-
-		let comparer = function (lhs, rhs) {
-			if (lhs.money < rhs.money) {
-				return 1;
-			}
-			if (lhs.money > rhs.money) {
-				return -1;
-			}
-			return 0;
-		};
-		gameOverDto.wallets.sort(comparer);
-
-		let canvas = document.getElementById(ConstHtmlIds.PresenterChart);
-		let ctx = canvas.getContext('2d');
-
-		let labels = [];
-		let walletAmounts = [];
-		let userColors = [];
-		for (let i = 0; i < gameOverDto.wallets.length; i++) {
-			labels.push(gameOverDto.wallets[i].username);
-			walletAmounts.push(gameOverDto.wallets[i].money);
-			userColors.push('#' + Math.floor(Math.random() * 16777215).toString(16));
-		}
-
-		let data = {
-			labels: labels,
-			datasets: [
-				{
-					data: walletAmounts,
-					backgroundColor: userColors
-				}
-			]
-		};
-
-		let config = Presenter.GetChartConfig(data, true);
-		Presenter.Chart.destroy();
-		Presenter.Chart = new Chart(ctx, config);
+		// Show user graph
+		// TODO Verify
+		log('Switching to user inventories...')
+		$(ConstHtmlIds.PresenterChartSlider).appendTo('#chart-slide-container');
 	},
 	ShowRoll: function (rollDto) {
 		let state = 0;
@@ -992,6 +1015,34 @@ var Presenter = {
 			}
 			else if (state === 2) {
 				log('Updating Chart');
+
+				if (rollDto.func === 'Up') {
+					// Check for split
+					if (CurrentData.StockValues[rollDto.stockName] >= 200) {
+						Audio.PlayAudio(Audio.Split);
+					}
+					else {
+						Audio.PlayAudio(Audio.Up);
+					}
+				}
+				else if (rollDto.func === 'Down') {
+					// Check for crash
+					if (CurrentData.StockValues[rollDto.stockName] <= 0) {
+						Audio.PlayAudio(Audio.Crash);
+					}
+					else {
+						Audio.PlayAudio(Audio.Down);
+					}
+				}
+				else {
+					// Only play div sound if stock is par or above
+					if (CurrentData.StockValues[rollDto.stockName] >= 100) {
+						Audio.PlayAudio(Audio.Div);
+					}
+					else {
+						Audio.PlayAudio(Audio.NoDiv);
+					}
+				}
 				Presenter.UpdateChart();
 			}
 			else {
@@ -1007,6 +1058,11 @@ var Presenter = {
 	},
 	GetInventoryChartData: function () {
 		log('Getting inventory data');
+		// TODO Sort the users that this function outputs
+		//let comparer = function (lhs, rhs) {
+
+		//};
+
 		let moneyColor = '#8a8a8a';
 		let moneyKey = 'Money';
 		let datasetObject = {};
@@ -1135,27 +1191,3 @@ $(document).ready(function () {
 	Connection.Init();
 });
 
-//#region Cookies
-
-// Based on https://stackoverflow.com/questions/5639346/what-is-the-shortest-function-for-reading-a-cookie-by-name-in-javascript
-function createCookie(name, value, days) {
-	if (days) {
-		var date = new Date();
-		date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-		var expires = "; expires=" + date.toGMTString();
-	} else {
-		var expires = "";
-	}
-	document.cookie = name + "=" + value + expires + "; path=/";
-}
-
-function getCookieValue(cookieName) {
-	var matched = document.cookie.match("(^|[^;]+)\\s*" + cookieName + "\\s*=\\s*([^;]+)");
-	return matched ? matched.pop() : "";
-}
-
-function deleteCookie(name) {
-	createCookie(name, "", -1);
-}
-
-//#endregion

@@ -23,8 +23,8 @@ namespace Models.Game
 		/// <summary>
 		/// Send a game ended update.
 		/// </summary>
-		/// <param name="gameOverDto">Game over data.</param>
-		Task GameOver(GameOverDto gameOverDto);
+		/// <param name="inventoryCollectionDto">Player inventory data.</param>
+		Task GameOver(PlayerInventoryCollectionDto inventoryCollectionDto);
 
 		/// <summary>
 		/// Send a game rolled update.

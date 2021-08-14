@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Models.DataTransferObjects;
 using Models.Game;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,6 +20,9 @@ namespace StonkTrader.Models.Workers
 		private StonkTraderGame m_game;
 		private string m_creatorConnectionId;
 		private HubConnection m_connection;
+
+		private Dictionary<string, string> m_connectionIdToPlayerIdMap = new Dictionary<string, string>();
+		private Dictionary<string, string> m_playerIdConnectionIdMap = new Dictionary<string, string>();
 
 		public GameWorker(ILogger<GameWorker> logger)
 		{
@@ -36,6 +40,8 @@ namespace StonkTrader.Models.Workers
 			m_connection.On<GameInitializerDto, string>(GameWorkerRequests.CreateGameRequest, CreateGame);
 
 			m_connection.On<string, string, bool>(GameWorkerRequests.JoinGameRequest, JoinGame);
+
+			m_connection.On<string, string>(GameWorkerRequests.ReJoinGameRequest, ReJoinGame);
 
 			m_connection.On<string>(GameWorkerRequests.StartGameRequest, StartGame);
 
@@ -96,6 +102,10 @@ namespace StonkTrader.Models.Workers
 
 		private async Task JoinGame(string connectionId, string username, bool isPlayer)
 		{
+			if (m_game == null)
+			{
+				await m_connection.SendAsync(GameWorkerResponses.JoinGameFailed, connectionId);
+			}
 			if (isPlayer)
 			{
 				m_logger.Log(LogLevel.Information, $"{username} is joining game.");
@@ -104,11 +114,12 @@ namespace StonkTrader.Models.Workers
 				{
 					return;
 				}
+				AddNewPlayer(connectionId, inventory.PlayerId);
 				await m_connection.InvokeAsync(GameWorkerResponses.PlayerJoinedGameResponse, connectionId, inventory);
 				if (m_game.IsStarted)
 				{
 					// If game is started, update the player with the market
-					await m_connection.InvokeAsync(GameWorkerResponses.MarketUpdated, m_game.GetMarketDto());
+					await m_connection.InvokeAsync(GameWorkerResponses.MarketUpdatedIndividual, connectionId, m_game.GetMarketDto());
 				}
 			}
 			else
@@ -116,6 +127,35 @@ namespace StonkTrader.Models.Workers
 				m_logger.Log(LogLevel.Information, "Observer is joining game.");
 				await m_connection.InvokeAsync(GameWorkerResponses.ObserverJoinedGameResponse, connectionId, m_game.GetMarketDto());
 			}
+		}
+
+		private async Task ReJoinGame(string connectionId, string playerId)
+		{
+			if (m_game == null || !m_game.IsStarted)
+			{
+				await m_connection.SendAsync(GameWorkerResponses.JoinGameFailed, connectionId);
+				return;
+			}
+			if (!m_playerIdConnectionIdMap.ContainsKey(playerId))
+			{
+				await m_connection.SendAsync(GameWorkerResponses.JoinGameFailed, connectionId);
+				return;
+			}
+			if (!m_game.Players.ContainsKey(playerId))
+			{
+				m_logger.Log(LogLevel.Error, "Player Id was not present in game.");
+				await m_connection.SendAsync(GameWorkerResponses.JoinGameFailed, connectionId);
+				return;
+			}
+
+			Player player = m_game.Players[playerId];
+			UpdateConnectionId(connectionId, playerId);
+			await m_connection.InvokeAsync(GameWorkerResponses.PlayerJoinedGameResponse, connectionId, player.GetPlayerInvetory());
+
+			m_logger.Log(LogLevel.Information, $"{player.Username} is re-joining game.");
+
+			// Update the player with the market
+			await m_connection.InvokeAsync(GameWorkerResponses.MarketUpdatedIndividual, connectionId, m_game.GetMarketDto());
 		}
 
 		private async Task StartGame(string creatorConnectionId)
@@ -140,21 +180,23 @@ namespace StonkTrader.Models.Workers
 			{
 				return;
 			}
+			string playerId = m_connectionIdToPlayerIdMap[connectionId];
+
 			var transactionWasSuccessful = false;
 			PlayerInventoryDto inventory = null;
 			if (isBuy)
 			{
-				if (m_game.IsBuyOkay(connectionId, stockName, amount))
+				if (m_game.IsBuyOkay(playerId, stockName, amount))
 				{
-					inventory = m_game.BuyStock(connectionId, stockName, amount);
+					inventory = m_game.BuyStock(playerId, stockName, amount);
 					transactionWasSuccessful = true;
 				}
 			}
 			else
 			{
-				if (m_game.IsSellOkay(connectionId, stockName, amount))
+				if (m_game.IsSellOkay(playerId, stockName, amount))
 				{
-					inventory = m_game.SellStock(connectionId, stockName, amount);
+					inventory = m_game.SellStock(playerId, stockName, amount);
 					transactionWasSuccessful = true;
 				}
 			}
@@ -169,6 +211,43 @@ namespace StonkTrader.Models.Workers
 			m_game = null;
 			m_creatorConnectionId = null;
 			await m_connection.InvokeAsync(GameWorkerResponses.GameEnded);
+		}
+
+		#endregion
+
+		#region Player Id
+
+		private void UpdateConnectionId(string connectionId, string playerId)
+		{
+			m_playerIdConnectionIdMap[playerId] = connectionId;
+			m_connectionIdToPlayerIdMap.Remove(connectionId);
+			m_connectionIdToPlayerIdMap.Add(connectionId, playerId);
+		}
+
+		/// <summary>
+		/// Adds a new player.
+		/// </summary>
+		/// <param name="connectionId">The connection id.</param>
+		/// <param name="playerId">The player id.</param>
+		private void AddNewPlayer(string connectionId, string playerId)
+		{
+			if (!m_connectionIdToPlayerIdMap.ContainsKey(connectionId))
+			{
+				m_connectionIdToPlayerIdMap.Add(connectionId, playerId);
+			}
+			else
+			{
+				m_logger.Log(LogLevel.Error, "Tried to add duplicate connection ID to dictionary.");
+			}
+
+			if (!m_playerIdConnectionIdMap.ContainsKey(playerId))
+			{
+				m_playerIdConnectionIdMap.Add(playerId, connectionId);
+			}
+			else
+			{
+				m_logger.Log(LogLevel.Error, "Tried to add duplicate GUID to dictionary.");
+			}
 		}
 
 		#endregion
@@ -197,10 +276,10 @@ namespace StonkTrader.Models.Workers
 		}
 
 		/// <inheritdoc/>
-		public async Task GameOver(GameOverDto gameOverDto)
+		public async Task GameOver(PlayerInventoryCollectionDto inventoryCollectionDto)
 		{
 			m_logger.Log(LogLevel.Information, "Game over.");
-			await m_connection.InvokeAsync(GameWorkerResponses.GameOver, gameOverDto);
+			await m_connection.InvokeAsync(GameWorkerResponses.GameOver, inventoryCollectionDto);
 		}
 
 		#endregion
@@ -232,8 +311,25 @@ namespace StonkTrader.Models.Workers
 
 		public static GameInitializerDto GetPrototypeGameInitializer()
 		{
+
+			return new GameInitializerDto()
+			{
+				MarketOpenTimeInSeconds = 90,
+				RollTimeInSeconds = 2,
+				TimeBetweenRollsInSeconds = 2,
+				NumberOfRounds = 7,
+				RollsPerRound = 12,
+				StartingMoney = 7500,
+				IsPrototype = true,
+				Stocks = new[]
+				{
+					new StockDto("Dogecoin", "#5cc3f7"),
+					new StockDto("Tesla", "#e60000"),
+					new StockDto("China", "#FFD700"),
+				}
+			};
 			// Della config
-			
+			/*
 			return new GameInitializerDto()
 			{
 				MarketOpenTimeInSeconds = 90,

@@ -92,7 +92,7 @@ namespace Models.Game
 					//0.05M,
 					.1M,
 					.2M,
-					.3M
+					.3M,
 				}
 			};
 			m_funcDie = new Die<Func<string, decimal, StockFunc>>
@@ -178,11 +178,12 @@ namespace Models.Game
 			{
 				return null;
 			}
-			var player = new Player(connectionId, username, Stocks.Values.Select(stock => stock.Name).ToList())
+			var playerId = GetNewPlayerId();
+			var player = new Player(playerId, connectionId, username, Stocks.Values.Select(stock => stock.Name).ToList())
 			{
 				Money = m_startingMoney
 			};
-			Players.Add(connectionId, player);
+			Players.Add(playerId, player);
 			PlayerInventoryDto inventory = player.GetPlayerInvetory();
 			return inventory;
 		}
@@ -237,7 +238,6 @@ namespace Models.Game
 		#endregion
 
 		#region Dice Rolling
-
 
 		/// <summary>
 		/// Roll the dice.
@@ -303,7 +303,7 @@ namespace Models.Game
 				if (holdings > 0)
 				{
 					player.Money += (int)(holdings * percentage);
-					updatedPlayerInvectories.Add((player.Id, player.GetPlayerInvetory()));
+					updatedPlayerInvectories.Add((player.ConnectionId, player.GetPlayerInvetory()));
 				}
 			}
 			PlayerInventoryCollectionDto inventoryDto = GetInventoryCollectionDto();
@@ -347,19 +347,19 @@ namespace Models.Game
 		/// <summary>
 		/// Determine if the given player can perform a proposed buy operation.
 		/// </summary>
-		/// <param name="userId">The user id.</param>
+		/// <param name="playerId">The user id.</param>
 		/// <param name="stockName">The stock to buy.</param>
 		/// <param name="amountToBuy">The amount of stock to buy.</param>
 		/// <returns>True if the operation is okay.</returns>
-		public bool IsBuyOkay(string userId, string stockName, int amountToBuy)
+		public bool IsBuyOkay(string playerId, string stockName, int amountToBuy)
 		{
 			if (!IsStarted)
 			{
 				return false;
 			}
-			if (!Players.ContainsKey(userId))
+			if (!Players.ContainsKey(playerId))
 			{
-				throw new InvalidOperationException($"The user '{userId}' was not present in the game.");
+				throw new InvalidOperationException($"The user '{playerId}' was not present in the game.");
 			}
 			if (!Stocks.ContainsKey(stockName))
 			{
@@ -369,7 +369,7 @@ namespace Models.Game
 			{
 				return false;
 			}
-			Player player = Players[userId];
+			Player player = Players[playerId];
 			var cost = Stocks[stockName].GetValueOfAmount(amountToBuy);
 			return player.Money >= cost;
 		}
@@ -377,14 +377,14 @@ namespace Models.Game
 		/// <summary>
 		/// Buy an amount of stock.
 		/// </summary>
-		/// <param name="userId">The user id.</param>
+		/// <param name="playerId">The user id.</param>
 		/// <param name="stockName">The stock to buy.</param>
 		/// <param name="amountToBuy">The amount of stock to buy.</param>
 		/// <returns>Updated player money.</returns>
-		public PlayerInventoryDto BuyStock(string userId, string stockName, int amountToBuy)
+		public PlayerInventoryDto BuyStock(string playerId, string stockName, int amountToBuy)
 		{
-			Player player = Players[userId];
-			if (!IsBuyOkay(userId, stockName, amountToBuy))
+			Player player = Players[playerId];
+			if (!IsBuyOkay(playerId, stockName, amountToBuy))
 			{
 				return player.GetPlayerInvetory();
 			}
@@ -397,19 +397,19 @@ namespace Models.Game
 		/// <summary>
 		/// Determine if the given player can perform a proposed sell operation.
 		/// </summary>
-		/// <param name="userId">The user id.</param>
+		/// <param name="playerId">The user id.</param>
 		/// <param name="stockName">The stock to buy.</param>
 		/// <param name="amountToSell">The amount of stock to buy.</param>
 		/// <returns>True if the operation is okay.</returns>
-		public bool IsSellOkay(string userId, string stockName, int amountToSell)
+		public bool IsSellOkay(string playerId, string stockName, int amountToSell)
 		{
 			if (!IsStarted)
 			{
 				return false;
 			}
-			if (!Players.ContainsKey(userId))
+			if (!Players.ContainsKey(playerId))
 			{
-				throw new InvalidOperationException($"The user '{userId}' was not present in the game.");
+				throw new InvalidOperationException($"The user '{playerId}' was not present in the game.");
 			}
 			if (!Stocks.ContainsKey(stockName))
 			{
@@ -419,21 +419,21 @@ namespace Models.Game
 			{
 				return false;
 			}
-			Player player = Players[userId];
+			Player player = Players[playerId];
 			return player.Holdings[stockName] >= amountToSell;
 		}
 
 		/// <summary>
 		/// Sell an amount of stock.
 		/// </summary>
-		/// <param name="userId">The user id.</param>
+		/// <param name="playerId">The user id.</param>
 		/// <param name="stockName">The stock to buy.</param>
 		/// <param name="amountToSell">The amount of stock to buy.</param>
 		/// <returns>Updated player money.</returns>
-		public PlayerInventoryDto SellStock(string userId, string stockName, int amountToSell)
+		public PlayerInventoryDto SellStock(string playerId, string stockName, int amountToSell)
 		{
-			Player player = Players[userId];
-			if (!IsSellOkay(userId, stockName, amountToSell))
+			Player player = Players[playerId];
+			if (!IsSellOkay(playerId, stockName, amountToSell))
 			{
 				return player.GetPlayerInvetory();
 			}
@@ -449,14 +449,12 @@ namespace Models.Game
 
 		private async Task EndGame()
 		{
-			var playerWallets = new List<(string id, int wallet)>();
+			// Send inventory update to observer with inventory breakdowns
+			await m_gameEventCommunicator.GameOver(GetInventoryCollectionDto());
 			SellAllShares();
-			foreach (Player player in Players.Values)
-			{
-				playerWallets.Add((player.Username, player.Money));
-			}
+
+			// Send update to players with money amount
 			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
-			await m_gameEventCommunicator.GameOver(new GameOverDto(Players.Values.Select(p => p.GetPlayerInvetory()).ToList()));
 			IsStarted = false;
 		}
 
@@ -507,10 +505,19 @@ namespace Models.Game
 
 			foreach (KeyValuePair<string, Player> kvp in Players)
 			{
-				inventories.Add(kvp.Key, kvp.Value.GetPlayerInvetory());
+				inventories.Add(kvp.Value.ConnectionId, kvp.Value.GetPlayerInvetory());
 			}
 
 			return new PlayerInventoryCollectionDto(inventories);
+		}
+
+		/// <summary>
+		/// Get a new player id as a string.
+		/// </summary>
+		/// <returns>The id as a string.</returns>
+		private string GetNewPlayerId()
+		{
+			return Guid.NewGuid().ToString();
 		}
 
 		#endregion

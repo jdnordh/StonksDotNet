@@ -13,6 +13,10 @@ namespace Models.DataTransferObjects
 		public string Username { get; set; }
 
 		[JsonInclude]
+		[JsonProperty("playerId")]
+		public string PlayerId { get; set; }
+
+		[JsonInclude]
 		[JsonProperty("money")]
 		public int Money { get; }
 
@@ -20,8 +24,9 @@ namespace Models.DataTransferObjects
 		[JsonProperty("holdings")]
 		public Dictionary<string, int> Holdings { get; }
 
-		public PlayerInventoryDto(int money, Dictionary<string, int> holdings, string username)
+		public PlayerInventoryDto(string playerId, int money, Dictionary<string, int> holdings, string username)
 		{
+			PlayerId = playerId;
 			Money = money;
 			Holdings = holdings;
 			Username = username;

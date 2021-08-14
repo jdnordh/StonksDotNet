@@ -4,6 +4,7 @@ using Models.Game;
 using Newtonsoft.Json;
 using StonkTrader.Models.Connection;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -18,9 +19,36 @@ namespace Hubs
 		private const string GameThreadsGroup = "GameThreads";
 
 		#region Connection
+
 		public static class UserHandler
 		{
 			public static HashSet<string> ConnectedIds = new HashSet<string>();
+			public static ConcurrentDictionary<string, string> ConnectionToPlayerId = new ConcurrentDictionary<string, string>();
+
+			public static string AddNewPlayer(string connectionId)
+			{
+				if (!ConnectionToPlayerId.ContainsKey(connectionId))
+				{
+					var guid = Guid.NewGuid();
+					var guidString = guid.ToString();
+					ConnectionToPlayerId.TryAdd(connectionId, guidString);
+					return guidString;
+				}
+				else
+				{
+					throw new InvalidOperationException($"The connection id {connectionId} was already present in the player dictionary.");
+				}
+			}
+
+			public static bool PlayerIdExists(string playerId)
+			{
+				return ConnectionToPlayerId.Values.Contains(playerId);
+			}
+
+			public static void ClearAllPlayerIds()
+			{
+				ConnectionToPlayerId.Clear();
+			}
 		}
 
 		public override Task OnConnectedAsync()
@@ -196,9 +224,9 @@ namespace Hubs
 		/// Called when the game finishes.
 		/// </summary>
 		/// <returns>A completed task.</returns>
-		public async Task GameOver(GameOverDto gameOverDto)
+		public async Task GameOver(PlayerInventoryCollectionDto inventoryCollectionDto)
 		{
-			await Clients.Group(PlayerGroup).SendAsync(ClientMethods.GameOver, gameOverDto);
+			await Clients.Group(PlayerGroup).SendAsync(ClientMethods.GameOver, inventoryCollectionDto);
 		}
 
 		/// <summary>
@@ -208,6 +236,16 @@ namespace Hubs
 		public async Task GameEnded()
 		{
 			await Clients.Group(PlayerGroup).SendAsync(ClientMethods.GameEnded);
+		}
+
+		/// <summary>
+		/// Called when joining a game fails.
+		/// </summary>
+		/// <param name="connectionId">The connection id.</param>
+		/// <returns>A completed task.</returns>
+		public async Task JoinGameFailed(string connectionId)
+		{
+			await Clients.Client(connectionId).SendAsync(ClientMethods.GameNotJoined, "You suck");
 		}
 
 		#endregion
@@ -226,6 +264,18 @@ namespace Hubs
 
 			await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.JoinGameRequest, CurrentUserConnectionId, username, isPlayer);
 		}
+
+		public async Task ReJoin(string playerId)
+		{
+			if (!WorkerManager.Instance.WorkerExists)
+			{
+				await Clients.Caller.SendAsync(ClientMethods.GameNotJoined, "Game worker is disconnected.");
+				return;
+			}
+
+			await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.ReJoinGameRequest, CurrentUserConnectionId, playerId);
+		}
+		
 
 		public async Task CreateGame(GameInitializerDto parameters)
 		{
