@@ -1,13 +1,8 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Models.DataTransferObjects;
-using Models.Game;
-using Newtonsoft.Json;
 using StonkTrader.Models.Connection;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 

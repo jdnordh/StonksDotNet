@@ -449,12 +449,14 @@ namespace Models.Game
 
 		private async Task EndGame()
 		{
-			// Send inventory update to observer with inventory breakdowns
-			await m_gameEventCommunicator.GameOver(GetInventoryCollectionDto());
+			var preSellInventories = GetInventoryCollectionDto();
 			SellAllShares();
 
 			// Send update to players with money amount
 			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
+
+			// Send inventory update to observer with inventory breakdowns
+			await m_gameEventCommunicator.GameOver(preSellInventories);
 			IsStarted = false;
 		}
 

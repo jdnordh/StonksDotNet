@@ -242,7 +242,7 @@ var Connection = {
 				}
 			}
 			else {
-				$(ConstHtmlIds.MarketOpenClosedHeader).text("Game Over");
+				ScreenOps.SwitchToGameOver();
 			}
 		});
 
@@ -457,6 +457,12 @@ var HtmlGeneration =
 		html += '</p></div></div><div class="grid-row-2 scrollviewer-vertical" id="stockList"></div>';
 		return html;
 	},
+	MakeGameOverScreen: function (money) {
+		let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1"><p class="market-closed" id="marketOpenClosedHeader">Game Over</p></div><div class="grid-row-2"><p id="money">$'
+		html += money;
+		html += '</p></div></div><div class="grid-row-2 scrollviewer-vertical" id="stockList"></div>';
+		return html;
+	},
 	MakeMarketScreen: function (money, isBuy) {
 		let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1 buy-sell-buttons" id ="buySell"><button type="button" class="grid-column-2 buy-sell-text btn ';
 		if (isBuy) {
@@ -542,6 +548,7 @@ var ScreenOps = {
 		MarketOpenPreSell: "MarketOpenPreSell",
 		MarketClosed: "MarketClosed",
 		Waiting: "Waiting",
+		GameOver: "GameOver",
 	},
 	StateBuildMethod: {
 		MarketOpenBuy: function () {
@@ -553,6 +560,9 @@ var ScreenOps = {
 		MarketClosed: function () {
 			ScreenOps.SwitchToClosedMarket();
 		},
+		GameOver: function () {
+			ScreenOps.SwitchToGameOver();
+		}
 	},
 	SwitchToMainMenu: function () {
 		let body = $('body');
@@ -571,6 +581,12 @@ var ScreenOps = {
 		});
 		joinGameButton.prop('disabled', false);
 		
+	},
+	SwitchToGameOver: function () {
+		ScreenOps.State = ScreenOps.States.GameOver;
+		let mainGrid = $(ConstHtmlIds.MainGrid);
+		mainGrid.empty();
+		mainGrid.append(HtmlGeneration.MakeGameOverScreen(CurrentData.Money));
 	},
 	SwitchToClosedMarket: function () {
 		ScreenOps.State = ScreenOps.States.MarketClosed;
@@ -846,8 +862,13 @@ var Presenter = {
 		Chart.register(ChartDataLabels);
 
 		// Don't show number when zero
+		//console.error('One time init:');
+		log(Chart.defaults.plugins.datalabels);
 		Chart.defaults.plugins.datalabels.display = function (ctx) {
 			return ctx.dataset.data[ctx.dataIndex] !== 0;
+		}
+		Chart.defaults.plugins.datalabels.formatter = function (value, context) {
+			return value !== null && value !== undefined ? value : null;
 		}
 		Chart.defaults.font.size = 36;
 	},
@@ -925,7 +946,7 @@ var Presenter = {
 					data: stockData.stockValues,
 					backgroundColor: stockData.stockColors,
 					borderColor: stockData.stockBorderColors,
-					borderWidth: 5
+					borderWidth: 5,
 				}
 			]
 		};
@@ -1066,10 +1087,8 @@ var Presenter = {
 		intervalId = setInterval(intervalFunc, intervalTime);
 	},
 	GetInventoryChartData: function () {
-		log('Getting inventory data');
-
 		let moneyColor = '#8a8a8a';
-		let moneyKey = 'Money';
+		let moneyKey = 'Cash';
 		let datasetObject = {};
 		let labels = [];
 
@@ -1078,7 +1097,7 @@ var Presenter = {
 			label: moneyKey,
 			data: [],
 			borderColor: moneyColor,
-			backgroundColor: moneyColor + 'B0',
+			backgroundColor: moneyColor + 'B0'
 		};
 		for (let stockName in CurrentData.StockValues) {
 			if (CurrentData.StockValues.hasOwnProperty(stockName)) {
@@ -1091,7 +1110,7 @@ var Presenter = {
 					label: stockName,
 					data: [],
 					borderColor: borderColor,
-					backgroundColor: backgroundColor + 'B0',
+					backgroundColor: backgroundColor + 'B0'
 				};
 			}
 		}
@@ -1122,7 +1141,6 @@ var Presenter = {
 						inventory.NetWorth += (amountHeld * shareWorth) / 100;
 					}
 				}
-
 				sortedUserInventories.push(inventory);
 			}
 		}
@@ -1147,28 +1165,6 @@ var Presenter = {
 				}
 			}
 		}
-		/*
-		for (let id in CurrentData.PlayerInventories) {
-			if (CurrentData.PlayerInventories.hasOwnProperty(id)) {
-				let inventory = CurrentData.PlayerInventories[id];
-
-				// Add username to labels
-				labels.push(inventory.username);
-
-				// Add money
-				datasetObject[moneyKey].data.push(inventory.money);
-
-				// Add stock holdings as worth, not shares
-				for (let stockName in inventory.holdings) {
-					if (inventory.holdings.hasOwnProperty(stockName)) {
-						let amountHeld = inventory.holdings[stockName];
-						let shareWorth = CurrentData.StockValues[stockName];
-						datasetObject[stockName].data.push((amountHeld * shareWorth) / 100);
-					}
-				}
-			}
-		}
-		*/
 		// Push datasets into an array
 		let datasets = [];
 		for (let assetName in datasetObject) {
@@ -1193,7 +1189,7 @@ var Presenter = {
 				showToolTips: false,
 				plugins: {
 					legend: {
-						display: false
+						display: true
 					}
 				},
 				tooltips: {

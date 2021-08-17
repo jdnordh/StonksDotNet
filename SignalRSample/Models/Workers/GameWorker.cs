@@ -17,6 +17,8 @@ namespace StonkTrader.Models.Workers
 		// TODO Use these ???
 		private readonly string m_gameId;
 		private readonly string m_gameToken;
+
+		//  TODO Make a dictionary of games instead of one.
 		private StonkTraderGame m_game;
 		private string m_creatorConnectionId;
 		private HubConnection m_connection;
@@ -80,7 +82,6 @@ namespace StonkTrader.Models.Workers
 
 		private async Task CreateGame(GameInitializerDto parameters, string creatorConnectionId)
 		{
-			var success = false;
 			if (m_game == null)
 			{
 				m_logger.Log(LogLevel.Information, "Creating game.");
@@ -94,10 +95,14 @@ namespace StonkTrader.Models.Workers
 
 				m_game = new StonkTraderGame(initializer, this);
 				m_creatorConnectionId = creatorConnectionId;
-				success = true;
+			}
+			else
+			{
+				await m_connection.InvokeAsync(GameWorkerResponses.GameCreatedResponse, creatorConnectionId, false);
+				return;
 			}
 
-			await m_connection.InvokeAsync(GameWorkerResponses.GameCreatedResponse, creatorConnectionId, success);
+			await m_connection.InvokeAsync(GameWorkerResponses.GameCreatedResponse, creatorConnectionId, true);
 		}
 
 		private async Task JoinGame(string connectionId, string username, bool isPlayer)
@@ -105,6 +110,7 @@ namespace StonkTrader.Models.Workers
 			if (m_game == null)
 			{
 				await m_connection.SendAsync(GameWorkerResponses.JoinGameFailed, connectionId);
+				return;
 			}
 			if (isPlayer)
 			{
@@ -215,6 +221,12 @@ namespace StonkTrader.Models.Workers
 
 		#region Player Id
 
+		private void ClearPlayerIdMaps()
+		{
+			m_connectionIdToPlayerIdMap.Clear();
+			m_playerIdConnectionIdMap.Clear();
+		}
+
 		private void UpdateConnectionId(string connectionId, string playerId)
 		{
 			m_playerIdConnectionIdMap[playerId] = connectionId;
@@ -277,10 +289,9 @@ namespace StonkTrader.Models.Workers
 		public async Task GameOver(PlayerInventoryCollectionDto inventoryCollectionDto)
 		{
 			m_logger.Log(LogLevel.Information, "Game over.");
+			ClearPlayerIdMaps();
 			m_game = null;
 			m_creatorConnectionId = null;
-			m_connectionIdToPlayerIdMap.Clear();
-			m_playerIdConnectionIdMap.Clear();
 			await m_connection.InvokeAsync(GameWorkerResponses.GameOver, inventoryCollectionDto);
 		}
 
@@ -313,7 +324,7 @@ namespace StonkTrader.Models.Workers
 
 		public static GameInitializerDto GetPrototypeGameInitializer()
 		{
-
+			/*
 			return new GameInitializerDto()
 			{
 				MarketOpenTimeInSeconds = 90,
@@ -330,8 +341,9 @@ namespace StonkTrader.Models.Workers
 					new StockDto("China", "#FFD700"),
 				}
 			};
+			*/
+
 			// Della config
-			/*
 			return new GameInitializerDto()
 			{
 				MarketOpenTimeInSeconds = 90,
