@@ -34,8 +34,6 @@ namespace StonkTrader.Models.Workers
 
 		protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 		{
-			//m_connection = new HubConnectionBuilder().WithUrl("https://localhost:44378/gamehub").Build();
-			//m_connection = new HubConnectionBuilder().WithUrl("http://stonks.com/gamehub").Build();
 			m_connection = new HubConnectionBuilder().WithUrl("http://localhost:5000/gamehub").Build();
 			m_connection.ServerTimeout = TimeSpan.FromMilliseconds(1800000);
 

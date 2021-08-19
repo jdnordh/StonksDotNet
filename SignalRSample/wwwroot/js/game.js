@@ -525,7 +525,6 @@ var HtmlGeneration =
 		return '<div class="center-absolute menu-grid"> <button id="startGame" class="btn btn-primary menu-button">Start Game</button></div>';
 	},
 	MakePresenter: function () {
-		//return '<div class="grid-observer-main grid-fill" id="mainGrid"><div id="presenter" class="fill"><h1 id="presenterText" class="grid-column-2 grid-row-1">Market Closed</h1></div><div class="chart-grid grid-row-2"><div class="chart-fill grid-row-1"><canvas id="presenterChart"></canvas></div><div class="roll-display grid-row-2"><h1 class="grid-column-1 roll-text" id="rollName"></h1><h1 class="grid-column-2 roll-text" id="rollFunc"></h1><h1 class="grid-column-3 roll-text" id="rollAmount"></h1></div></div></div>';
 		return '<div class="grid-observer-main grid-fill" id="mainGrid"><div id="presenter" class="fill"><h1 id="presenterText" class="grid-column-2 grid-row-1">Market Closed</h1></div><div class="chart-grid grid-row-2"><div id="chart-slide-container" class="grid-row-1"><div id="presenterChartSlider" class="chart-fill"><canvas class="canvas-chart" id="presenterChart"></canvas></div><div id="inventoryChartSlider" class="chart-fill"><canvas class="canvas-chart" id="inventoryChart"></canvas></div></div><div class="roll-display grid-row-2"><h1 class="grid-column-1 roll-text" id="rollName"></h1><h1 class="grid-column-2 roll-text" id="rollFunc"></h1><h1 class="grid-column-3 roll-text" id="rollAmount"></h1></div></div></div>';
 	},
 	MakeEndGameButton: function () {
@@ -862,14 +861,6 @@ var Presenter = {
 		Chart.register(ChartDataLabels);
 
 		// Don't show number when zero
-		//console.error('One time init:');
-		log(Chart.defaults.plugins.datalabels);
-		Chart.defaults.plugins.datalabels.display = function (ctx) {
-			return ctx.dataset.data[ctx.dataIndex] !== 0;
-		}
-		Chart.defaults.plugins.datalabels.formatter = function (value, context) {
-			return value !== null && value !== undefined ? value : null;
-		}
 		Chart.defaults.font.size = 36;
 	},
 	Chart: undefined,
@@ -1173,6 +1164,7 @@ var Presenter = {
 				datasets.push(dataset);
 			}
 		}
+
 		let data = {
 			labels: labels,
 			datasets: datasets
@@ -1190,6 +1182,15 @@ var Presenter = {
 				plugins: {
 					legend: {
 						display: true
+					},
+					datalabels: {
+						// TODO Fix that corner problem
+						formatter: function (value, context) {
+							return value !== null && value !== undefined ? '$' + value : null;
+						},
+						display: function (ctx) {
+							return ctx.dataset.data[ctx.dataIndex] !== 0;
+						}
 					}
 				},
 				tooltips: {

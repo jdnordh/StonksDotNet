@@ -93,6 +93,7 @@ namespace Models.Game
 					.1M,
 					.2M,
 					.3M,
+					//.5M
 				}
 			};
 			m_funcDie = new Die<Func<string, decimal, StockFunc>>
@@ -315,6 +316,7 @@ namespace Models.Game
 		/// </summary>
 		private async Task ResolveSplitOrCrash()
 		{
+			bool splitOrCrashed = false;
 			foreach (Stock stock in Stocks.Values)
 			{
 				// If stock crashes, remove all shares
@@ -324,6 +326,7 @@ namespace Models.Game
 					{
 						player.Holdings[stock.Name] = 0;
 					}
+					splitOrCrashed = true;
 					stock.ResetValue();
 				}
 				// If stock splits, double all shares
@@ -333,10 +336,18 @@ namespace Models.Game
 					{
 						player.Holdings[stock.Name] = player.Holdings[stock.Name] * 2;
 					}
+					splitOrCrashed = true;
 					stock.ResetValue();
 				}
 			}
 			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
+
+			if (splitOrCrashed)
+			{
+				// Wait to show that stock has crash or split
+				await Task.Delay(1000);
+			}
+
 			await m_gameEventCommunicator.GameMarketChanged(GetMarketDto());
 		}
 
