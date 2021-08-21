@@ -233,6 +233,9 @@ namespace Models.Game
 		{
 			IsMarketOpen = false;
 			await m_gameEventCommunicator.GameMarketChanged(GetMarketDto());
+
+			// TODO replace with timer
+			await Task.Delay(m_timeBetweenRollsInSeconds);
 			await Roll();
 		}
 
@@ -345,7 +348,8 @@ namespace Models.Game
 			if (splitOrCrashed)
 			{
 				// Wait to show that stock has crash or split
-				await Task.Delay(1000);
+				// TODO replace with timer
+				await Task.Delay(m_timeBetweenRollsInSeconds);
 			}
 
 			await m_gameEventCommunicator.GameMarketChanged(GetMarketDto());

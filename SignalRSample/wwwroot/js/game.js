@@ -488,6 +488,7 @@ var HtmlGeneration =
 		html += ' stock-text buy-sell-banner-button" id="';
 		html += id;
 		html += '">Buy</button></div >';
+		// TODO There is a bug when a stock name has a space in it
 		return {
 			html: html,
 			id: '#' + id
@@ -972,6 +973,12 @@ var Presenter = {
 		};
 		intervalId = setInterval(intervalFunc, intervalLength);
 	},
+	SwitchToPlayerInventoryChart: function () {
+		$(ConstHtmlIds.PresenterChartSlider).appendTo('#chart-slide-container');
+	},
+	SwitchToMarketChart: function () {
+		$(ConstHtmlIds.InventoryChartSlider).appendTo('#chart-slide-container');
+	},
 	SetMarketOpen: function (endTime, currentRound, totalRounds) {
 		let timerFunc = function (secondsRemaining) {
 			if (secondsRemaining > 0) {
@@ -983,35 +990,38 @@ var Presenter = {
 		};
 		Presenter.StartTimer(endTime, timerFunc, 1000);
 
-		let isMarketGraph = true;
+		// Initially switch to inventory chart
+		let chartState = 1;
+		Presenter.SwitchToPlayerInventoryChart();
+
 		let graphSwitchFunc = function (secondsRemaining) {
 			if (secondsRemaining > 0) {
-				if (isMarketGraph) {
-					// Show user graph
-					log('Switching to user inventories...')
-					isMarketGraph = false;
-					$(ConstHtmlIds.PresenterChartSlider).appendTo('#chart-slide-container');
+				if (chartState === 1) {
+					chartState = 2;
+					Presenter.SwitchToPlayerInventoryChart();
 				}
-				else {
+				else if (chartState === 2) {
+					// Wait a cyle to show inventories for longer
+					chartState = 3;
+				}
+				else if (chartState === 3) {
 					// Show market graph
-					log('Switching to market...')
-					isMarketGraph = true;
-					$(ConstHtmlIds.InventoryChartSlider).appendTo('#chart-slide-container');
+					chartState = 1;
+					Presenter.SwitchToMarketChart();
 				}
 			}
 			else {
 				// Show market graph
-				log('Switching to market...')
-				$(ConstHtmlIds.InventoryChartSlider).appendTo('#chart-slide-container');
+				Presenter.SwitchToMarketChart();
 			}
 		};
-		Presenter.StartTimer(endTime, graphSwitchFunc, 10000);
+		Presenter.StartTimer(endTime, graphSwitchFunc, 5000);
 	},
 	SetMarketClosed: function () {
 		$(ConstHtmlIds.PresenterText).text("Market Closed");
 
 		// Show market graph
-		$(ConstHtmlIds.InventoryChartSlider).appendTo('#chart-slide-container');
+		Presenter.SwitchToMarketChart();
 	},
 	SetGameOver: function () {
 		$(ConstHtmlIds.PresenterText).text("Game Over");
@@ -1078,7 +1088,7 @@ var Presenter = {
 		intervalId = setInterval(intervalFunc, intervalTime);
 	},
 	GetInventoryChartData: function () {
-		let moneyColor = '#8a8a8a';
+		let moneyColor = '#85bb65';
 		let moneyKey = 'Cash';
 		let datasetObject = {};
 		let labels = [];
@@ -1122,7 +1132,8 @@ var Presenter = {
 		for (let id in CurrentData.PlayerInventories) {
 			if (CurrentData.PlayerInventories.hasOwnProperty(id)) {
 				let inventory = CurrentData.PlayerInventories[id];
-				inventory.NetWorth = inventory.money;
+				inventory.NetWorth = 0;
+				inventory.NetWorth += inventory.money;
 
 				// Add stock holdings as worth, not shares
 				for (let stockName in inventory.holdings) {
@@ -1140,7 +1151,8 @@ var Presenter = {
 		// Add user data
 		for (let i = 0; i < sortedUserInventories.length; i++) {
 			let inventory = sortedUserInventories[i];
-
+			log('Adding inventory:');
+			log(inventory);
 			// Add username to labels
 			labels.push(inventory.username);
 
@@ -1186,10 +1198,14 @@ var Presenter = {
 					datalabels: {
 						// TODO Fix that corner problem
 						formatter: function (value, context) {
-							return value !== null && value !== undefined ? '$' + value : null;
+							if (value === null || value === undefined) {
+								return null;
+							}
+							return '$' + value;
 						},
 						display: function (ctx) {
-							return ctx.dataset.data[ctx.dataIndex] !== 0;
+							let value = Number(ctx.dataset.data[ctx.dataIndex]);
+							return value > 0;
 						}
 					}
 				},
@@ -1221,12 +1237,8 @@ var Presenter = {
 
 		for (let i = 0; i < inventoryData.datasets.length; ++i) {
 			for (let j = 0; j < inventoryData.datasets[i].data.length; ++j) {
-				if (chartData.datasets[i].data.length <= inventoryData.datasets[i].data.length) {
-					chartData.datasets[i].data.push(inventoryData.datasets[i].data[j]);
-				}
-				else {
-					chartData.datasets[i].data[j] = inventoryData.datasets[i].data[j];
-				}
+				// TODO Verify this works
+				chartData.datasets[i].data[j] = inventoryData.datasets[i].data[j];
 			}
 		}
 

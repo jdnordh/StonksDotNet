@@ -14,9 +14,6 @@ namespace StonkTrader.Models.Workers
 	public class GameWorker : BackgroundService, IGameEventCommunicator
 	{
 		private readonly ILogger<GameWorker> m_logger;
-		// TODO Use these ???
-		private readonly string m_gameId;
-		private readonly string m_gameToken;
 
 		//  TODO Make a dictionary of games instead of one.
 		private StonkTraderGame m_game;
@@ -135,7 +132,7 @@ namespace StonkTrader.Models.Workers
 
 		private async Task ReJoinGame(string connectionId, string playerId)
 		{
-			if (m_game == null || !m_game.IsStarted)
+			if (m_game == null)
 			{
 				await m_connection.SendAsync(GameWorkerResponses.JoinGameFailed, connectionId);
 				return;
@@ -297,8 +294,30 @@ namespace StonkTrader.Models.Workers
 
 		#region Game Defaults
 
+		// TODO There is a bug in the javascript that doesn't allow you to buy or sell stocks with a soace in their name
+
 		public static GameInitializerDto GetDefaultGameInitializer()
 		{
+			return new GameInitializerDto()
+			{
+				MarketOpenTimeInSeconds = 60,
+				RollTimeInSeconds = 2,
+				TimeBetweenRollsInSeconds = 2,
+				NumberOfRounds = 7,
+				RollsPerRound = 12,
+				StartingMoney = 5000,
+				IsPrototype = false,
+				Stocks = new[]
+				{
+					new StockDto("Property", "#228B22"),
+					new StockDto("Oil", "#4682B4"),
+					new StockDto("Dogecoin", "#FFD700"),
+					new StockDto("Bonds", "#cc6600"),
+					new StockDto("Industry", "#6e6a5f"),
+					new StockDto("Tech", "#e60000"),
+				}
+			};
+			/*
 			return new GameInitializerDto()
 			{
 				MarketOpenTimeInSeconds = 60,
@@ -318,11 +337,12 @@ namespace StonkTrader.Models.Workers
 					new StockDto("Grain", "#F0E68C"),
 				}
 			};
+			*/
 		}
 
 		public static GameInitializerDto GetPrototypeGameInitializer()
 		{
-			/*
+			
 			return new GameInitializerDto()
 			{
 				MarketOpenTimeInSeconds = 90,
@@ -334,13 +354,13 @@ namespace StonkTrader.Models.Workers
 				IsPrototype = true,
 				Stocks = new[]
 				{
-					new StockDto("Dogecoin", "#5cc3f7"),
+					new StockDto("Bitcoin", "#5cc3f7"),
 					new StockDto("Tesla", "#e60000"),
-					new StockDto("China", "#FFD700"),
+					new StockDto("Fishing", "#FFD700"),
 				}
 			};
-			*/
-
+			
+			/*
 			// Della config
 			return new GameInitializerDto()
 			{

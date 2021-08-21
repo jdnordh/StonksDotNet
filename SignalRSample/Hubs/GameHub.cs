@@ -214,7 +214,7 @@ namespace Hubs
 		/// <returns>A completed task.</returns>
 		public async Task JoinGameFailed(string connectionId)
 		{
-			await Clients.Client(connectionId).SendAsync(ClientMethods.GameNotJoined, "You suck");
+			await Clients.Client(connectionId).SendAsync(ClientMethods.GameNotJoined, "No game to join.");
 		}
 
 		#endregion
