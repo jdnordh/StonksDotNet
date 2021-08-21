@@ -310,8 +310,8 @@ namespace Models.Game
 					updatedPlayerInvectories.Add((player.ConnectionId, player.GetPlayerInvetory()));
 				}
 			}
-			PlayerInventoryCollectionDto inventoryDto = GetInventoryCollectionDto();
-			await m_gameEventCommunicator.PlayerInventoriesUpdated(inventoryDto);
+			PlayerInventoryCollectionDto inventoryCollectionDto = GetInventoryCollectionDto();
+			await m_gameEventCommunicator.PlayerInventoriesUpdated(inventoryCollectionDto);
 		}
 
 		/// <summary>
@@ -522,7 +522,7 @@ namespace Models.Game
 
 			foreach (KeyValuePair<string, Player> kvp in Players)
 			{
-				inventories.Add(kvp.Value.ConnectionId, kvp.Value.GetPlayerInvetory());
+				inventories.Add(kvp.Key, kvp.Value.GetPlayerInvetory());
 			}
 
 			return new PlayerInventoryCollectionDto(inventories);

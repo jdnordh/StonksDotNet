@@ -155,8 +155,11 @@ namespace StonkTrader.Models.Workers
 
 			m_logger.Log(LogLevel.Information, $"{player.Username} is re-joining game.");
 
-			// Update the player with the market
-			await m_connection.InvokeAsync(GameWorkerResponses.MarketUpdatedIndividual, connectionId, m_game.GetMarketDto());
+			// Update the player with the market if the game is open
+			if (m_game.IsStarted)
+			{
+				await m_connection.InvokeAsync(GameWorkerResponses.MarketUpdatedIndividual, connectionId, m_game.GetMarketDto());
+			}
 		}
 
 		private async Task StartGame(string creatorConnectionId)
@@ -263,7 +266,15 @@ namespace StonkTrader.Models.Workers
 		public async Task PlayerInventoriesUpdated(PlayerInventoryCollectionDto playerInventoryCollectionDto)
 		{
 			m_logger.Log(LogLevel.Information, "Player inventories updated.");
-			await m_connection.InvokeAsync(GameWorkerResponses.InventoriesUpdated, playerInventoryCollectionDto);
+
+			var inventories = new Dictionary<string, PlayerInventoryDto>();
+			foreach(KeyValuePair<string, PlayerInventoryDto> kvp in playerInventoryCollectionDto.Inventories)
+			{
+				inventories.Add(m_playerIdConnectionIdMap[kvp.Key], kvp.Value);
+			}
+
+			var updatedConnectionIdDto = new PlayerInventoryCollectionDto(inventories);
+			await m_connection.InvokeAsync(GameWorkerResponses.InventoriesUpdated, updatedConnectionIdDto);
 		}
 
 		/// <inheritdoc/>

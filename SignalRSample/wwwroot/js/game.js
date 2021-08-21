@@ -37,6 +37,10 @@ var Cookie = {
 
 //#endregion
 
+var Config = {
+	InventoryMarketChartSwitchTime: 10000,
+};
+
 var Audio = {
 	Up: new Audio('audio/up.mp3'),
 	Down: new Audio('audio/down.mp3'),
@@ -1001,10 +1005,6 @@ var Presenter = {
 					Presenter.SwitchToPlayerInventoryChart();
 				}
 				else if (chartState === 2) {
-					// Wait a cyle to show inventories for longer
-					chartState = 3;
-				}
-				else if (chartState === 3) {
 					// Show market graph
 					chartState = 1;
 					Presenter.SwitchToMarketChart();
@@ -1015,7 +1015,7 @@ var Presenter = {
 				Presenter.SwitchToMarketChart();
 			}
 		};
-		Presenter.StartTimer(endTime, graphSwitchFunc, 5000);
+		Presenter.StartTimer(endTime, graphSwitchFunc, Config.InventoryMarketChartSwitchTime);
 	},
 	SetMarketClosed: function () {
 		$(ConstHtmlIds.PresenterText).text("Market Closed");
@@ -1026,9 +1026,7 @@ var Presenter = {
 	SetGameOver: function () {
 		$(ConstHtmlIds.PresenterText).text("Game Over");
 		// Show user graph
-		// TODO Verify
-		log('Switching to user inventories...')
-		$(ConstHtmlIds.PresenterChartSlider).appendTo('#chart-slide-container');
+		Presenter.SwitchToPlayerInventoryChart();
 	},
 	ShowRoll: function (rollDto) {
 		let state = 0;
@@ -1237,7 +1235,6 @@ var Presenter = {
 
 		for (let i = 0; i < inventoryData.datasets.length; ++i) {
 			for (let j = 0; j < inventoryData.datasets[i].data.length; ++j) {
-				// TODO Verify this works
 				chartData.datasets[i].data[j] = inventoryData.datasets[i].data[j];
 			}
 		}
