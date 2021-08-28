@@ -1,4 +1,5 @@
 ﻿using Models.DataTransferObjects;
+using StonkTrader.Models.Game.Characters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,13 @@ namespace Models.Game
 	/// </summary>
 	public class StonkTraderGame
 	{
+		#region Constants
+
+		const int SecondsBetweenRolls = 2;
+		const int RollTimeInSeconds = 2;
+
+		#endregion
+
 		#region Fields
 
 		// Init fields
@@ -22,22 +30,19 @@ namespace Models.Game
 		private readonly int m_rollTimeInSeconds;
 		private readonly int m_timeBetweenRollsInSeconds;
 		private readonly IGameEventCommunicator m_gameEventCommunicator;
-		private readonly bool m_isPrototype;
 
 		// Rolling
-		private readonly Die<string> m_stockDie;
-		private readonly Die<decimal> m_amountDie;
-		private readonly Die<Func<string, decimal, StockFunc>> m_funcDie;
+		private List<List<Roll>> m_rolls;
+		private Roll m_currentRoll;
 
 		// Timers
 		private Timer m_marketTimer;
 		private Timer m_rollTimer;
 		private Timer m_rollPlayerDelayTimer;
-		private StockFunc m_currentStockFunc;
 
 		// Trackers
-		private int m_currentRound;
-		private int m_currentRoll;
+		private int m_currentRoundNumber;
+		private int m_currentRollNumber;
 
 		#endregion
 
@@ -62,13 +67,12 @@ namespace Models.Game
 			m_numberOfRollsPerRound = initializer.RollsPerRound;
 			m_startingMoney = initializer.StartingMoney;
 			m_marketOpenTimeInSeconds = initializer.MarketOpenTimeInSeconds;
-			m_rollTimeInSeconds = initializer.RollTimeInSeconds;
-			m_timeBetweenRollsInSeconds = initializer.TimeBetweenRollsInSeconds;
+			m_rollTimeInSeconds = RollTimeInSeconds;
+			m_timeBetweenRollsInSeconds = SecondsBetweenRolls;
 			m_gameEventCommunicator = gameEventCommunicator;
-			m_isPrototype = initializer.IsPrototype;
 
-			m_currentRound = 0;
-			m_currentRoll = 0;
+			m_currentRoundNumber = 0;
+			m_currentRollNumber = 0;
 
 			// Intialize timers
 			m_marketTimer = new Timer(m_marketOpenTimeInSeconds * 1000);
@@ -83,37 +87,11 @@ namespace Models.Game
 			m_rollPlayerDelayTimer.Elapsed += RollPlayerDelayTimerElapsed;
 			m_rollPlayerDelayTimer.AutoReset = false;
 
-			m_stockDie = new Die<string>() { Results = initializer.Stocks.Select(stock => stock.Name).ToList() };
-			m_amountDie = new Die<decimal>
-			{
-				Results = new List<decimal>
-				{
-					// TODO CHange this
-					//0.05M,
-					.1M,
-					.2M,
-					.3M,
-					//.5M
-				}
-			};
-			m_funcDie = new Die<Func<string, decimal, StockFunc>>
-			{
-				Results = new List<Func<string, decimal, StockFunc>>
-				{
-					(stock, percentAmount) =>
-					{
-						return new StockFunc(StockFuncType.Up, stock, percentAmount);
-					},
-					(stock, percentAmount) =>
-					{
-						return new StockFunc(StockFuncType.Down, stock, percentAmount);
-					},
-					(stock, percentAmount) =>
-					{
-						return new StockFunc(StockFuncType.Dividend, stock, percentAmount);
-					}
-				}
-			};
+			//m_afterMarketDelayTimer = new Timer(m_timeBetweenRollsInSeconds * 1000);
+			//m_afterMarketDelayTimer.Elapsed += RollTimerElapsed; 
+			//m_afterMarketDelayTimer.AutoReset = false;
+
+			GenerateRolls(initializer);
 
 			Stocks = new Dictionary<string, Stock>();
 			foreach (StockDto stockDto in initializer.Stocks)
@@ -123,6 +101,8 @@ namespace Models.Game
 			IsMarketOpen = false;
 			IsStarted = false;
 		}
+
+		#region Event Handlers
 
 		private async void RollTimerElapsed(object sender, System.Timers.ElapsedEventArgs e)
 		{
@@ -138,24 +118,24 @@ namespace Models.Game
 		{
 			// Do roll action after the presenter has shown it so clients don't get the update before it's on screen.
 			Func<Task> rollMethod = null;
-			switch (m_currentStockFunc.Type)
+			switch (m_currentRoll.Type)
 			{
-				case StockFuncType.Up:
+				case RollType.Up:
 				{
-					Stocks[m_currentStockFunc.StockName].IncreaseValue(m_currentStockFunc.PercentageAmount);
+					Stocks[m_currentRoll.StockName].IncreaseValue(m_currentRoll.PercentageAmount);
 					rollMethod = ResolveSplitOrCrash;
 					break;
 				}
-				case StockFuncType.Down:
+				case RollType.Down:
 				{
-					Stocks[m_currentStockFunc.StockName].DecreaseValue(m_currentStockFunc.PercentageAmount);
+					Stocks[m_currentRoll.StockName].DecreaseValue(m_currentRoll.PercentageAmount);
 					rollMethod = ResolveSplitOrCrash;
 					break;
 				}
-				case StockFuncType.Dividend:
+				case RollType.Dividend:
 				{
 					rollMethod = () => {
-						return PayDividends(m_currentStockFunc.StockName, m_currentStockFunc.PercentageAmount);
+						return PayDividends(m_currentRoll.StockName, m_currentRoll.PercentageAmount);
 					};
 					break;
 				}
@@ -165,25 +145,75 @@ namespace Models.Game
 
 		#endregion
 
+		#endregion
+
 		#region Initialization
+
+		private void GenerateRolls(GameInitializerDto initializer)
+		{
+			var stockDie = new Die<string>() { Results = initializer.Stocks.Select(stock => stock.Name).ToList() };
+			var amountDie = new Die<decimal>
+			{
+				Results = new List<decimal>
+				{
+					.1M,
+					.2M,
+					.3M,
+				}
+			};
+			var rollDie = new Die<Func<string, decimal, Roll>>
+			{
+				Results = new List<Func<string, decimal, Roll>>
+				{
+					(stock, percentAmount) =>
+					{
+						return new Roll(RollType.Up, stock, percentAmount);
+					},
+					(stock, percentAmount) =>
+					{
+						return new Roll(RollType.Down, stock, percentAmount);
+					},
+					(stock, percentAmount) =>
+					{
+						return new Roll(RollType.Dividend, stock, percentAmount);
+					}
+				}
+			};
+
+			m_rolls = new List<List<Roll>>();
+			for (int round = 0; round < m_numberOfRounds; round++)
+			{
+				m_rolls.Add(new List<Roll>());
+				for (int rollNum = 0; rollNum < m_numberOfRollsPerRound; rollNum++)
+				{
+					var stockName = stockDie.Roll();
+					var amount = amountDie.Roll();
+					var roll = rollDie.Roll();
+					var rollResult = roll(stockName, amount);
+
+					m_rolls[round].Add(rollResult);
+				}
+			}
+		}
 
 		/// <summary>
 		/// Add a player to the game.
 		/// </summary>
 		/// <param name="connectionId">The connection id.</param>
 		/// <param name="username">The username.</param>
+		/// <param name="characterId">The character id.</param>
 		/// <returns>The player's inventory.</returns>
-		public PlayerInventoryDto AddPlayer(string connectionId, string username)
+		public PlayerInventoryDto AddPlayer(string connectionId, string username, int characterId)
 		{
 			if (Players.ContainsKey(connectionId))
 			{
 				return null;
 			}
 			var playerId = GetNewPlayerId();
-			var player = new Player(playerId, connectionId, username, Stocks.Values.Select(stock => stock.Name).ToList())
-			{
-				Money = m_startingMoney
-			};
+			List<string> stockNames = GetStockNames();
+			var player = new Player(playerId, connectionId, username, m_startingMoney, stockNames, 
+				CharacterProvider.GetCharacterForId(characterId, stockNames));
+
 			Players.Add(playerId, player);
 			PlayerInventoryDto inventory = player.GetPlayerInvetory();
 			return inventory;
@@ -209,13 +239,13 @@ namespace Models.Game
 			{
 				return;
 			}
-			if (m_currentRound == m_numberOfRounds)
+			if (m_currentRoundNumber == m_numberOfRounds)
 			{
 				// Game is over
 				await EndGame();
 				return;
 			}
-			++m_currentRound;
+			++m_currentRoundNumber;
 			IsMarketOpen = true;
 
 			m_marketTimer.Start();
@@ -223,8 +253,6 @@ namespace Models.Game
 			var marketMiliseconds = m_marketOpenTimeInSeconds * 1000;
 			var marketEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + marketMiliseconds;
 			MarketDto marketDto = GetMarketDto();
-			marketDto.CurrentRound = m_currentRound;
-			marketDto.TotalRounds = m_numberOfRounds;
 			marketDto.MarketCloseTimeInMilliseconds = marketEndTime;
 			await m_gameEventCommunicator.GameMarketChanged(marketDto);
 		}
@@ -234,9 +262,7 @@ namespace Models.Game
 			IsMarketOpen = false;
 			await m_gameEventCommunicator.GameMarketChanged(GetMarketDto());
 
-			// TODO replace with timer
-			await Task.Delay(m_timeBetweenRollsInSeconds);
-			await Roll();
+			m_rollTimer.Start();
 		}
 
 		#endregion
@@ -248,20 +274,17 @@ namespace Models.Game
 		/// </summary>
 		private async Task Roll()
 		{
-			if (m_currentRoll == m_numberOfRollsPerRound)
+			if (m_currentRollNumber == m_numberOfRollsPerRound)
 			{
-				m_currentRoll = 0;
+				m_currentRollNumber = 0;
 				await OpenMarket();
 			}
 			else
 			{
 				// Do rolling
-				++m_currentRoll;
-				m_currentStockFunc = GetRollFunc();
-				MarketDto marketDto = GetMarketDto();
+				m_currentRoll = m_rolls[m_currentRoundNumber][m_currentRollNumber++];
 
-				marketDto.RollDto = new RollDto(m_currentStockFunc.StockName, m_currentStockFunc.Type.ToString(),
-					(int)(m_currentStockFunc.PercentageAmount * 100), m_rollTimeInSeconds);
+				MarketDto marketDto = GetMarketDto();
 
 				// Show roll on presenter
 				await m_gameEventCommunicator.GameRolled(marketDto);
@@ -274,19 +297,19 @@ namespace Models.Game
 			}
 		}
 
-		private StockFunc GetRollFunc()
+		/// <summary>
+		/// Previews the first roll of a round if the player has access to it.
+		/// </summary>
+		/// <param name="playerId">The player id.</param>
+		/// <returns>The roll dto, or null if not allowed.</returns>
+		public RollDto PreviewFirstRoll(string playerId)
 		{
-			var stockResult = m_stockDie.Roll();
-			var amountResult = m_amountDie.Roll();
-			if (m_isPrototype)
+			if (Players[playerId].Character.GetsFirstRollReveal && IsMarketOpen)
 			{
-				if (Stocks[stockResult].IsHalved && amountResult == 0.2M)
-				{
-					amountResult = 0.05M;
-				}
+				Roll roll = m_rolls[m_currentRoundNumber][0];
+				return RollToRollDto(roll);
 			}
-			Func<string, decimal, StockFunc> stockFuncResult = m_funcDie.Roll();
-			return stockFuncResult(stockResult, amountResult);
+			return null;
 		}
 
 		/// <summary>
@@ -306,7 +329,8 @@ namespace Models.Game
 				var holdings = player.Holdings[stock];
 				if (holdings > 0)
 				{
-					player.Money += (int)(holdings * percentage);
+					decimal specificPercentage = player.Character.GetDivedendAmount(Stocks[stock].Value, percentage);
+					player.Money += (int)(holdings * specificPercentage);
 					updatedPlayerInvectories.Add((player.ConnectionId, player.GetPlayerInvetory()));
 				}
 			}
@@ -325,10 +349,24 @@ namespace Models.Game
 				// If stock crashes, remove all shares
 				if (stock.Value <= 0)
 				{
+					// Reset stock holdings of crashed stock
+					int totalSharesLost = 0;
 					foreach (Player player in Players.Values)
 					{
+						totalSharesLost += player.Holdings[stock.Name];
 						player.Holdings[stock.Name] = 0;
 					}
+
+					// Payout rebates
+					if (totalSharesLost > 0)
+					{
+						foreach (Player player in Players.Values)
+						{
+							int crashRebate = player.Character.CalculateCrashRebateAmount(totalSharesLost);
+							player.Money += crashRebate;
+						}
+					}
+
 					splitOrCrashed = true;
 					stock.ResetValue();
 				}
@@ -348,8 +386,7 @@ namespace Models.Game
 			if (splitOrCrashed)
 			{
 				// Wait to show that stock has crash or split
-				// TODO replace with timer
-				await Task.Delay(m_timeBetweenRollsInSeconds);
+				await Task.Delay(m_timeBetweenRollsInSeconds * 1000);
 			}
 
 			await m_gameEventCommunicator.GameMarketChanged(GetMarketDto());
@@ -509,6 +546,12 @@ namespace Models.Game
 			{
 				PlayerInventories = GetInventoryCollectionDto()
 			};
+			marketDto.CurrentRound = m_currentRoundNumber;
+			marketDto.TotalRounds = m_numberOfRounds;
+			if (m_currentRoll != null)
+			{
+				marketDto.RollDto = RollToRollDto(m_currentRoll);
+			}
 			return marketDto;
 		}
 
@@ -535,6 +578,25 @@ namespace Models.Game
 		private string GetNewPlayerId()
 		{
 			return Guid.NewGuid().ToString();
+		}
+
+		/// <summary>
+		/// Get the stock names in a list.
+		/// </summary>
+		/// <returns></returns>
+		private List<string> GetStockNames()
+		{
+			return Stocks.Values.Select(stock => stock.Name).ToList();
+		}
+
+		/// <summary>
+		/// Gets a <see cref="RollDto"/> from a <see cref="Roll"/>.
+		/// </summary>
+		/// <param name="roll">The roll to convert.</param>
+		/// <returns>A roll dto.</returns>
+		private RollDto RollToRollDto(Roll roll)
+		{
+			return new RollDto(roll.StockName, roll.Type.ToString(), (int)(roll.PercentageAmount * 100), m_rollTimeInSeconds);
 		}
 
 		#endregion

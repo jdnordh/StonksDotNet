@@ -4,15 +4,15 @@ namespace Models.Game
 	/// <summary>
 	/// A function that modifies stock values, or pays divideds.
 	/// </summary>
-	public class StockFunc
+	public class Roll
 	{
-		public StockFuncType Type {get;}
+		public RollType Type {get;}
 
 		public string StockName { get; }
 
 		public decimal PercentageAmount { get; }
 
-		public StockFunc(StockFuncType type, string stockName, decimal percentageAmount)
+		public Roll(RollType type, string stockName, decimal percentageAmount)
 		{
 			Type = type;
 			StockName = stockName;
@@ -20,7 +20,7 @@ namespace Models.Game
 		}
 	}
 
-	public enum StockFuncType
+	public enum RollType
 	{
 		Up,
 		Down,

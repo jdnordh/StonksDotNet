@@ -13,6 +13,10 @@ namespace Models.DataTransferObjects
 		public bool IsOpen { get; }
 
 		[JsonInclude]
+		[JsonProperty("isHalfTime")]
+		public bool IsHalfTime { get; }
+
+		[JsonInclude]
 		[JsonProperty("rollDto")]
 		public RollDto RollDto { get; set; }
 

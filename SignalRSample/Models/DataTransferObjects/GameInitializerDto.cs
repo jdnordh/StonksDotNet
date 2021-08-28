@@ -1,7 +1,6 @@
 ﻿
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Models.DataTransferObjects
@@ -22,20 +21,12 @@ namespace Models.DataTransferObjects
 		public int RollsPerRound { get; set; }
 
 		[JsonInclude]
+		[JsonProperty("stockPreset")]
+		public int StockPreset { get; set; }
+
+		[JsonInclude]
 		[JsonProperty("numberOfRounds")]
 		public int NumberOfRounds { get; set; }
-
-		[JsonInclude]
-		[JsonProperty("rollTimeInSeconds")]
-		public int RollTimeInSeconds { get; set; }
-
-		[JsonInclude]
-		[JsonProperty("timeBetweenRollsInSeconds")]
-		public int TimeBetweenRollsInSeconds { get; set; }
-
-		[JsonInclude]
-		[JsonProperty("isPrototype")]
-		public bool IsPrototype { get; set; }
 
 		[JsonInclude]
 		[JsonProperty("stocks")]

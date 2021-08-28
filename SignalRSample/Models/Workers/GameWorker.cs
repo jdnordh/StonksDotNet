@@ -36,13 +36,15 @@ namespace StonkTrader.Models.Workers
 
 			m_connection.On<GameInitializerDto, string>(GameWorkerRequests.CreateGameRequest, CreateGame);
 
-			m_connection.On<string, string, bool>(GameWorkerRequests.JoinGameRequest, JoinGame);
+			m_connection.On<string, string, bool, int>(GameWorkerRequests.JoinGameRequest, JoinGame);
 
 			m_connection.On<string, string>(GameWorkerRequests.ReJoinGameRequest, ReJoinGame);
 
 			m_connection.On<string>(GameWorkerRequests.StartGameRequest, StartGame);
 
 			m_connection.On<string, string, bool, int>(GameWorkerRequests.TransactionRequest, DoTransaction);
+
+			m_connection.On<string>(GameWorkerRequests.RollPreviewRequest, RollPreview);
 
 			m_connection.On(GameWorkerRequests.GameEndRequest, EndGame);
 
@@ -75,20 +77,27 @@ namespace StonkTrader.Models.Workers
 
 		#region Request Handlers
 
+		private async Task RollPreview(string connectionId)
+		{
+			if (!m_connectionIdToPlayerIdMap.TryGetValue(connectionId, out var playerId))
+			{
+				return;
+			}
+			var rollDto = m_game.PreviewFirstRoll(playerId);
+			if (rollDto != null)
+			{
+				await m_connection.InvokeAsync(GameWorkerResponses.RollPreviewResponse, connectionId, rollDto);
+			}
+		}
+
 		private async Task CreateGame(GameInitializerDto parameters, string creatorConnectionId)
 		{
 			if (m_game == null)
 			{
 				m_logger.Log(LogLevel.Information, "Creating game.");
-				GameInitializerDto initializer = parameters.IsPrototype ? GetPrototypeGameInitializer() : GetDefaultGameInitializer();
-				initializer.MarketOpenTimeInSeconds = parameters.MarketOpenTimeInSeconds;
-				initializer.StartingMoney = parameters.StartingMoney;
-				initializer.RollsPerRound = parameters.RollsPerRound;
-				initializer.NumberOfRounds = parameters.NumberOfRounds;
-				initializer.RollTimeInSeconds = parameters.RollTimeInSeconds;
-				initializer.TimeBetweenRollsInSeconds = parameters.TimeBetweenRollsInSeconds;
+				parameters.Stocks = GetStockPreset(parameters.StockPreset);
 
-				m_game = new StonkTraderGame(initializer, this);
+				m_game = new StonkTraderGame(parameters, this);
 				m_creatorConnectionId = creatorConnectionId;
 			}
 			else
@@ -100,7 +109,7 @@ namespace StonkTrader.Models.Workers
 			await m_connection.InvokeAsync(GameWorkerResponses.GameCreatedResponse, creatorConnectionId, true);
 		}
 
-		private async Task JoinGame(string connectionId, string username, bool isPlayer)
+		private async Task JoinGame(string connectionId, string username, bool isPlayer, int characterId)
 		{
 			if (m_game == null)
 			{
@@ -110,7 +119,7 @@ namespace StonkTrader.Models.Workers
 			if (isPlayer)
 			{
 				m_logger.Log(LogLevel.Information, $"{username} is joining game.");
-				PlayerInventoryDto inventory = m_game.AddPlayer(connectionId, username);
+				PlayerInventoryDto inventory = m_game.AddPlayer(connectionId, username, characterId);
 				if (inventory == null)
 				{
 					return;
@@ -305,121 +314,82 @@ namespace StonkTrader.Models.Workers
 
 		#region Game Defaults
 
-		// TODO There is a bug in the javascript that doesn't allow you to buy or sell stocks with a soace in their name
+		// TODO There is a bug in the javascript that doesn't allow you to buy or sell stocks with a space in their name
 
-		public static GameInitializerDto GetDefaultGameInitializer()
+		public static StockDto[] GetStockPreset(int preset) 
 		{
-			return new GameInitializerDto()
+			switch (preset)
 			{
-				MarketOpenTimeInSeconds = 60,
-				RollTimeInSeconds = 2,
-				TimeBetweenRollsInSeconds = 2,
-				NumberOfRounds = 7,
-				RollsPerRound = 12,
-				StartingMoney = 5000,
-				IsPrototype = false,
-				Stocks = new[]
+				case 2:
 				{
-					new StockDto("Property", "#228B22"),
-					new StockDto("Oil", "#4682B4"),
-					new StockDto("Dogecoin", "#FFD700"),
-					new StockDto("Bonds", "#cc6600"),
-					new StockDto("Industry", "#6e6a5f"),
-					new StockDto("Tech", "#e60000"),
+					return new[]
+					{
+						new StockDto("Gold", "#FFD700"),
+						new StockDto("Silver", "#C0C0C0"),
+						new StockDto("Oil", "#4682B4"),
+						new StockDto("Bonds", "#228B22"),
+						new StockDto("Industrial", "#DA70D6"),
+						new StockDto("Grain", "#F0E68C"),
+					};
 				}
-			};
-			/*
-			return new GameInitializerDto()
-			{
-				MarketOpenTimeInSeconds = 60,
-				RollTimeInSeconds = 2,
-				TimeBetweenRollsInSeconds = 2,
-				NumberOfRounds = 7,
-				RollsPerRound = 12,
-				StartingMoney = 5000,
-				IsPrototype = false,
-				Stocks = new[]
+				case 3:
 				{
-					new StockDto("Gold", "#FFD700"),
-					new StockDto("Silver", "#C0C0C0"),
-					new StockDto("Oil", "#4682B4"),
-					new StockDto("Bonds", "#228B22"),
-					new StockDto("Industrial", "#DA70D6"),
-					new StockDto("Grain", "#F0E68C"),
+					return new[]
+					{
+						// TODO Update these
+						new StockDto("Gold", "#FFD700"),
+						new StockDto("Silver", "#C0C0C0"),
+						new StockDto("Oil", "#4682B4"),
+						new StockDto("Bonds", "#228B22"),
+						new StockDto("Industrial", "#DA70D6"),
+						new StockDto("Grain", "#F0E68C"),
+					};
 				}
-			};
-			*/
-		}
-
-		public static GameInitializerDto GetPrototypeGameInitializer()
-		{
-			
-			return new GameInitializerDto()
-			{
-				MarketOpenTimeInSeconds = 90,
-				RollTimeInSeconds = 2,
-				TimeBetweenRollsInSeconds = 2,
-				NumberOfRounds = 7,
-				RollsPerRound = 12,
-				StartingMoney = 7500,
-				IsPrototype = true,
-				Stocks = new[]
+				case 4:
 				{
-					new StockDto("Bitcoin", "#5cc3f7"),
-					new StockDto("Tesla", "#e60000"),
-					new StockDto("Fishing", "#FFD700"),
+					return new[]
+					{
+						new StockDto("Bitcoin", "#f2a900"),
+						new StockDto("Ethereum", "#3c3c3d"),
+						new StockDto("Dogecoin", "#e1b303"),
+					};
 				}
-			};
-			
-			/*
-			// Della config
-			return new GameInitializerDto()
-			{
-				MarketOpenTimeInSeconds = 90,
-				RollTimeInSeconds = 2,
-				TimeBetweenRollsInSeconds = 2,
-				NumberOfRounds = 7,
-				RollsPerRound = 12,
-				StartingMoney = 7500,
-				IsPrototype = true,
-				Stocks = new []
+				case 5:
 				{
-					new StockDto("Dogecoin", "#5cc3f7"),
-					new StockDto("Crayola", "#ff33cc"),
-					new StockDto("Twitch", "#6441a5"),
-					new StockDto("Reddit", "#ff471a"),
-					new StockDto("Memes", "#98FB98"),
-					new StockDto("YouTube", "#e60000"),
+					return new[]
+					{
+						new StockDto("USA", "#041E42"),
+						new StockDto("China", "#C8102E"),
+						new StockDto("India", "#FF8F1C"),
+						new StockDto("Germany", "#000000"),
+						new StockDto("UAE", "#009639"),
+					};
 				}
-			};
-			/*
-			return new GameInitializerDto()
-			{
-				MarketOpenTimeInSeconds = 90,
-				RollTimeInSeconds = 2,
-				TimeBetweenRollsInSeconds = 2,
-				NumberOfRounds = 7,
-				RollsPerRound = 12,
-				StartingMoney = 7500,
-				IsPrototype = true,
-				Stocks = new[]
+				case 6:
 				{
-					new StockDto("Tech", "#5cc3f7"),
-					new StockDto("Crypto", "#0df20d"),
-					//new StockDto("Oil", "#005cb3"),
-					new StockDto("Retail", "#800000"),
-					new StockDto("Art", "#98FB98"),
-					//new StockDto("Industrial", "#8B008B"),
-
-					//new StockDto("Power", "#e61919", true),
-					new StockDto("Gold", "#FFD700", true),
-					new StockDto("Silver", "#C0C0C0", true),
-					new StockDto("Bonds", "#4aad18", true),
-					new StockDto("Transport", "#66ffff", true),
-					//new StockDto("Grain", "#5cc3f7", true),
+					return new[]
+					{
+						new StockDto("Dogecoin", "#5cc3f7"),
+						new StockDto("Crayola", "#ff33cc"),
+						new StockDto("Twitch", "#6441a5"),
+						new StockDto("Reddit", "#ff471a"),
+						new StockDto("Memes", "#98FB98"),
+						new StockDto("YouTube", "#e60000"),
+					};
 				}
-			};
-			*/
+				default:
+				{
+					return new[]
+					{
+						new StockDto("Property", "#228B22"),
+						new StockDto("Oil", "#4682B4"),
+						new StockDto("Dogecoin", "#f2b90d"),
+						new StockDto("Bonds", "#8724a8"),
+						new StockDto("Industry", "#6e6a5f"),
+						new StockDto("Tech", "#990000"),
+					};
+				}
+			}
 		}
 
 		#endregion

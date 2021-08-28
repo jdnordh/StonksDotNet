@@ -217,13 +217,24 @@ namespace Hubs
 			await Clients.Client(connectionId).SendAsync(ClientMethods.GameNotJoined, "No game to join.");
 		}
 
+		/// <summary>
+		/// Called when a user previews a roll.
+		/// </summary>
+		/// <param name="connectionId">The connection id.</param>
+		/// <param name="connectionId">The roll dto.</param>
+		/// <returns>A completed task.</returns>
+		public async Task RollPreviewResponse(string connectionId, RollDto rollDto)
+		{
+			await Clients.Client(connectionId).SendAsync(ClientMethods.RollPreview, rollDto);
+		}
+		
 		#endregion
 
 		#region Communication with Clients
 
 		#region Game Creation and Joining
 
-		public async Task JoinGame(string username, bool isPlayer)
+		public async Task JoinGame(string username, bool isPlayer, int characterId)
 		{
 			if (!WorkerManager.Instance.WorkerExists)
 			{
@@ -231,7 +242,7 @@ namespace Hubs
 				return;
 			}
 
-			await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.JoinGameRequest, CurrentUserConnectionId, username, isPlayer);
+			await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.JoinGameRequest, CurrentUserConnectionId, username, isPlayer, characterId);
 		}
 
 		public async Task ReJoin(string playerId)
@@ -278,6 +289,15 @@ namespace Hubs
 		#endregion
 
 		#region Transactions
+
+		public async Task RequestRollPreview()
+		{
+			if (!WorkerManager.Instance.WorkerExists)
+			{
+				return;
+			}
+			await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.RollPreviewRequest, CurrentUserConnectionId);
+		}
 
 		public async Task RequestTransaction(string stockName, bool isBuy, int amount)
 		{

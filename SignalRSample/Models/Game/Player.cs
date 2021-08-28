@@ -1,4 +1,5 @@
 ﻿using Models.DataTransferObjects;
+using StonkTrader.Models.Game.Characters;
 using System.Collections.Generic;
 
 namespace Models.Game
@@ -20,12 +21,16 @@ namespace Models.Game
 
 		private List<string> m_stocks;
 
-		public Player(string id, string connectionId, string username, List<string> stocks)
+		public CharacterBase Character { get; }
+
+		public Player(string id, string connectionId, string username, int startingMoney, List<string> stocks, CharacterBase character)
 		{
 			Id = id;
 			ConnectionId = connectionId;
 			Username = username;
 			m_stocks = stocks;
+			Money = startingMoney;
+			Character = character;
 			ClearAllShares();
 		}
 
@@ -40,7 +45,7 @@ namespace Models.Game
 
 		public PlayerInventoryDto GetPlayerInvetory()
 		{
-			return new PlayerInventoryDto(Id, Money, Holdings, Username);
+			return new PlayerInventoryDto(Id, Money, Holdings, Username, Character.Id);
 		}
 	}
 }
