@@ -14,7 +14,7 @@ namespace Models.DataTransferObjects
 
 		[JsonInclude]
 		[JsonProperty("isHalfTime")]
-		public bool IsHalfTime { get; }
+		public bool IsHalfTime { get; set; }
 
 		[JsonInclude]
 		[JsonProperty("rollDto")]

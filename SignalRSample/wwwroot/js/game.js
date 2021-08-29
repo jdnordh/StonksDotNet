@@ -191,14 +191,16 @@ var Connection = {
 				Presenter.UpdateInventoryChart();
 				if (marketDto.isOpen) {
 					let marketEndTime = Number(marketDto.marketCloseTimeInMilliseconds);
-					Presenter.SetMarketOpen(marketEndTime, marketDto.currentRound, marketDto.totalRounds);
+					Presenter.SetMarketOpen(marketEndTime, marketDto.currentRound, marketDto.totalRounds, marketDto.isHalfTime);
 				}
 				else {
 					Presenter.SetMarketClosed();
 				}
 			}
 			else if (Connection.ClientType === Connection.ClientTypes.Player) {
-				if (marketDto.isOpen) {
+				let canParticipateInHalfTimeMarket = CurrentData.CharacterId === 2;
+				if ((marketDto.isOpen && !marketDto.isHalfTime) ||
+					(marketDto.isOpen && marketDto.isHalfTime && canParticipateInHalfTimeMarket)) {
 					ScreenOps.SwitchToOpenMarket(marketDto);
 				}
 				else {
@@ -527,7 +529,7 @@ var HtmlGeneration =
 		html += rollDto.stockName;
 		html += '</p><p class="grid-column-2 stock-text">';
 		html += rollDto.func;
-		html += '</p><p class="grid-column-3 stock-text">';
+		html += '</p><p class="grid-column-3 stock-text right-align-p">';
 		html += rollDto.amount;
 		html += '</p></div>';
 		return html;
@@ -732,6 +734,7 @@ var ScreenOps = {
 		let list = $(ConstHtmlIds.StockList);
 		list.empty();
 
+		// Add roll preview button if player has privileges
 		if (CurrentData.CharacterId === 1) {
 			list.append(HtmlGeneration.MakeRollPreviewButton());
 			$(ConstHtmlIds.RollPreviewButton).on(clickHandler, function () {
@@ -760,6 +763,14 @@ var ScreenOps = {
 		ScreenOps.State = ScreenOps.States.MarketOpenSell;
 		let list = $(ConstHtmlIds.StockList);
 		list.empty();
+
+		// Add roll preview button if player has privileges
+		if (CurrentData.CharacterId === 1) {
+			list.append(HtmlGeneration.MakeRollPreviewButton());
+			$(ConstHtmlIds.RollPreviewButton).on(clickHandler, function () {
+				Connection.RequestRollPreview();
+			});
+		}
 
 		for (let stockName in CurrentData.Holdings) {
 			if (CurrentData.Holdings.hasOwnProperty(stockName)) {
@@ -1094,12 +1105,6 @@ var Presenter = {
 						annotation2,
 						annotation3
 					},
-					//horizontalLine: [
-					//	{
-					//		dash: [10, 10],
-					//		y: 100,
-					//	}
-					//],
 				},
 				tooltips: {
 					enabled: false
@@ -1179,10 +1184,12 @@ var Presenter = {
 	SwitchToMarketChart: function () {
 		$(ConstHtmlIds.InventoryChartSlider).appendTo('#chart-slide-container');
 	},
-	SetMarketOpen: function (endTime, currentRound, totalRounds) {
+	SetMarketOpen: function (endTime, currentRound, totalRounds, isHalfTime) {
 		let timerFunc = function (secondsRemaining) {
 			if (secondsRemaining > 0) {
-				$(ConstHtmlIds.PresenterText).text('Round ' + currentRound + '/' + totalRounds + ' | Market Open for ' + secondsRemaining + 's');
+				let roundText = isHalfTime ? 'Half Time' : 'Round ' + (currentRound + 1) + '/' + totalRounds;
+				let displayText = roundText + ' | Market Open for ' + secondsRemaining + 's';
+				$(ConstHtmlIds.PresenterText).text(displayText);
 			}
 			else {
 				$(ConstHtmlIds.PresenterText).text("Market Closed");

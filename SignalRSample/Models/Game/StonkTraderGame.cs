@@ -37,10 +37,13 @@ namespace Models.Game
 
 		// Timers
 		private Timer m_marketTimer;
+		private Timer m_marketHalfTimer;
 		private Timer m_rollTimer;
 		private Timer m_rollPlayerDelayTimer;
 
-		// Trackers
+		/// <summary>
+		/// The current round number that starts at 0 for the first round.
+		/// </summary>
 		private int m_currentRoundNumber;
 		private int m_currentRollNumber;
 
@@ -53,6 +56,8 @@ namespace Models.Game
 		public bool IsStarted { get; private set; }
 
 		public bool IsMarketOpen { get; private set; }
+
+		public bool IsMarketHalfTime { get; private set; }
 
 		public Dictionary<string, Player> Players;
 
@@ -71,13 +76,16 @@ namespace Models.Game
 			m_timeBetweenRollsInSeconds = SecondsBetweenRolls;
 			m_gameEventCommunicator = gameEventCommunicator;
 
-			m_currentRoundNumber = 0;
+			m_currentRoundNumber = -1;
 			m_currentRollNumber = 0;
 
 			// Intialize timers
 			m_marketTimer = new Timer(m_marketOpenTimeInSeconds * 1000);
 			m_marketTimer.Elapsed += MarketTimerElapsed;
 			m_marketTimer.AutoReset = false;
+			m_marketHalfTimer = new Timer(m_marketOpenTimeInSeconds * 500);
+			m_marketHalfTimer.Elapsed += MarketTimerElapsed;
+			m_marketHalfTimer.AutoReset = false;
 
 			m_rollTimer = new Timer((m_rollTimeInSeconds + m_timeBetweenRollsInSeconds) * 1000);
 			m_rollTimer.Elapsed += RollTimerElapsed;
@@ -239,18 +247,23 @@ namespace Models.Game
 			{
 				return;
 			}
-			if (m_currentRoundNumber == m_numberOfRounds)
+			if (m_currentRoundNumber + 1 == m_numberOfRounds)
 			{
 				// Game is over
 				await EndGame();
 				return;
 			}
-			++m_currentRoundNumber;
 			IsMarketOpen = true;
+			if (!IsMarketHalfTime)
+			{
+				++m_currentRoundNumber;
+			}
 
+			//
 			m_marketTimer.Start();
 
-			var marketMiliseconds = m_marketOpenTimeInSeconds * 1000;
+			int timeMultiplier = IsMarketHalfTime ? 500 : 1000;
+			var marketMiliseconds = m_marketOpenTimeInSeconds * timeMultiplier;
 			var marketEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + marketMiliseconds;
 			MarketDto marketDto = GetMarketDto();
 			marketDto.MarketCloseTimeInMilliseconds = marketEndTime;
@@ -279,8 +292,18 @@ namespace Models.Game
 				m_currentRollNumber = 0;
 				await OpenMarket();
 			}
+			else if (m_currentRollNumber == (m_numberOfRollsPerRound / 2) && 
+				Players.Values.Where(p => p.Character.GetsHalfTimeTransaction).Any() &&
+				!IsMarketHalfTime && false)
+			{
+				// TODO This gets stuck
+				IsMarketHalfTime = true;
+				await OpenMarket();
+			}
 			else
 			{
+				IsMarketHalfTime = false;
+
 				// Do rolling
 				m_currentRoll = m_rolls[m_currentRoundNumber][m_currentRollNumber++];
 
@@ -306,6 +329,7 @@ namespace Models.Game
 		{
 			if (Players[playerId].Character.GetsFirstRollReveal && IsMarketOpen)
 			{
+				// TODO round number is 1 too large
 				Roll roll = m_rolls[m_currentRoundNumber][0];
 				return RollToRollDto(roll);
 			}
@@ -397,6 +421,44 @@ namespace Models.Game
 		#region Buy and Sell
 
 		/// <summary>
+		/// Check if a transaction is valid.
+		/// </summary>
+		/// <param name="playerId">The user id.</param>
+		/// <param name="stockName">The stock to buy.</param>
+		/// <param name="amount">The amount of stock to buy.</param>
+		/// <returns>True if the transaction is valid.</returns>
+		private bool IsTransactionValid(string playerId, string stockName, int amount)
+		{
+			if (!IsStarted)
+			{
+				return false;
+			}
+			if (!IsMarketOpen)
+			{
+				return false;
+			}
+			if (!Players.TryGetValue(playerId, out Player player))
+			{
+				// TODO Verify this needs an exception throw
+				throw new InvalidOperationException($"The user '{playerId}' was not present in the game.");
+			}
+			if (IsMarketHalfTime && !player.Character.GetsHalfTimeTransaction)
+			{
+				return false;
+			}
+			if (!Stocks.ContainsKey(stockName))
+			{
+				return false;
+			}
+			if (amount % 500 != 0)
+			{
+				return false;
+			}
+
+			return true;
+		}
+
+		/// <summary>
 		/// Determine if the given player can perform a proposed buy operation.
 		/// </summary>
 		/// <param name="playerId">The user id.</param>
@@ -405,19 +467,7 @@ namespace Models.Game
 		/// <returns>True if the operation is okay.</returns>
 		public bool IsBuyOkay(string playerId, string stockName, int amountToBuy)
 		{
-			if (!IsStarted)
-			{
-				return false;
-			}
-			if (!Players.ContainsKey(playerId))
-			{
-				throw new InvalidOperationException($"The user '{playerId}' was not present in the game.");
-			}
-			if (!Stocks.ContainsKey(stockName))
-			{
-				return false;
-			}
-			if (amountToBuy % 500 != 0)
+			if (!IsTransactionValid(playerId, stockName, amountToBuy))
 			{
 				return false;
 			}
@@ -455,19 +505,7 @@ namespace Models.Game
 		/// <returns>True if the operation is okay.</returns>
 		public bool IsSellOkay(string playerId, string stockName, int amountToSell)
 		{
-			if (!IsStarted)
-			{
-				return false;
-			}
-			if (!Players.ContainsKey(playerId))
-			{
-				throw new InvalidOperationException($"The user '{playerId}' was not present in the game.");
-			}
-			if (!Stocks.ContainsKey(stockName))
-			{
-				return false;
-			}
-			if (amountToSell % 500 != 0)
+			if (!IsTransactionValid(playerId, stockName, amountToSell))
 			{
 				return false;
 			}
@@ -548,6 +586,7 @@ namespace Models.Game
 			};
 			marketDto.CurrentRound = m_currentRoundNumber;
 			marketDto.TotalRounds = m_numberOfRounds;
+			marketDto.IsHalfTime = IsMarketHalfTime;
 			if (m_currentRoll != null)
 			{
 				marketDto.RollDto = RollToRollDto(m_currentRoll);

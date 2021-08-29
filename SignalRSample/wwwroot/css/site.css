@@ -252,8 +252,12 @@ p {
    font-size: 3vh;
 }
 
+.right-align-p{
+   text-align: right;
+}
+
 .buy-sell-div {
-    border-bottom: solid;
+   border-bottom: solid;
 }
 
 .buy-sell-buttons {
