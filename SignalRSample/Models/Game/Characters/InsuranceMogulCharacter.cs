@@ -7,7 +7,7 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class InsuranceMogulCharacter : CharacterBase
 	{
-		private const decimal RebateAmount = 0.5M;
+		private const decimal RebateAmount = 2M;
 		private const decimal RebateStockValue = 0.1M;
 
 		/// <summary>

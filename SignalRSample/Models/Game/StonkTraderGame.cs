@@ -247,20 +247,23 @@ namespace Models.Game
 			{
 				return;
 			}
-			if (m_currentRoundNumber + 1 == m_numberOfRounds)
+			if (m_currentRoundNumber + 1 == m_numberOfRounds && !IsMarketHalfTime)
 			{
 				// Game is over
 				await EndGame();
 				return;
 			}
 			IsMarketOpen = true;
-			if (!IsMarketHalfTime)
+
+			if (IsMarketHalfTime)
+			{
+				m_marketHalfTimer.Start();
+			}
+			else
 			{
 				++m_currentRoundNumber;
+				m_marketTimer.Start();
 			}
-
-			//
-			m_marketTimer.Start();
 
 			int timeMultiplier = IsMarketHalfTime ? 500 : 1000;
 			var marketMiliseconds = m_marketOpenTimeInSeconds * timeMultiplier;
@@ -273,6 +276,14 @@ namespace Models.Game
 		private async Task CloseMarket()
 		{
 			IsMarketOpen = false;
+
+			// Calculate rebates
+			foreach (Player player in Players.Values)
+			{
+				int crashRebate = player.Character.CalculateMarketRebateAmount(Stocks);
+				player.Money += crashRebate;
+			}
+
 			await m_gameEventCommunicator.GameMarketChanged(GetMarketDto());
 
 			m_rollTimer.Start();
@@ -281,6 +292,11 @@ namespace Models.Game
 		#endregion
 
 		#region Dice Rolling
+
+		private bool ShouldDoHalfTimeMarket
+		{
+			get => Players.Values.Where(p => p.Character.GetsHalfTimeTransaction).Any();
+		}
 
 		/// <summary>
 		/// Roll the dice.
@@ -292,9 +308,7 @@ namespace Models.Game
 				m_currentRollNumber = 0;
 				await OpenMarket();
 			}
-			else if (m_currentRollNumber == (m_numberOfRollsPerRound / 2) && 
-				Players.Values.Where(p => p.Character.GetsHalfTimeTransaction).Any() &&
-				!IsMarketHalfTime && false)
+			else if (m_currentRollNumber == (m_numberOfRollsPerRound / 2) && ShouldDoHalfTimeMarket && !IsMarketHalfTime)
 			{
 				// TODO This gets stuck
 				IsMarketHalfTime = true;

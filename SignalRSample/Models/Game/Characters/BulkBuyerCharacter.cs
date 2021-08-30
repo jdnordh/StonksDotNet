@@ -8,9 +8,9 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class BulkBuyerCharacter : CharacterBase
 	{
-		private const decimal RebateOverAmount = 0.9M;
+		private const decimal RebateMinValue = 1M;
 		private const int StockAmountToRebate = 4000;
-		private const decimal RebateAmount = 0.05M;
+		private const decimal RebateAmount = 0.2M;
 
 		/// <summary>
 		/// Constructor.
@@ -48,7 +48,7 @@ namespace StonkTrader.Models.Game.Characters
 			{
 				var stockName = kvp.Key;
 				var stock = kvp.Value;
-				if (stock.Value > RebateOverAmount && m_holdingChanges[stockName] > StockAmountToRebate)
+				if (stock.Value >= RebateMinValue && m_holdingChanges[stockName] > StockAmountToRebate)
 				{
 					decimal cost = m_holdingChanges[stockName] * stock.Value;
 					rebateAmount += cost * RebateAmount;

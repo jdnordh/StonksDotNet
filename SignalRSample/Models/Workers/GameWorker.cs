@@ -336,12 +336,11 @@ namespace StonkTrader.Models.Workers
 				{
 					return new[]
 					{
-						// TODO Update these
-						new StockDto("Gold", "#FFD700"),
-						new StockDto("Silver", "#C0C0C0"),
-						new StockDto("Oil", "#4682B4"),
-						new StockDto("Bonds", "#228B22"),
-						new StockDto("Industrial", "#DA70D6"),
+						new StockDto("Stone", "#3d475c"),
+						new StockDto("Wood", "#993300"),
+						new StockDto("Iron", "#d9d9d9"),
+						new StockDto("Water", "#0099ff"),
+						new StockDto("Livestock", "#ff6666"),
 						new StockDto("Grain", "#F0E68C"),
 					};
 				}
@@ -350,8 +349,8 @@ namespace StonkTrader.Models.Workers
 					return new[]
 					{
 						new StockDto("Bitcoin", "#f2a900"),
-						new StockDto("Ethereum", "#3c3c3d"),
-						new StockDto("Dogecoin", "#e1b303"),
+						new StockDto("Ethereum", "#ff5050"),
+						new StockDto("Dogecoin", "#00e6e6"),
 					};
 				}
 				case 5:
@@ -370,7 +369,7 @@ namespace StonkTrader.Models.Workers
 					return new[]
 					{
 						new StockDto("Dogecoin", "#5cc3f7"),
-						new StockDto("Crayola", "#ff33cc"),
+						new StockDto("Snapchat", "#FFFC00"),
 						new StockDto("Twitch", "#6441a5"),
 						new StockDto("Reddit", "#ff471a"),
 						new StockDto("Memes", "#98FB98"),

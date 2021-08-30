@@ -580,7 +580,7 @@ var HtmlGeneration =
 	},
 	MakeCharacterSelectMenu: function () {
 		// TODO Move this into a razor page
-		return '<div class="center-absolute menu-character-container"><div class="menu-character-select-grid"><h1>Select Your Character</h1><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">Inside Trader</h2><p class="grid-row-2">This character allows you to see the first roll of every round before it is rolled.</p></div><button id="selectCharacter1" class="btn btn-primary grid-column-2">Select</button></div><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">Day Trader</h2><p class="grid-row-2">This character can make additional trades half way through a closed market.</p></div><button id="selectCharacter2" class="btn btn-primary grid-column-2">Select</button></div><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">Master of the Hold</h2><p class="grid-row-2">This character gets paid 5% more dividends.</p></div><button id="selectCharacter3" class="btn btn-primary grid-column-2">Select</button></div><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">High Roller</h2><p class="grid-row-2">This character gets a 10% rebate on all buys of stocks under 50.</p></div><button id="selectCharacter4" class="btn btn-primary grid-column-2">Select</button></div><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">Bulk Buyer</h2><p class="grid-row-2">This character gets a 5% rebate on all buys of more than 4000 shares on stocks over 90.</p></div><button id="selectCharacter5" class="btn btn-primary grid-column-2">Select</button></div><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">Insurance Mogul</h2><p class="grid-row-2">This character gets a 5% bonus for all players shares that are lost during a stock crash.</p></div><button id="selectCharacter6" class="btn btn-primary grid-column-2">Select</button></div></div></div>';
+		return '<div class="center-absolute menu-character-container"><div class="menu-character-select-grid"><h1>Select Your Character</h1><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">Inside Trader</h2><p class="grid-row-2">This character allows you to see the first roll of every round before it is rolled.</p></div><button id="selectCharacter1" class="btn btn-primary grid-column-2">Select</button></div><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">Day Trader</h2><p class="grid-row-2">This character can make additional trades half way through a closed market.</p></div><button id="selectCharacter2" class="btn btn-primary grid-column-2">Select</button></div><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">Master of the Hold</h2><p class="grid-row-2">This character gets paid 5% more dividends.</p></div><button id="selectCharacter3" class="btn btn-primary grid-column-2">Select</button></div><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">High Roller</h2><p class="grid-row-2">This character gets a 25% rebate on all buys of stocks valued 50 or under.</p></div><button id="selectCharacter4" class="btn btn-primary grid-column-2">Select</button></div><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">Bulk Buyer</h2><p class="grid-row-2">This character gets a 20% rebate on all buys of more than 4000 shares on stocks valued 100 or over.</p></div><button id="selectCharacter5" class="btn btn-primary grid-column-2">Select</button></div><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">Insurance Mogul</h2><p class="grid-row-2">This character gets a 20% cash bonus for all shares that are lost during a stock crash.</p></div><button id="selectCharacter6" class="btn btn-primary grid-column-2">Select</button></div></div></div>';
 	},
 	MakeStartGameMenu: function () {
 		return '<div class="center-absolute menu-grid"> <button id="startGame" class="btn btn-primary menu-button">Start Game</button></div>';
@@ -598,7 +598,7 @@ var HtmlGeneration =
 		return '<div class="grid-player-main grid-fill" id="mainGrid"></div>';
 	},
 	MakeParametersMenu: function () {
-		return '<div class="scrollviewer-vertical"><div class="grid-input-parameters"><label for="marketOpenTime" class="menu-text">Market Open Time (s): 60</label><input id="marketOpenTime" autocomplete="off" type="range" min="10" max="120" step="2" class="menu-text" value="60"/><label for="startingMoney" class="menu-text">Starting Money: 5000</label><input id="startingMoney" autocomplete="off" type="range" class="menu-text" min="1000" max="100000" step="1000" value="5000"/><label for="rollsPerRound" class="menu-text">Rolls per Round: 10</label><input id="rollsPerRound" autocomplete="off" type="range" min="2" max="36" step="2" class="menu-text" value="10"/><label for="rounds" class="menu-text">Rounds: 5</label><input id="rounds" autocomplete="off" type="range" min="1" max="36" class="menu-text" value="5"/><label for="stockPresets" class="menu-text">Stock Preset: 1</label><input id="stockPresets" autocomplete="off" type="range" min="1" max="6" class="menu-text" value="1"/><br/><button id="createGameWithParameters" class="btn btn-primary menu-button">Create Game</button></div></div>';
+		return '<div class="scrollviewer-vertical"><div class="grid-input-parameters"><label for="marketOpenTime" class="menu-text">Market Open Time (s): 60</label><input id="marketOpenTime" autocomplete="off" type="range" min="10" max="120" step="2" class="menu-text" value="60"/><label for="startingMoney" class="menu-text">Starting Money: 5000</label><input id="startingMoney" autocomplete="off" type="range" class="menu-text" min="1000" max="100000" step="1000" value="5000"/><label for="rollsPerRound" class="menu-text">Rolls per Round: 10</label><input id="rollsPerRound" autocomplete="off" type="range" min="2" max="36" step="2" class="menu-text" value="10"/><label for="rounds" class="menu-text">Rounds: 5</label><input id="rounds" autocomplete="off" type="range" min="1" max="36" class="menu-text" value="5"/><label for="stockPresets" class="menu-text">Stock Preset: Modern (6)</label><input id="stockPresets" autocomplete="off" type="range" min="1" max="6" class="menu-text" value="1"/><br/><button id="createGameWithParameters" class="btn btn-primary menu-button">Create Game</button></div></div>';
 	},
 }
 
@@ -940,8 +940,27 @@ var ScreenOps = {
 		$(ConstHtmlIds.ParamRounds).on('input', function () {
 			$('label[for=rounds]').text('Rounds: ' + this.value);
 		})
+		let getPresetName = function (preset) {
+			switch (Number(preset)) {
+				case 1:
+					return "Modern (6)";
+				case 2:
+					return "Classic (6)";
+				case 3:
+					return "Ancient (6)";
+				case 4:
+					return "Crypto (3)";
+				case 5:
+					return "Countries (5)";
+				case 6:
+					return "Memes (6)";
+				default:
+					return preset;
+			}
+		};
 		$(ConstHtmlIds.ParamStockPresets).on('input', function () {
-			$('label[for=stockPresets]').text('Stock Preset: ' + this.value);
+			let name = getPresetName(this.value);
+			$('label[for=stockPresets]').text('Stock Preset: ' + name);
 		})
 	},
 	ShowEndGameButton: function () {

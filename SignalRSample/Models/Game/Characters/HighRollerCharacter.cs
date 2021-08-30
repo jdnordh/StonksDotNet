@@ -8,8 +8,8 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class HighRollerCharacter : CharacterBase
 	{
-		private const decimal RebateUnderAmount = 0.5M;
-		private const decimal RebateAmount = 0.1M;
+		private const decimal RebateMaxValue = 0.5M;
+		private const decimal RebateAmount = 0.25M;
 
 		/// <summary>
 		/// Constructor.
@@ -47,7 +47,7 @@ namespace StonkTrader.Models.Game.Characters
 			{
 				var stockName = kvp.Key;
 				var stock = kvp.Value;
-				if (stock.Value < RebateUnderAmount && m_holdingChanges[stockName] > 0)
+				if (stock.Value <= RebateMaxValue && m_holdingChanges[stockName] > 0)
 				{
 					decimal cost = m_holdingChanges[stockName] * stock.Value;
 					rebateAmount += cost * RebateAmount;
