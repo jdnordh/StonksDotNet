@@ -1,0 +1,22 @@
+﻿@page
+@model StonkTrader.Pages.Game.CharactersModel
+
+<div class="center-absolute menu-character-container">
+	<div class="menu-character-select-grid">
+		<h1>Select Your Character</h1>
+		@foreach(var kvp in Model.Characters)
+		{
+			<div class="character-card">
+				<div class="character-text-grid grid-column-1">
+					<h2 class="grid-row-1">
+						@Html.DisplayFor(m => kvp.Value.Name)
+					</h2>
+					<p class="grid-row-2">
+						@Html.DisplayFor(m => kvp.Value.Description)
+					</p>
+				</div>
+				<button id="selectCharacter1" class="btn btn-primary grid-column-2">Select</button>
+			</div>
+		}
+	</div>
+</div>

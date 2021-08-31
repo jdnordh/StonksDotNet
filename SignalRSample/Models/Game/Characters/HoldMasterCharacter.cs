@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-
+﻿
 namespace StonkTrader.Models.Game.Characters
 {
 	/// <summary>
@@ -7,13 +6,7 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class HoldMasterCharacter : CharacterBase
 	{
-		/// <summary>
-		/// Constructor.
-		/// </summary>
-		/// <param name="stocks">The stocks in the game.</param>
-		public HoldMasterCharacter(IEnumerable<string> stocks) : base(stocks)
-		{
-		}
+		private const decimal ExtraDividendPercentage = 0.1M;
 
 		#region Properties
 
@@ -21,6 +14,11 @@ namespace StonkTrader.Models.Game.Characters
 		/// The name of this chacter.
 		/// </summary>
 		public override string Name => "Master of the Hold";
+
+		/// <summary>
+		/// The name of this chacter.
+		/// </summary>
+		public override string Description => $"This character gets paid {Num(ExtraDividendPercentage * 100)}% more dividends.";
 
 		/// <summary>
 		/// The id of this chacter.
@@ -39,7 +37,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// <returns>The adjusted amout.</returns>
 		public override decimal GetDivedendAmount(decimal stockValue, decimal originalDiv)
 		{
-			return originalDiv + 0.05M;
+			return originalDiv + ExtraDividendPercentage;
 		}
 
 		#endregion

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-
+﻿
 namespace StonkTrader.Models.Game.Characters
 {
 	/// <summary>
@@ -7,20 +6,17 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class InsideTraderCharacter : CharacterBase
 	{
-		/// <summary>
-		/// Constructor.
-		/// </summary>
-		/// <param name="stocks">The stocks in the game.</param>
-		public InsideTraderCharacter(IEnumerable<string> stocks) : base(stocks)
-		{
-		}
-
 		#region Properties
 
 		/// <summary>
 		/// The name of this chacter.
 		/// </summary>
 		public override string Name => "Inside Trader";
+
+		/// <summary>
+		/// The name of this chacter.
+		/// </summary>
+		public override string Description => "This character allows you to see the first roll of every round before it is rolled.";
 
 		/// <summary>
 		/// The id of this chacter.

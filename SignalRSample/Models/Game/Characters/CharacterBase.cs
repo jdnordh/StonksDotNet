@@ -1,5 +1,6 @@
 ﻿using Models.DataTransferObjects;
 using Models.Game;
+using System;
 using System.Collections.Generic;
 
 namespace StonkTrader.Models.Game.Characters
@@ -9,20 +10,8 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public abstract class CharacterBase
 	{
-		protected Dictionary<string, int> m_holdingChanges;
-
-		/// <summary>
-		/// Constructor.
-		/// </summary>
-		/// <param name="stocks">The stocks in the game.</param>
-		protected CharacterBase(IEnumerable<string> stocks)
-		{
-			m_holdingChanges = new Dictionary<string, int>();
-			foreach (var stock in stocks)
-			{
-				m_holdingChanges.Add(stock, 0);
-			}
-		}
+		protected Dictionary<string, int> m_holdingChanges = new Dictionary<string, int>();
+		protected readonly static Func<decimal, string> Num = (d) => d.ToString("N0");
 
 		#region Properties
 
@@ -30,6 +19,11 @@ namespace StonkTrader.Models.Game.Characters
 		/// The name of this chacter.
 		/// </summary>
 		public abstract string Name { get; }
+
+		/// <summary>
+		/// The description of this chacter.
+		/// </summary>
+		public abstract string Description { get; }
 
 		/// <summary>
 		/// The id of this chacter.
@@ -51,6 +45,19 @@ namespace StonkTrader.Models.Game.Characters
 		#region Public Methods
 
 		/// <summary>
+		/// Initializes the character for the start of a market.
+		/// </summary>
+		/// <param name="stocks">The stocks in the game.</param>
+		public void SetStocksForStartOfMarket(IEnumerable<string> stocks)
+		{
+			m_holdingChanges.Clear();
+			foreach (var stock in stocks)
+			{
+				m_holdingChanges.Add(stock, 0);
+			}
+		}
+
+		/// <summary>
 		/// Gets the divedend amount for this character.
 		/// </summary>
 		/// <param name="stockValue">The value of the stock that is dividending.</param>
@@ -68,8 +75,7 @@ namespace StonkTrader.Models.Game.Characters
 		public void RecordTransaction(PlayerTransactionDto dto)
 		{
 			int amount = dto.StockAmount;
-			amount *= dto.IsBuyTransaction ? 1 : -1;
-			m_holdingChanges[dto.StockName] += amount;
+			m_holdingChanges[dto.StockName] += amount * (dto.IsBuyTransaction ? 1 : -1);
 		}
 
 		/// <summary>

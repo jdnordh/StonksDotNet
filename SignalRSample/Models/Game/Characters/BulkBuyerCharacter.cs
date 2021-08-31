@@ -12,20 +12,17 @@ namespace StonkTrader.Models.Game.Characters
 		private const int StockAmountToRebate = 4000;
 		private const decimal RebateAmount = 0.2M;
 
-		/// <summary>
-		/// Constructor.
-		/// </summary>
-		/// <param name="stocks">The stocks in the game.</param>
-		public BulkBuyerCharacter(IEnumerable<string> stocks) : base(stocks)
-		{
-		}
-
 		#region Properties
 
 		/// <summary>
 		/// The name of this chacter.
 		/// </summary>
 		public override string Name => "Bulk Buyer";
+
+		/// <summary>
+		/// The name of this chacter.
+		/// </summary>
+		public override string Description => $"This character gets a {Num(RebateAmount * 100)}% rebate on all buys of more than {Num(StockAmountToRebate)} shares on stocks valued {Num(RebateMinValue * 100)} or over.";
 
 		/// <summary>
 		/// The id of this chacter.

@@ -1,6 +1,4 @@
 ﻿
-using System.Collections.Generic;
-
 namespace StonkTrader.Models.Game.Characters
 {
 	/// <summary>
@@ -8,20 +6,17 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class DayTraderCharacter : CharacterBase
 	{
-		/// <summary>
-		/// Constructor.
-		/// </summary>
-		/// <param name="stocks">The stocks in the game.</param>
-		public DayTraderCharacter(IEnumerable<string> stocks) : base(stocks)
-		{
-		}
-
 		#region Properties
 
 		/// <summary>
 		/// The name of this chacter.
 		/// </summary>
 		public override string Name => "Day Trader";
+
+		/// <summary> 
+		/// The name of this chacter.
+		/// </summary>
+		public override string Description => "This character can make additional trades half way through a closed market.";
 
 		/// <summary>
 		/// The id of this chacter.

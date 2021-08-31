@@ -11,20 +11,17 @@ namespace StonkTrader.Models.Game.Characters
 		private const decimal RebateMaxValue = 0.5M;
 		private const decimal RebateAmount = 0.25M;
 
-		/// <summary>
-		/// Constructor.
-		/// </summary>
-		/// <param name="stocks">The stocks in the game.</param>
-		public HighRollerCharacter(IEnumerable<string> stocks) : base(stocks)
-		{
-		}
-
 		#region Properties
 
 		/// <summary>
 		/// The name of this chacter.
 		/// </summary>
 		public override string Name => "High Roller";
+
+		/// <summary>
+		/// The name of this chacter.
+		/// </summary>
+		public override string Description => $"This character gets a {Num(RebateAmount * 100)}% rebate on all buys of stocks valued {Num(RebateMaxValue * 100)} or under.";
 
 		/// <summary>
 		/// The id of this chacter.

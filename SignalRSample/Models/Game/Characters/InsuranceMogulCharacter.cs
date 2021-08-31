@@ -7,16 +7,7 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class InsuranceMogulCharacter : CharacterBase
 	{
-		private const decimal RebateAmount = 2M;
-		private const decimal RebateStockValue = 0.1M;
-
-		/// <summary>
-		/// Constructor.
-		/// </summary>
-		/// <param name="stocks">The stocks in the game.</param>
-		public InsuranceMogulCharacter(IEnumerable<string> stocks) : base(stocks)
-		{
-		}
+		private const decimal CashBonusPercentage = 0.2M;
 
 		#region Properties
 
@@ -24,6 +15,11 @@ namespace StonkTrader.Models.Game.Characters
 		/// The name of this chacter.
 		/// </summary>
 		public override string Name => "Insurance Mogul";
+
+		/// <summary>
+		/// The name of this chacter.
+		/// </summary>
+		public override string Description => $"This character gets a {Num(CashBonusPercentage * 100)}% bonus for all players shares that are lost during a stock crash.";
 
 		/// <summary>
 		/// The id of this chacter.
@@ -41,7 +37,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// <returns>The rebate amount.</returns>
 		public override int CalculateCrashRebateAmount(int totalSharesLost)
 		{
-			return (int)(totalSharesLost * RebateStockValue * RebateAmount);
+			return (int)(totalSharesLost * CashBonusPercentage);
 		}
 
 		#endregion

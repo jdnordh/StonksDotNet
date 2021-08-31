@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-
+﻿
 namespace StonkTrader.Models.Game.Characters
 {
 	/// <summary>
@@ -7,13 +6,6 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class DefaultCharacter : CharacterBase
 	{
-		/// <summary>
-		/// Constructor.
-		/// </summary>
-		/// <param name="stocks">The stocks in the game.</param>
-		public DefaultCharacter(IEnumerable<string> stocks) : base(stocks)
-		{
-		}
 
 		#region Properties
 
@@ -21,6 +13,11 @@ namespace StonkTrader.Models.Game.Characters
 		/// The name of this chacter.
 		/// </summary>
 		public override string Name => "Default";
+
+		/// <summary>
+		/// The name of this chacter.
+		/// </summary>
+		public override string Description => "The default character.";
 
 		/// <summary>
 		/// The id of this chacter.

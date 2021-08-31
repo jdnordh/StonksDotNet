@@ -173,14 +173,14 @@ namespace Models.Game
 			{
 				Results = new List<Func<string, decimal, Roll>>
 				{
-					(stock, percentAmount) =>
-					{
-						return new Roll(RollType.Up, stock, percentAmount);
-					},
-					(stock, percentAmount) =>
-					{
-						return new Roll(RollType.Down, stock, percentAmount);
-					},
+					//(stock, percentAmount) =>
+					//{
+					//	return new Roll(RollType.Up, stock, percentAmount);
+					//},
+					//(stock, percentAmount) =>
+					//{
+					//	return new Roll(RollType.Down, stock, percentAmount);
+					//},
 					(stock, percentAmount) =>
 					{
 						return new Roll(RollType.Dividend, stock, percentAmount);
@@ -220,7 +220,7 @@ namespace Models.Game
 			var playerId = GetNewPlayerId();
 			List<string> stockNames = GetStockNames();
 			var player = new Player(playerId, connectionId, username, m_startingMoney, stockNames, 
-				CharacterProvider.GetCharacterForId(characterId, stockNames));
+				CharacterProvider.GetCharacterForId(characterId));
 
 			Players.Add(playerId, player);
 			PlayerInventoryDto inventory = player.GetPlayerInvetory();
@@ -255,6 +255,11 @@ namespace Models.Game
 			}
 			IsMarketOpen = true;
 
+			foreach(Player player in Players.Values)
+			{
+				player.Character.SetStocksForStartOfMarket(GetStockNames());
+			}
+
 			if (IsMarketHalfTime)
 			{
 				m_marketHalfTimer.Start();
@@ -283,7 +288,7 @@ namespace Models.Game
 				int crashRebate = player.Character.CalculateMarketRebateAmount(Stocks);
 				player.Money += crashRebate;
 			}
-
+			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
 			await m_gameEventCommunicator.GameMarketChanged(GetMarketDto());
 
 			m_rollTimer.Start();
@@ -507,6 +512,8 @@ namespace Models.Game
 			var cost = Stocks[stockName].GetValueOfAmount(amountToBuy);
 			player.Money -= cost;
 			player.Holdings[stockName] += amountToBuy;
+			player.Character.RecordTransaction(new PlayerTransactionDto(true, amountToBuy, stockName));
+
 			return player.GetPlayerInvetory();
 		}
 
@@ -544,6 +551,8 @@ namespace Models.Game
 			var soldFor = Stocks[stockName].GetValueOfAmount(amountToSell);
 			player.Holdings[stockName] -= amountToSell;
 			player.Money += soldFor;
+			player.Character.RecordTransaction(new PlayerTransactionDto(false, amountToSell, stockName));
+
 			return player.GetPlayerInvetory();
 		}
 
