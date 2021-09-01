@@ -173,14 +173,14 @@ namespace Models.Game
 			{
 				Results = new List<Func<string, decimal, Roll>>
 				{
-					//(stock, percentAmount) =>
-					//{
-					//	return new Roll(RollType.Up, stock, percentAmount);
-					//},
-					//(stock, percentAmount) =>
-					//{
-					//	return new Roll(RollType.Down, stock, percentAmount);
-					//},
+					(stock, percentAmount) =>
+					{
+						return new Roll(RollType.Up, stock, percentAmount);
+					},
+					(stock, percentAmount) =>
+					{
+						return new Roll(RollType.Down, stock, percentAmount);
+					},
 					(stock, percentAmount) =>
 					{
 						return new Roll(RollType.Dividend, stock, percentAmount);

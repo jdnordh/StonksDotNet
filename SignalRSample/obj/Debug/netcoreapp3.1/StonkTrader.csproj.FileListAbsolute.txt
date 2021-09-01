@@ -135,3 +135,4 @@ D:\Repos\Stonks\SignalRSample\bin\Debug\netcoreapp3.1\Microsoft.AspNetCore.Http.
 D:\Repos\Stonks\SignalRSample\bin\Debug\netcoreapp3.1\Microsoft.AspNetCore.SignalR.Client.dll
 D:\Repos\Stonks\SignalRSample\obj\Debug\netcoreapp3.1\StonkTrader.GeneratedMSBuildEditorConfig.editorconfig
 D:\Repos\Stonks\SignalRSample\obj\Debug\netcoreapp3.1\Razor\Pages\Game\Characters.cshtml.g.cs
+D:\Repos\Stonks\SignalRSample\obj\Debug\netcoreapp3.1\Razor\Pages\Game\CreateGame.cshtml.g.cs
