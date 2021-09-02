@@ -1,7 +1,7 @@
 ﻿@page
 @model StonkTrader.Pages.Game.CharactersModel
 
-<div class="center-absolute menu-character-container">
+<div id="menu-character-container" class="center-absolute">
 	<div class="menu-character-select-grid">
 		<h1>Select Your Character</h1>
 		@foreach(var kvp in Model.Characters)
@@ -15,7 +15,10 @@
 						@Html.DisplayFor(m => kvp.Value.Description)
 					</p>
 				</div>
-				<button id="selectCharacter1" class="btn btn-primary grid-column-2">Select</button>
+				@{ 
+					string buttonId = $"selectCharacter{kvp.Value.Id}";
+				}
+				<button id="@buttonId" class="btn btn-primary grid-column-2">Select</button>
 			</div>
 		}
 	</div>

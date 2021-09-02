@@ -436,17 +436,6 @@ var ConstHtmlIds =
 	RollPreviewButton: "#rollPreviewBtn",
 }
 
-var HtmlCache = {
-	CharacterMenu: "",
-	GetCharacterMenu: function () {
-		// TODO
-		//$.get("/Game/Characters", function (data) {
-		//	let dataBody = $(data).find('body');
-		//	HtmlCache.CharacterMenu = $(data).find('body').html();
-		//});
-	},
-};
-
 var HtmlGeneration =
 {
 	MakePreBuyScreen: function (stockName) {
@@ -588,9 +577,6 @@ var HtmlGeneration =
 	},
 	MakeJoinMenu: function () {
 		return '<div class="center-absolute menu-join-grid"><div class="menu-sub-grid"><label for="username" class="menu-text">Username (0/12):</label><input autocomplete="off" type="text" maxlength="12" class="menu-text" id="username"/></div><button id="joinGame" class="btn btn-primary grid-row-2 menu-button">Join Game</button></div>';
-	},
-	MakeCharacterSelectMenu: function () {
-		return '<div class="center-absolute menu-character-container"><div class="menu-character-select-grid"><h1>Select Your Character</h1><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">Inside Trader</h2><p class="grid-row-2">This character allows you to see the first roll of every round before it is rolled.</p></div><button id="selectCharacter1" class="btn btn-primary grid-column-2">Select</button></div><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">Day Trader</h2><p class="grid-row-2">This character can make additional trades half way through a closed market.</p></div><button id="selectCharacter2" class="btn btn-primary grid-column-2">Select</button></div><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">Master of the Hold</h2><p class="grid-row-2">This character gets paid 10% more dividends.</p></div><button id="selectCharacter3" class="btn btn-primary grid-column-2">Select</button></div><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">High Roller</h2><p class="grid-row-2">This character gets a 25% rebate on all buys of stocks valued 50 or under.</p></div><button id="selectCharacter4" class="btn btn-primary grid-column-2">Select</button></div><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">Bulk Buyer</h2><p class="grid-row-2">This character gets a 20% rebate on all buys of more than 4000 shares on stocks valued 100 or over.</p></div><button id="selectCharacter5" class="btn btn-primary grid-column-2">Select</button></div><div class="character-card"><div class="character-text-grid grid-column-1"><h2 class="grid-row-1">Insurance Mogul</h2><p class="grid-row-2">This character gets a 20% cash bonus for all shares that are lost during a stock crash.</p></div><button id="selectCharacter6" class="btn btn-primary grid-column-2">Select</button></div></div></div>';
 	},
 	MakeStartGameMenu: function () {
 		return '<div class="center-absolute menu-grid"> <button id="startGame" class="btn btn-primary menu-button">Start Game</button></div>';
@@ -899,14 +885,17 @@ var ScreenOps = {
 	SwitchToCharacterSelectMenu: function () {
 		let body = $('body');
 		body.empty();
-		body.append(HtmlGeneration.MakeCharacterSelectMenu());
-
-		// Attach handlers
-		for (let i = 1; i <= 6; i++) {
-			$(ConstHtmlIds.SelectCharacter + i).on(clickHandler, function () {
-				Connection.JoinGame(CurrentData.Username, i);
-			});
-		}
+		body.load('/Game/Characters #menu-character-container', function () {
+			// Attach handlers
+			log('Characters loaded callback');
+			let characterAmount = 6;
+			for (let i = 1; i <= characterAmount; i++) {
+				$(ConstHtmlIds.SelectCharacter + i).on(clickHandler, function () {
+					log('Selecting character: ' + i);
+					Connection.JoinGame(CurrentData.Username, i);
+				});
+			}
+		});
 	},
 	SwitchToWaitingMenu: function () {
 		ScreenOps.State = ScreenOps.States.Waiting;
@@ -1478,6 +1467,8 @@ var Presenter = {
 
 $(document).ready(function () {
 	clickHandler = ("ontouchstart" in window ? "touchend" : "click");
+
+	HtmlCache.GetCharacterMenu();
 
 	// Disable buttons until server connection is established
 	$(ConstHtmlIds.CreateGame).prop('disabled', true);
