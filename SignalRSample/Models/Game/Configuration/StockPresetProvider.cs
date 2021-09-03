@@ -88,12 +88,12 @@ namespace StonkTrader.Models.Game.Configuration
 						Name = "Planets",
 						Stocks = new[]
 						{
-							new StockDto("Mars", "#c1440e"),
-							new StockDto("Earth", "#FFCC33"),
-							new StockDto("Pluto", "#f6ddbd"),
-							new StockDto("Neptune", "#3E54E8"),
-							new StockDto("Uranus", "#94e3f2"),
 							new StockDto("Sun", "#FFCC33"),
+							new StockDto("Earth", "#68cc25"),
+							new StockDto("Mars", "#c1440e"),
+							new StockDto("Uranus", "#94e3f2"),
+							new StockDto("Neptune", "#3E54E8"),
+							new StockDto("Pluto", "#f6ddbd"),
 						}
 					}
 				},

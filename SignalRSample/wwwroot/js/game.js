@@ -582,7 +582,7 @@ var HtmlGeneration =
 		return '<div class="center-absolute menu-grid"> <button id="startGame" class="btn btn-primary menu-button">Start Game</button></div>';
 	},
 	MakePresenter: function () {
-		return '<div class="grid-observer-main grid-fill" id="mainGrid"><div id="presenter" class="fill"><h1 id="presenterText" class="grid-column-2 grid-row-1">Market Closed</h1></div><div class="chart-grid grid-row-2"><div id="chart-slide-container" class="grid-row-1"><div id="presenterChartSlider" class="chart-fill"><canvas class="canvas-chart" id="presenterChart"></canvas></div><div id="inventoryChartSlider" class="chart-fill"><canvas class="canvas-chart" id="inventoryChart"></canvas></div></div><div class="roll-display grid-row-2"><h1 class="grid-column-1 roll-text" id="rollName"></h1><h1 class="grid-column-2 roll-text" id="rollFunc"></h1><h1 class="grid-column-3 roll-text" id="rollAmount"></h1></div></div></div>';
+		return '<div class="grid-observer-main grid-fill" id="mainGrid"> <div id="presenter" class="fill"> <h1 id="presenterText" class="grid-column-2 grid-row-1">Market Closed</h1> </div><div class="chart-grid grid-row-2"> <div id="chart-slide-container" class="grid-row-1"> <div id="inventoryChartSlider" class="chart-fill"> <canvas class="canvas-chart" id="inventoryChart"></canvas> </div><div id="presenterChartSlider" class="chart-fill"> <canvas class="canvas-chart" id="presenterChart"></canvas> </div></div><div class="roll-display grid-row-2"> <h1 class="grid-column-1 roll-text" id="rollName"></h1> <h1 class="grid-column-2 roll-text" id="rollFunc"></h1> <h1 class="grid-column-3 roll-text" id="rollAmount"></h1> </div></div></div>';
 	},
 	MakeEndGameButton: function () {
 		return '<button class="btn btn-primary menu-button" id="endGameButton">End Game</button>';
@@ -1092,6 +1092,13 @@ var Presenter = {
 		body.empty();
 		body.append(HtmlGeneration.MakePresenter());
 
+		// Create inventory chart
+		let inventoryConfig = Presenter.GetInventoryChartConfig(Presenter.GetInventoryChartData());
+		let inventoryCanvas = document.getElementById(ConstHtmlIds.InventoryChart);
+		let inventoryCtx = inventoryCanvas.getContext('2d');
+		Presenter.InventoryChart = new Chart(inventoryCtx, inventoryConfig);
+
+		// Create market chart
 		let stockData = Presenter.GetChartData();
 		let canvas = document.getElementById(ConstHtmlIds.PresenterChart);
 		let ctx = canvas.getContext('2d');
@@ -1109,12 +1116,6 @@ var Presenter = {
 		};
 		let config = Presenter.GetChartConfig(data);
 		Presenter.Chart = new Chart(ctx, config);
-
-		// Create inventory chart
-		let inventoryConfig = Presenter.GetInventoryChartConfig(Presenter.GetInventoryChartData());
-		let inventoryCanvas = document.getElementById(ConstHtmlIds.InventoryChart);
-		let inventoryCtx = inventoryCanvas.getContext('2d');
-		Presenter.InventoryChart = new Chart(inventoryCtx, inventoryConfig);
 
 	},
 	UpdateChart: function () {
