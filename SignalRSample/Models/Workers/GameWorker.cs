@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Models.DataTransferObjects;
 using Models.Game;
+using StonkTrader.Models.Game.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -95,7 +96,7 @@ namespace StonkTrader.Models.Workers
 			if (m_game == null)
 			{
 				m_logger.Log(LogLevel.Information, "Creating game.");
-				parameters.Stocks = GetStockPreset(parameters.StockPreset);
+				parameters.Stocks = StockPresetProvider.GetPreset(parameters.StockPreset).Stocks;
 
 				m_game = new StonkTraderGame(parameters, this);
 				m_creatorConnectionId = creatorConnectionId;
@@ -308,87 +309,6 @@ namespace StonkTrader.Models.Workers
 			m_game = null;
 			m_creatorConnectionId = null;
 			await m_connection.InvokeAsync(GameWorkerResponses.GameOver, inventoryCollectionDto);
-		}
-
-		#endregion
-
-		#region Game Defaults
-
-		// TODO There is a bug in the javascript that doesn't allow you to buy or sell stocks with a space in their name
-
-		public static StockDto[] GetStockPreset(int preset) 
-		{
-			switch (preset)
-			{
-				case 2:
-				{
-					return new[]
-					{
-						new StockDto("Gold", "#FFD700"),
-						new StockDto("Silver", "#C0C0C0"),
-						new StockDto("Oil", "#4682B4"),
-						new StockDto("Bonds", "#228B22"),
-						new StockDto("Industrial", "#DA70D6"),
-						new StockDto("Grain", "#F0E68C"),
-					};
-				}
-				case 3:
-				{
-					return new[]
-					{
-						new StockDto("Stone", "#3d475c"),
-						new StockDto("Wood", "#993300"),
-						new StockDto("Iron", "#d9d9d9"),
-						new StockDto("Water", "#0099ff"),
-						new StockDto("Livestock", "#ff6666"),
-						new StockDto("Grain", "#F0E68C"),
-					};
-				}
-				case 4:
-				{
-					return new[]
-					{
-						new StockDto("Bitcoin", "#f2a900"),
-						new StockDto("Ethereum", "#ff5050"),
-						new StockDto("Dogecoin", "#00e6e6"),
-					};
-				}
-				case 5:
-				{
-					return new[]
-					{
-						new StockDto("USA", "#041E42"),
-						new StockDto("China", "#C8102E"),
-						new StockDto("India", "#FF8F1C"),
-						new StockDto("Germany", "#000000"),
-						new StockDto("UAE", "#009639"),
-					};
-				}
-				case 6:
-				{
-					return new[]
-					{
-						new StockDto("Dogecoin", "#5cc3f7"),
-						new StockDto("Snapchat", "#FFFC00"),
-						new StockDto("Twitch", "#6441a5"),
-						new StockDto("Reddit", "#ff471a"),
-						new StockDto("Memes", "#98FB98"),
-						new StockDto("YouTube", "#e60000"),
-					};
-				}
-				default:
-				{
-					return new[]
-					{
-						new StockDto("Property", "#228B22"),
-						new StockDto("Oil", "#4682B4"),
-						new StockDto("Dogecoin", "#f2b90d"),
-						new StockDto("Bonds", "#8724a8"),
-						new StockDto("Industry", "#6e6a5f"),
-						new StockDto("Tech", "#990000"),
-					};
-				}
-			}
 		}
 
 		#endregion

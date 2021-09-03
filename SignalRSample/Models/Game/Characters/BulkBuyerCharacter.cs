@@ -9,7 +9,7 @@ namespace StonkTrader.Models.Game.Characters
 	public class BulkBuyerCharacter : CharacterBase
 	{
 		private const decimal RebateMinValue = 1M;
-		private const int StockAmountToRebate = 4000;
+		private const int CashAmountToRebate = 4000;
 		private const decimal RebateAmount = 0.2M;
 
 		#region Properties
@@ -22,7 +22,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// <summary>
 		/// The name of this chacter.
 		/// </summary>
-		public override string Description => $"This character gets a {Num(RebateAmount * 100)}% rebate on all buys of more than {Num(StockAmountToRebate)} shares on stocks valued {Num(RebateMinValue * 100)} or over.";
+		public override string Description => $"This character gets a {Num(RebateAmount * 100)}% rebate on all buys of more than ${Num(CashAmountToRebate)} on stocks valued {Num(RebateMinValue * 100)} or over.";
 
 		/// <summary>
 		/// The id of this chacter.
@@ -44,10 +44,10 @@ namespace StonkTrader.Models.Game.Characters
 			foreach(KeyValuePair<string, Stock> kvp in stockValues)
 			{
 				var stockName = kvp.Key;
-				var stock = kvp.Value;
-				if (stock.Value >= RebateMinValue && m_holdingChanges[stockName] > StockAmountToRebate)
+				Stock stock = kvp.Value;
+				var cost = m_holdingChanges[stockName] * stock.Value;
+				if (stock.Value >= RebateMinValue && cost >= CashAmountToRebate)
 				{
-					decimal cost = m_holdingChanges[stockName] * stock.Value;
 					rebateAmount += cost * RebateAmount;
 				}
 			}

@@ -593,9 +593,6 @@ var HtmlGeneration =
 	MakeEmptyGameplayGrid: function () {
 		return '<div class="grid-player-main grid-fill" id="mainGrid"></div>';
 	},
-	MakeParametersMenu: function () {
-		return '<div class="scrollviewer-vertical"><div class="grid-input-parameters"><label for="marketOpenTime" class="menu-text">Market Open Time (s): 60</label><input id="marketOpenTime" autocomplete="off" type="range" min="10" max="120" step="2" class="menu-text" value="60"/><label for="startingMoney" class="menu-text">Starting Money: 5000</label><input id="startingMoney" autocomplete="off" type="range" class="menu-text" min="1000" max="100000" step="1000" value="5000"/><label for="rollsPerRound" class="menu-text">Rolls per Round: 10</label><input id="rollsPerRound" autocomplete="off" type="range" min="2" max="36" step="2" class="menu-text" value="10"/><label for="rounds" class="menu-text">Rounds: 5</label><input id="rounds" autocomplete="off" type="range" min="1" max="36" class="menu-text" value="5"/><label for="stockPresets" class="menu-text">Stock Preset: Modern (6)</label><input id="stockPresets" autocomplete="off" type="range" min="1" max="6" class="menu-text" value="1"/><br/><button id="createGameWithParameters" class="btn btn-primary menu-button">Create Game</button></div></div>';
-	},
 }
 
 var ScreenOps = {
@@ -850,7 +847,6 @@ var ScreenOps = {
 				shouldDisable = false;
 			}
 			//let validText = shouldDisable ? 'not valid' : 'valid';
-			//log('Input ' + username + ' is ' + validText);
 			$(ConstHtmlIds.JoinGame).prop('disabled', shouldDisable);
 		};
 
@@ -907,60 +903,61 @@ var ScreenOps = {
 	SwitchToParametersMenu: function () {
 		let body = $('body');
 		body.empty();
-		body.append(HtmlGeneration.MakeParametersMenu());
+		body.load('/Game/CreateGame #parameters-menu', function () {
+			// Attach handlers
+			log('CreateGame loaded callback');
+			$(ConstHtmlIds.CreateGameWithParameters).on(clickHandler, function () {
+				let marketTime = Number($(ConstHtmlIds.ParamMarketOpenTime).val());
+				let startingMoney = Number($(ConstHtmlIds.ParamStartingMoney).val());
+				let rollsPerRound = Number($(ConstHtmlIds.ParamRollsPerRound).val());
+				let rounds = Number($(ConstHtmlIds.ParamRounds).val());
+				let stockPreset = Number($(ConstHtmlIds.ParamStockPresets).val());
 
-		// Attach handlers
-		$(ConstHtmlIds.CreateGameWithParameters).on(clickHandler, function () {
-			let marketTime = Number($(ConstHtmlIds.ParamMarketOpenTime).val());
-			let startingMoney = Number($(ConstHtmlIds.ParamStartingMoney).val());
-			let rollsPerRound = Number($(ConstHtmlIds.ParamRollsPerRound).val());
-			let rounds = Number($(ConstHtmlIds.ParamRounds).val());
-			let stockPreset = Number($(ConstHtmlIds.ParamStockPresets).val());
+				let params = {
+					marketOpenTimeInSeconds: marketTime,
+					startingMoney: startingMoney,
+					rollsPerRound: rollsPerRound,
+					numberOfRounds: rounds,
+					stockPreset: stockPreset,
+				};
+				Connection.CreateGame(params);
+			});
 
-			let params = {
-				marketOpenTimeInSeconds: marketTime,
-				startingMoney: startingMoney,
-				rollsPerRound: rollsPerRound,
-				numberOfRounds: rounds,
-				stockPreset: stockPreset,
+			$(ConstHtmlIds.ParamMarketOpenTime).on('input', function () {
+				$('label[for=marketOpenTime]').text('Market Open Time: ' + this.value + 's');
+			})
+			$(ConstHtmlIds.ParamStartingMoney).on('input', function () {
+				$('label[for=startingMoney]').text('Starting Money: $' + this.value);
+			})
+			$(ConstHtmlIds.ParamRollsPerRound).on('input', function () {
+				$('label[for=rollsPerRound]').text('Rolls per Round: ' + this.value);
+			})
+			$(ConstHtmlIds.ParamRounds).on('input', function () {
+				$('label[for=rounds]').text('Rounds: ' + this.value);
+			})
+			let getPresetName = function (preset) {
+				switch (Number(preset)) {
+					case 1:
+						return "Modern (6)";
+					case 2:
+						return "Classic (6)";
+					case 3:
+						return "Ancient (6)";
+					case 4:
+						return "Crypto (3)";
+					case 5:
+						return "Countries (5)";
+					case 6:
+						return "Planets (6)";
+					default:
+						return preset;
+				}
 			};
-			Connection.CreateGame(params);
+			$(ConstHtmlIds.ParamStockPresets).on('input', function () {
+				let name = getPresetName(this.value);
+				$('label[for=stockPresets]').text('Stock Preset: ' + name);
+			})
 		});
-
-		$(ConstHtmlIds.ParamMarketOpenTime).on('input', function () {
-			$('label[for=marketOpenTime]').text('Market Open Time: ' + this.value + 's');
-		})
-		$(ConstHtmlIds.ParamStartingMoney).on('input', function () {
-			$('label[for=startingMoney]').text('Starting Money: $' + this.value);
-		})
-		$(ConstHtmlIds.ParamRollsPerRound).on('input', function () {
-			$('label[for=rollsPerRound]').text('Rolls per Round: ' + this.value);
-		})
-		$(ConstHtmlIds.ParamRounds).on('input', function () {
-			$('label[for=rounds]').text('Rounds: ' + this.value);
-		})
-		let getPresetName = function (preset) {
-			switch (Number(preset)) {
-				case 1:
-					return "Modern (6)";
-				case 2:
-					return "Classic (6)";
-				case 3:
-					return "Ancient (6)";
-				case 4:
-					return "Crypto (3)";
-				case 5:
-					return "Countries (5)";
-				case 6:
-					return "Memes (6)";
-				default:
-					return preset;
-			}
-		};
-		$(ConstHtmlIds.ParamStockPresets).on('input', function () {
-			let name = getPresetName(this.value);
-			$('label[for=stockPresets]').text('Stock Preset: ' + name);
-		})
 	},
 	ShowEndGameButton: function () {
 		$('body').append(HtmlGeneration.MakeEndGameButton());
@@ -979,58 +976,6 @@ var Presenter = {
 		}
 		// Register label plugin
 		Chart.register(ChartDataLabels);
-
-		var horizonalLinePlugin = {
-			id: 'horizontal-line-plugin',
-			afterDraw: function (chartInstance) {
-				var yScale = chartInstance.scales["y-axis-0"];
-				var canvas = chartInstance.chart;
-				var ctx = canvas.ctx;
-				var index;
-				var line;
-				var style;
-
-				if (chartInstance.options.horizontalLine) {
-					for (index = 0; index < chartInstance.options.plugins.horizontalLine.length; index++) {
-						line = chartInstance.options.plugins.horizontalLine[index];
-
-						if (!line.color) {
-							style = "rgba(0,0,0,.5)";
-						}
-						else {
-							style = line.color;
-						}
-
-						if (line.y) {
-							yValue = yScale.getPixelForValue(line.y);
-						}
-						else {
-							yValue = 0;
-						}
-
-						if (line.dash) {
-							ctx.setLineDash(dash);
-						}
-
-						ctx.lineWidth = 2;
-
-						if (yValue) {
-							ctx.beginPath();
-							ctx.moveTo(0, yValue);
-							ctx.lineTo(canvas.width, yValue);
-							ctx.strokeStyle = style;
-							ctx.stroke();
-						}
-
-						if (line.text) {
-							ctx.fillStyle = style;
-							ctx.fillText(line.text, 0, yValue + ctx.lineWidth);
-						}
-					}
-					return;
-				};
-			}
-		};
 
 		// Don't show number when zero
 		Chart.defaults.font.size = 36;
@@ -1063,24 +1008,6 @@ var Presenter = {
 		}
 	},
 	GetChartConfig: function (data) {
-		const annotation1 = {
-			drawTime: 'beforeDatasetsDraw',
-			type: 'line',
-			scaleID: 'y',
-			yMin: 100,
-			yMax: 100,
-			value: 100,
-			borderColor: 'rgba(0,0,0,0.5)',
-			borderWidth: 5,
-			label: {
-				backgroundColor: 'rgba(0,0,0,0.5)',
-				content: 'Par',
-				enabled: true
-			},
-		};
-		const annotation2 = {};
-		const annotation3 = {};
-
 		let config = {
 			type: 'bar',
 			data: data,
@@ -1090,39 +1017,55 @@ var Presenter = {
 					legend: {
 						display: false
 					},
-					lines: {
-						id: 'line-plugin',
-						afterDraw: function (chartInstance) {
-							var yScale = chartInstance.scales["y-axis-0"];
-							var canvas = chartInstance.chart;
-							var ctx = canvas.ctx;
-							var text;
-
-							let yValue = yScale.getPixelForValue(100);
-
-							ctx.save();
-							if (yValue) {
-								ctx.setLineDash([10,10]);
-								ctx.lineWidth = 2;
-								ctx.beginPath();
-								ctx.moveTo(0, yValue);
-								ctx.lineTo(canvas.width, yValue);
-								ctx.strokeStyle = "rgba(0,0,0,.5)";
-								ctx.stroke();
-							}
-
-							if (text) {
-								ctx.fillStyle = "rgba(0,0,0,.5)";
-								ctx.fillText(text, 0, yValue + ctx.lineWidth);
-							}
-							ctx.restore();
-						}
-					},
 					annotation: {
-						annotation1,
-						annotation2,
-						annotation3
-					},
+						annotations: {
+							label1: {
+								drawTime: 'beforeDatasetsDraw',
+								type: 'line',
+								scaleID: 'y',
+								mode: 'horizontal',
+								scaleID: 'yAxes',
+								value: 150,
+								borderColor: 'rgba(0, 0, 0, 0)',
+								enter: function (c, e) {
+									log(c.element);
+								},
+								label: {
+									rotation: '-30',
+									content: 'DIVIDENDS PAYABLE',
+									enabled: true,
+									backgroundColor: 'rgba(0, 0, 0, 0.25)',
+								}
+							},
+							label2: {
+								drawTime: 'beforeDatasetsDraw',
+								type: 'line',
+								scaleID: 'y',
+								mode: 'horizontal',
+								scaleID: 'yAxes',
+								value: 50,
+								borderColor: 'rgba(0, 0, 0, 0)',
+								label: {
+									rotation: '-30',
+									content: 'DIVIDENDS NOT PAYABLE',
+									enabled: true,
+									backgroundColor: 'rgba(0, 0, 0, 0.25)',
+								}
+							},
+							parLine: {
+								drawTime: 'beforeDatasetsDraw',
+								type: 'line',
+								scaleID: 'y',
+								mode: 'horizontal',
+								scaleID: 'yAxes',
+								value: 100,
+								mode: 'horizontal',
+								borderDash: [10,10],
+								borderWidth: 3,
+								borderColor: 'rgba(0, 0, 0, 0.4)',
+							}
+						}
+					}
 				},
 				tooltips: {
 					enabled: false
@@ -1133,7 +1076,7 @@ var Presenter = {
 					yAxes: {
 						min: 0,
 						max: 200
-					}
+					},
 				},
 			}
 		};
@@ -1183,7 +1126,6 @@ var Presenter = {
 			Presenter.Chart.data.datasets[0].data[i] = stockData.stockValues[i];
 		}
 		Presenter.Chart.update();
-		log(Presenter.Chart);
 	},
 	StartTimer: function (endTime, displayFunc, intervalLength) {
 		let intervalId = -1;
@@ -1254,19 +1196,14 @@ var Presenter = {
 		let state = 0;
 		let intervalId = -1;
 		$(ConstHtmlIds.RollName).text(rollDto.stockName);
-		log('Showing Roll Stock');
 		let intervalFunc = function () {
 			if (state === 0) {
-				log('Showing Roll Func');
 				$(ConstHtmlIds.RollFunc).text(rollDto.func);
 			}
 			else if (state === 1) {
-				log('Showing Roll Amount');
 				$(ConstHtmlIds.RollAmount).text(rollDto.amount);
 			}
 			else if (state === 2) {
-				log('Updating Chart');
-
 				if (rollDto.func === 'Up') {
 					// Check for split
 					if (CurrentData.StockValues[rollDto.stockName] >= 200) {
@@ -1371,8 +1308,6 @@ var Presenter = {
 		// Add user data
 		for (let i = 0; i < sortedUserInventories.length; i++) {
 			let inventory = sortedUserInventories[i];
-			//log('Adding inventory:');
-			//log(inventory);
 			// Add username to labels
 			labels.push(inventory.username);
 
@@ -1401,8 +1336,6 @@ var Presenter = {
 			labels: labels,
 			datasets: datasets
 		};
-		//log('Inventory data:');
-		//log(data);
 		return data;
 	},
 	GetInventoryChartConfig: function (data) {
@@ -1467,8 +1400,6 @@ var Presenter = {
 
 $(document).ready(function () {
 	clickHandler = ("ontouchstart" in window ? "touchend" : "click");
-
-	HtmlCache.GetCharacterMenu();
 
 	// Disable buttons until server connection is established
 	$(ConstHtmlIds.CreateGame).prop('disabled', true);

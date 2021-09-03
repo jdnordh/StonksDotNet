@@ -285,8 +285,8 @@ namespace Models.Game
 			// Calculate rebates
 			foreach (Player player in Players.Values)
 			{
-				int crashRebate = player.Character.CalculateMarketRebateAmount(Stocks);
-				player.Money += crashRebate;
+				int rebate = player.Character.CalculateMarketRebateAmount(Stocks);
+				player.Money += rebate;
 			}
 			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
 			await m_gameEventCommunicator.GameMarketChanged(GetMarketDto());

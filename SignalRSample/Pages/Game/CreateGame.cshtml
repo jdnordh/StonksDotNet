@@ -2,3 +2,21 @@
 @model StonkTrader.Pages.Game.CreateGameModel
 @{
 }
+<body>
+	<div id="parameters-menu" class="scrollviewer-vertical">
+		<div class="grid-input-parameters">
+			<label for="marketOpenTime" class="menu-text">Market Open Time (s): @Model.MarketTime.DefaultValue</label>
+			<input id="marketOpenTime" autocomplete="off" type="range" min="@Model.MarketTime.Min" max="@Model.MarketTime.Max" step="10" class="menu-text" value="@Model.MarketTime.DefaultValue" />
+			<label for="startingMoney" class="menu-text">Starting Money: @Model.Money.DefaultValue</label>
+			<input id="startingMoney" autocomplete="off" type="range" class="menu-text" min="@Model.Money.Min" max="@Model.Money.Max" step="1000" value="@Model.Money.DefaultValue" />
+			<label for="rounds" class="menu-text">Rounds: @Model.NumberOfRounds.DefaultValue</label>
+			<input id="rounds" autocomplete="off" type="range" min="@Model.NumberOfRounds.Min" max="@Model.NumberOfRounds.Max" class="menu-text" value="@Model.NumberOfRounds.DefaultValue" />
+			<label for="rollsPerRound" class="menu-text">Rolls per Round: @Model.NumberOfRollsPerRound.DefaultValue</label>
+			<input id="rollsPerRound" autocomplete="off" type="range" min="@Model.NumberOfRollsPerRound.Min" max="@Model.NumberOfRollsPerRound.Max" step="2" class="menu-text" value="@Model.NumberOfRollsPerRound.DefaultValue" />
+			<label for="stockPresets" class="menu-text">Stock Preset: Modern (6)</label>
+			<input id="stockPresets" autocomplete="off" type="range" min="@Model.StockPreset.Min" max="@Model.StockPreset.Max" class="menu-text" value="@Model.StockPreset.DefaultValue" />
+			<br />
+			<button id="createGameWithParameters" class="btn btn-primary menu-button">Create Game</button>
+		</div>
+	</div>
+</body>

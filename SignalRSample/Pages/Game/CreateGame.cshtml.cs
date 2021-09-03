@@ -1,16 +1,18 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using StonkTrader.Models.Game.Configuration;
 
 namespace StonkTrader.Pages.Game
 {
-    public class CreateGameModel : PageModel
-    {
-        public void OnGet()
-        {
-        }
-    }
+	public class CreateGameModel : PageModel
+	{
+		public ParameterConfiguration MarketTime => DefaultGameValues.MarketTime;
+		public ParameterConfiguration Money => DefaultGameValues.Money;
+		public ParameterConfiguration NumberOfRounds => DefaultGameValues.NumberOfRounds;
+		public ParameterConfiguration NumberOfRollsPerRound => DefaultGameValues.NumberOfRollsPerRound;
+		public ParameterConfiguration StockPreset => DefaultGameValues.StockPreset;
+
+		public void OnGet()
+		{
+		}
+	}
 }

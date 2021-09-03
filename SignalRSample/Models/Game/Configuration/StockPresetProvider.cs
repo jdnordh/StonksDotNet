@@ -1,5 +1,6 @@
 ﻿using Models.DataTransferObjects;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace StonkTrader.Models.Game.Configuration
 {
@@ -7,6 +8,9 @@ namespace StonkTrader.Models.Game.Configuration
 	{
 		private readonly static Dictionary<int, StockPreset> Presets;
 		private readonly static StockPreset DefaultPreset;
+
+		public readonly static int MinStockPresetId;
+		public readonly static int MaxStockPresetId;
 
 		static StockPresetProvider()
 		{
@@ -81,19 +85,22 @@ namespace StonkTrader.Models.Game.Configuration
 				},
 				{6, new StockPreset()
 					{
-						Name = "Memes",
+						Name = "Planets",
 						Stocks = new[]
 						{
-							new StockDto("Dogecoin", "#5cc3f7"),
-							new StockDto("Snapchat", "#FFFC00"),
-							new StockDto("Twitch", "#6441a5"),
-							new StockDto("Reddit", "#ff471a"),
-							new StockDto("Memes", "#98FB98"),
-							new StockDto("YouTube", "#e60000"),
+							new StockDto("Mars", "#c1440e"),
+							new StockDto("Earth", "#FFCC33"),
+							new StockDto("Pluto", "#f6ddbd"),
+							new StockDto("Neptune", "#3E54E8"),
+							new StockDto("Uranus", "#94e3f2"),
+							new StockDto("Sun", "#FFCC33"),
 						}
 					}
 				},
 			};
+
+			MinStockPresetId = Presets.Keys.First();
+			MaxStockPresetId = Presets.Keys.Last();
 		}
 
 		/// <summary>
