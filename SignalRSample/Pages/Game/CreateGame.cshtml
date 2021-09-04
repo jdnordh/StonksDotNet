@@ -13,10 +13,21 @@
 			<input id="rounds" autocomplete="off" type="range" min="@Model.NumberOfRounds.Min" max="@Model.NumberOfRounds.Max" class="menu-text" value="@Model.NumberOfRounds.DefaultValue" />
 			<label for="rollsPerRound" class="menu-text">Rolls per Round: @Model.NumberOfRollsPerRound.DefaultValue</label>
 			<input id="rollsPerRound" autocomplete="off" type="range" min="@Model.NumberOfRollsPerRound.Min" max="@Model.NumberOfRollsPerRound.Max" step="2" class="menu-text" value="@Model.NumberOfRollsPerRound.DefaultValue" />
-			<label for="stockPresets" class="menu-text">Stock Preset: Modern (6)</label>
+			@{
+				string stockPresetLabel = $"Stock Preset: {Model.DefaultStockName} - {Model.DefaultStockCount} Stocks";
+			}
+			<label for="stockPresets" class="menu-text">@stockPresetLabel</label>
 			<input id="stockPresets" autocomplete="off" type="range" min="@Model.StockPreset.Min" max="@Model.StockPreset.Max" class="menu-text" value="@Model.StockPreset.DefaultValue" />
+
+			@foreach((int id, int stockCount, string presetName) in Model.StockPresetNames)
+			{
+				string inputId = $"preset{id}";
+				string value = $"{presetName} - {stockCount} Stocks";
+				<input type="hidden" id="@inputId" value="@value" />
+			}
 			<br />
 			<button id="createGameWithParameters" class="btn btn-primary menu-button">Create Game</button>
+			<button id="backButton" class="btn btn-outline-primary menu-button">Back</button>
 		</div>
 	</div>
 </body>

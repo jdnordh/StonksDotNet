@@ -39,16 +39,28 @@ var Cookie = {
 
 var Config = {
 	InventoryMarketChartSwitchTime: 10000,
+	CashColor: "#85bb65",
 };
 
-var Audio = {
-	Up: new Audio('audio/up.mp3'),
-	Down: new Audio('audio/down.mp3'),
-	Div: new Audio('audio/div.mp3'),
-	NoDiv: new Audio('audio/nodiv.mp3'),
-	Split: new Audio('audio/split.mp3'),
-	Crash: new Audio('audio/crash.mp3'),
+var GameAudio = {
+	Up: undefined,
+	Down: undefined,
+	Div: undefined,
+	NoDiv: undefined,
+	Split: undefined,
+	Crash: undefined,
+	Init: function () {
+		GameAudio.Up = new Audio('audio/up.mp3');
+		GameAudio.Down = new Audio('audio/down.mp3');
+		GameAudio.Div = new Audio('audio/div.mp3');
+		GameAudio.NoDiv = new Audio('audio/nodiv.mp3');
+		GameAudio.Split = new Audio('audio/split.mp3');
+		GameAudio.Crash = new Audio('audio/crash.mp3');
+	},
 	PlayAudio: function (audio) {
+		if (!audio) {
+			return;
+		}
 		if (audio.paused) {
 			audio.play();
 		}
@@ -434,6 +446,7 @@ var ConstHtmlIds =
 	InventoryChartSlider: "#inventoryChartSlider",
 	SelectCharacter: "#selectCharacter",
 	RollPreviewButton: "#rollPreviewBtn",
+	BackButton: "#backButton",
 }
 
 var HtmlGeneration =
@@ -575,8 +588,18 @@ var HtmlGeneration =
 		html += '</p></div>';
 		return html;
 	},
-	MakeJoinMenu: function () {
-		return '<div class="center-absolute menu-join-grid"><div class="menu-sub-grid"><label for="username" class="menu-text">Username (0/12):</label><input autocomplete="off" type="text" maxlength="12" class="menu-text" id="username"/></div><button id="joinGame" class="btn btn-primary grid-row-2 menu-button">Join Game</button></div>';
+	MakeJoinMenu: function (initialUsername) {
+		if (initialUsername && initialUsername.length > 0) {
+			let html = '<div class="center-absolute menu-join-grid"><div class="menu-sub-grid"><label for="username" class="menu-text">Username (';
+			html += initialUsername.length;
+			html += '/12):</label><input autocomplete="off" type="text" maxlength="12" class="menu-text" id="username" value="';
+			html += initialUsername;
+			html += '"/></div><button id="joinGame" class="btn btn-primary grid-row-2 menu-button">Join Game</button><button id="backButton" class="btn btn-outline-primary menu-button">Back</button></div>';
+			return html;
+		}
+		else {
+			return '<div class="center-absolute menu-join-grid"><div class="menu-sub-grid"><label for="username" class="menu-text">Username (0/12):</label><input autocomplete="off" type="text" maxlength="12" class="menu-text" id="username"/></div><button id="joinGame" class="btn btn-primary grid-row-2 menu-button">Join Game</button><button id="backButton" class="btn btn-outline-primary menu-button">Back</button></div>';
+		}
 	},
 	MakeStartGameMenu: function () {
 		return '<div class="center-absolute menu-grid"> <button id="startGame" class="btn btn-primary menu-button">Start Game</button></div>';
@@ -588,7 +611,7 @@ var HtmlGeneration =
 		return '<button class="btn btn-primary menu-button" id="endGameButton">End Game</button>';
 	},
 	MakeMainMenu: function () {
-		return '<div class="grid-player-main grid-fill" id="mainGrid"><div class="center-absolute menu-grid"><button id="createGame" class="btn btn-primary grid-row-1 menu-button" disabled>Create Game</button><button id="joinGame" class="btn btn-primary grid-row-2 menu-button" disabled>Join Game</button><button id="watchGame" class="btn btn-primary grid-row-3 menu-button" disabled>Watch Game</button></div></div>';
+		return '<div class="grid-player-main grid-fill" id="mainGrid"><div class="center-absolute menu-grid"><button id="createGame" class="btn btn-primary grid-row-1 menu-button" disabled>Create Game</button><button id="joinGame" class="btn btn-primary grid-row-2 menu-button" disabled>Join Game</button><button id="watchGame" class="btn btn-primary grid-row-3 menu-button" disabled>Watch Game</button><form action="/help" class="grid-row-4"><button type="submit" id="howToPlay" class="btn btn-primary fill menu-button">How To Play</button></form></div></div>';
 	},
 	MakeEmptyGameplayGrid: function () {
 		return '<div class="grid-player-main grid-fill" id="mainGrid"></div>';
@@ -624,11 +647,12 @@ var ScreenOps = {
 		let body = $('body');
 		body.empty();
 		body.append(HtmlGeneration.MakeMainMenu());
+
+		// Attach menu handlers
 		let createGameButton = $(ConstHtmlIds.CreateGame);
 		let joinGameButton = $(ConstHtmlIds.JoinGame);
 		let watchGameButton = $(ConstHtmlIds.WatchGame);
 
-		// Attach menu handlers
 		createGameButton.on(clickHandler, function () {
 			ScreenOps.SwitchToParametersMenu();
 		});
@@ -641,7 +665,6 @@ var ScreenOps = {
 			Connection.JoinGameObserver();
 		});
 		watchGameButton.prop('disabled', false);
-		
 	},
 	SwitchToGameOver: function () {
 		ScreenOps.State = ScreenOps.States.GameOver;
@@ -826,10 +849,12 @@ var ScreenOps = {
 			ScreenOps.SwitchToSell();
 		});
 	},
-	SwitchToJoinMenu: function () {
+	SwitchToJoinMenu: function (initialUsername) {
+		let body = $('body');
+		body.empty();
+		body.append(HtmlGeneration.MakeEmptyGameplayGrid);
 		let mainGrid = $(ConstHtmlIds.MainGrid);
-		mainGrid.empty();
-		mainGrid.append(HtmlGeneration.MakeJoinMenu());
+		mainGrid.append(HtmlGeneration.MakeJoinMenu(initialUsername));
 		let joinGameUpdateFunc = function () {
 			// Make sure username is not blank
 			let username = $(ConstHtmlIds.Username).val();
@@ -875,8 +900,14 @@ var ScreenOps = {
 			CurrentData.Username = $(ConstHtmlIds.Username).val();
 			ScreenOps.SwitchToCharacterSelectMenu();
 		});
-		$(ConstHtmlIds.JoinGame).prop('disabled', true);
+		if (!initialUsername) {
+			$(ConstHtmlIds.JoinGame).prop('disabled', true);
+		}
 		$(ConstHtmlIds.Username).focus();
+
+		$(ConstHtmlIds.BackButton).on(clickHandler, function () {
+			ScreenOps.SwitchToMainMenu();
+		});
 	},
 	SwitchToCharacterSelectMenu: function () {
 		let body = $('body');
@@ -891,6 +922,10 @@ var ScreenOps = {
 					Connection.JoinGame(CurrentData.Username, i);
 				});
 			}
+
+			$(ConstHtmlIds.BackButton).on(clickHandler, function () {
+				ScreenOps.SwitchToJoinMenu(CurrentData.Username);
+			});
 		});
 	},
 	SwitchToWaitingMenu: function () {
@@ -936,27 +971,19 @@ var ScreenOps = {
 				$('label[for=rounds]').text('Rounds: ' + this.value);
 			})
 			let getPresetName = function (preset) {
-				switch (Number(preset)) {
-					case 1:
-						return "Modern (6)";
-					case 2:
-						return "Classic (6)";
-					case 3:
-						return "Ancient (6)";
-					case 4:
-						return "Crypto (3)";
-					case 5:
-						return "Countries (5)";
-					case 6:
-						return "Planets (6)";
-					default:
-						return preset;
-				}
+				// The preset name is in a hidden input, so grab it
+				let name = $('#preset' + preset).val();
+				log('Preset name: ' + name);
+				return name;
 			};
 			$(ConstHtmlIds.ParamStockPresets).on('input', function () {
 				let name = getPresetName(this.value);
 				$('label[for=stockPresets]').text('Stock Preset: ' + name);
-			})
+			});
+
+			$(ConstHtmlIds.BackButton).on(clickHandler, function () {
+				ScreenOps.SwitchToMainMenu();
+			});
 		});
 	},
 	ShowEndGameButton: function () {
@@ -979,6 +1006,8 @@ var Presenter = {
 
 		// Don't show number when zero
 		Chart.defaults.font.size = 36;
+
+		GameAudio.Init();
 	},
 	Chart: undefined,
 	InventoryChart: undefined,
@@ -1116,7 +1145,6 @@ var Presenter = {
 		};
 		let config = Presenter.GetChartConfig(data);
 		Presenter.Chart = new Chart(ctx, config);
-
 	},
 	UpdateChart: function () {
 		if (!Presenter.Chart) {
@@ -1208,28 +1236,28 @@ var Presenter = {
 				if (rollDto.func === 'Up') {
 					// Check for split
 					if (CurrentData.StockValues[rollDto.stockName] >= 200) {
-						Audio.PlayAudio(Audio.Split);
+						GameAudio.PlayAudio(GameAudio.Split);
 					}
 					else {
-						Audio.PlayAudio(Audio.Up);
+						GameAudio.PlayAudio(GameAudio.Up);
 					}
 				}
 				else if (rollDto.func === 'Down') {
 					// Check for crash
 					if (CurrentData.StockValues[rollDto.stockName] <= 0) {
-						Audio.PlayAudio(Audio.Crash);
+						GameAudio.PlayAudio(GameAudio.Crash);
 					}
 					else {
-						Audio.PlayAudio(Audio.Down);
+						GameAudio.PlayAudio(GameAudio.Down);
 					}
 				}
 				else {
 					// Only play div sound if stock is par or above
 					if (CurrentData.StockValues[rollDto.stockName] >= 100) {
-						Audio.PlayAudio(Audio.Div);
+						GameAudio.PlayAudio(GameAudio.Div);
 					}
 					else {
-						Audio.PlayAudio(Audio.NoDiv);
+						GameAudio.PlayAudio(GameAudio.NoDiv);
 					}
 				}
 				Presenter.UpdateChart();
@@ -1246,7 +1274,7 @@ var Presenter = {
 		intervalId = setInterval(intervalFunc, intervalTime);
 	},
 	GetInventoryChartData: function () {
-		let moneyColor = '#85bb65';
+		let moneyColor = Config.CashColor;
 		let moneyKey = 'Cash';
 		let datasetObject = {};
 		let labels = [];
@@ -1401,11 +1429,6 @@ var Presenter = {
 
 $(document).ready(function () {
 	clickHandler = ("ontouchstart" in window ? "touchend" : "click");
-
-	// Disable buttons until server connection is established
-	$(ConstHtmlIds.CreateGame).prop('disabled', true);
-	$(ConstHtmlIds.JoinGame).prop('disabled', true);
-	$(ConstHtmlIds.WatchGame).prop('disabled', true);
 
 	Connection.Init();
 });

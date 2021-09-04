@@ -15,11 +15,14 @@
 						@Html.DisplayFor(m => kvp.Value.Description)
 					</p>
 				</div>
-				@{ 
+				@{
 					string buttonId = $"selectCharacter{kvp.Value.Id}";
 				}
 				<button id="@buttonId" class="btn btn-primary grid-column-2">Select</button>
 			</div>
 		}
+		<div class="character-card-button">
+			<button id="backButton" class="btn btn-outline-primary menu-button fill">Back</button>
+		</div>
 	</div>
 </div>
