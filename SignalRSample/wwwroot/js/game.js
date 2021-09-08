@@ -40,6 +40,8 @@ var Cookie = {
 var Config = {
 	InventoryMarketChartSwitchTime: 10000,
 	CashColor: "#85bb65",
+	DividendLabelAngle: '-20',
+	DividendLabelColor: 'rgba(0, 0, 0, 0.2)',
 };
 
 var GameAudio = {
@@ -136,8 +138,15 @@ var Connection = {
 		});
 	},
 	Init: function () {
-		Connection.Hub = new signalR.HubConnectionBuilder().withUrl("/gameHub").build();
+		Connection.Hub = new signalR.HubConnectionBuilder()
+			.withUrl("/gameHub")
+			.withAutomaticReconnect()
+			.build();
 		Connection.Hub.serverTimeoutInMilliseconds = 1800000;
+
+		Connection.Hub.onreconnecting(function (error) {
+			log('Reconnecting...');
+		});
 
 		Connection.Hub.on(Connection.ClientMethods.GameCreated, function () {
 			Connection.ClientType = Connection.ClientTypes.Creator;
@@ -1060,10 +1069,10 @@ var Presenter = {
 									log(c.element);
 								},
 								label: {
-									rotation: '-30',
+									rotation: Config.DividendLabelAngle,
 									content: 'DIVIDENDS PAYABLE',
 									enabled: true,
-									backgroundColor: 'rgba(0, 0, 0, 0.25)',
+									backgroundColor: Config.DividendLabelColor,
 								}
 							},
 							label2: {
@@ -1075,10 +1084,10 @@ var Presenter = {
 								value: 50,
 								borderColor: 'rgba(0, 0, 0, 0)',
 								label: {
-									rotation: '-30',
+									rotation: Config.DividendLabelAngle,
 									content: 'DIVIDENDS NOT PAYABLE',
 									enabled: true,
-									backgroundColor: 'rgba(0, 0, 0, 0.25)',
+									backgroundColor: Config.DividendLabelColor,
 								}
 							},
 							parLine: {
@@ -1184,20 +1193,19 @@ var Presenter = {
 				$(ConstHtmlIds.PresenterText).text("Market Closed");
 			}
 		};
-		Presenter.StartTimer(endTime, timerFunc, 1000);
+		Presenter.StartTimer(endTime, timerFunc, 500);
 
 		// Initially switch to inventory chart
 		let isMarketChartActive = false;
-		// TODO recomment this line to add par line and text
 		Presenter.SwitchToPlayerInventoryChart();
 
 		let graphSwitchFunc = function (secondsRemaining) {
-			if (secondsRemaining > 0) {
+			if (secondsRemaining > 10) {
 				if (isMarketChartActive) {
 					isMarketChartActive = false;
 					Presenter.SwitchToPlayerInventoryChart();
 				}
-				else{
+				else {
 					// Show market graph
 					isMarketChartActive = true;
 					Presenter.SwitchToMarketChart();
@@ -1205,7 +1213,10 @@ var Presenter = {
 			}
 			else {
 				// Show market graph
-				Presenter.SwitchToMarketChart();
+				if (!isMarketChartActive) {
+					isMarketChartActive = true;
+					Presenter.SwitchToMarketChart();
+				}
 			}
 		};
 		Presenter.StartTimer(endTime, graphSwitchFunc, Config.InventoryMarketChartSwitchTime);

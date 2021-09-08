@@ -15,6 +15,8 @@ namespace Hubs
 
 		#region Connection
 
+		// TODO Handle signalr reconnect so users don't have to refresh
+
 		public static class UserHandler
 		{
 			public static HashSet<string> ConnectedIds = new HashSet<string>();

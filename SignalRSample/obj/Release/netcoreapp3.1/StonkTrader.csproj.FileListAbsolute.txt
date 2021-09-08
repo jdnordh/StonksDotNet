@@ -97,3 +97,5 @@ D:\Repos\Stonks\SignalRSample\bin\Release\netcoreapp3.1\System.IO.Pipelines.dll
 D:\Repos\Stonks\SignalRSample\bin\Release\netcoreapp3.1\System.Threading.Channels.dll
 D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\StonkTrader.GeneratedMSBuildEditorConfig.editorconfig
 D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\Razor\Pages\Game\Characters.cshtml.g.cs
+D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\Razor\Pages\Game\CreateGame.cshtml.g.cs
+D:\Repos\Stonks\SignalRSample\obj\Release\netcoreapp3.1\Razor\Pages\Help.cshtml.g.cs
