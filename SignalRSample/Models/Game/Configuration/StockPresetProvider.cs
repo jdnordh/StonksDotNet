@@ -66,14 +66,14 @@ namespace StonkTrader.Models.Game.Configuration
 			},
 			new StockPreset()
 			{
-				Name = "Countries",
+				Name = "Lord of the Rings",
 				Stocks = new[]
 				{
-					new StockDto("USA", "#041E42"),
-					new StockDto("China", "#C8102E"),
-					new StockDto("India", "#FF8F1C"),
-					new StockDto("Germany", "#000000"),
-					new StockDto("UAE", "#009639"),
+					new StockDto("Gondor", "#0086b3"),
+					new StockDto("Rohan", "#cc6600"),
+					new StockDto("Dwarves", "#339966"),
+					new StockDto("Isengard", "#e6e6e6"),
+					new StockDto("Mordor", "#ff1800"),
 				}
 			},
 			new StockPreset()
@@ -81,9 +81,9 @@ namespace StonkTrader.Models.Game.Configuration
 				Name = "Planets",
 				Stocks = new[]
 				{
-					new StockDto("Sun", "#FFCC33"),
-					new StockDto("Earth", "#68cc25"),
-					new StockDto("Mars", "#c1440e"),
+					new StockDto("Venus", "#f5a3a3"),
+					new StockDto("Earth", "#0f8a0f"),
+					new StockDto("Mars", "#c32222"),
 					new StockDto("Uranus", "#94e3f2"),
 					new StockDto("Neptune", "#3E54E8"),
 					new StockDto("Pluto", "#f6ddbd"),
