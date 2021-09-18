@@ -41,7 +41,7 @@ var Config = {
 	InventoryMarketChartSwitchTime: 10000,
 	CashColor: "#85bb65",
 	DividendLabelAngle: '-20',
-	DividendLabelColor: 'rgba(0, 0, 0, 0.2)',
+	DividendLabelColor: 'rgba(0, 0, 0, 0.15)',
 };
 
 var GameAudio = {
@@ -147,7 +147,7 @@ var Connection = {
 		Connection.Hub.onreconnecting(function (error) {
 			log('Reconnecting...');
 		});
-
+		
 		Connection.Hub.on(Connection.ClientMethods.GameCreated, function () {
 			Connection.ClientType = Connection.ClientTypes.Creator;
 			ScreenOps.SwitchToStartGameMenu();

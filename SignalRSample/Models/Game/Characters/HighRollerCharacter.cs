@@ -44,9 +44,9 @@ namespace StonkTrader.Models.Game.Characters
 			{
 				var stockName = kvp.Key;
 				var stock = kvp.Value;
-				if (stock.Value <= RebateMaxValue && m_holdingChanges[stockName] > 0)
+				if (stock.Value <= RebateMaxValue && HoldingChanges[stockName] > 0)
 				{
-					decimal cost = m_holdingChanges[stockName] * stock.Value;
+					decimal cost = HoldingChanges[stockName] * stock.Value;
 					rebateAmount += cost * RebateAmount;
 				}
 			}

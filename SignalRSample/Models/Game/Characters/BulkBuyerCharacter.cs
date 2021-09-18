@@ -10,7 +10,7 @@ namespace StonkTrader.Models.Game.Characters
 	{
 		private const decimal RebateMinValue = 1M;
 		private const int CashAmountToRebate = 4000;
-		private const decimal RebateAmount = 0.2M;
+		private const decimal RebateAmount = 0.15M;
 
 		#region Properties
 
@@ -45,8 +45,9 @@ namespace StonkTrader.Models.Game.Characters
 			{
 				var stockName = kvp.Key;
 				Stock stock = kvp.Value;
-				var cost = m_holdingChanges[stockName] * stock.Value;
-				if (stock.Value >= RebateMinValue && cost >= CashAmountToRebate)
+				int holdingChange = HoldingChanges[stockName];
+				var cost = holdingChange * stock.Value;
+				if (stock.Value >= RebateMinValue && cost >= CashAmountToRebate && holdingChange > 0)
 				{
 					rebateAmount += cost * RebateAmount;
 				}

@@ -4,11 +4,11 @@ namespace StonkTrader.Models.Game.Characters
 {
 	public static class CharacterProvider
 	{
-		private readonly static Dictionary<int, CharacterBase> Characters;
+		private readonly static Dictionary<int, CharacterBase> CharactersList;
 
 		static CharacterProvider()
 		{
-			Characters = new Dictionary<int, CharacterBase>() 
+			CharactersList = new Dictionary<int, CharacterBase>() 
 			{
 				{1, new InsideTraderCharacter()},
 				{2, new DayTraderCharacter()},
@@ -26,11 +26,16 @@ namespace StonkTrader.Models.Game.Characters
 		/// <returns>A character.</returns>
 		public static CharacterBase GetCharacterForId(int id)
 		{
-			if (!Characters.TryGetValue(id, out CharacterBase value))
+			return id switch
 			{
-				value = new DefaultCharacter();
-			}
-			return value;
+				1 => new InsideTraderCharacter(),
+				2 => new DayTraderCharacter(),
+				3 => new HoldMasterCharacter(),
+				4 => new HighRollerCharacter(),
+				5 => new BulkBuyerCharacter(),
+				6 => new InsuranceMogulCharacter(),
+				_ => new DefaultCharacter(),
+			};
 		}
 
 		/// <summary>
@@ -39,7 +44,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// <returns>A dictionary populated with all characters.</returns>
 		public static Dictionary<int, CharacterBase> GetAllCharacters()
 		{
-			return Characters;
+			return CharactersList;
 		}
 	}
 }

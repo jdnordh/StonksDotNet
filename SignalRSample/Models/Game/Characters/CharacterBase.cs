@@ -2,6 +2,7 @@
 using Models.Game;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace StonkTrader.Models.Game.Characters
 {
@@ -10,7 +11,6 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public abstract class CharacterBase
 	{
-		protected Dictionary<string, int> m_holdingChanges = new Dictionary<string, int>();
 		protected readonly static Func<decimal, string> Num = (d) => d.ToString("N0");
 
 		#region Properties
@@ -40,28 +40,25 @@ namespace StonkTrader.Models.Game.Characters
 		/// </summary>
 		public virtual bool GetsFirstRollReveal => false;
 
+		/// <summary>
+		/// If the stocks are initialized.
+		/// </summary>
+		public bool AreStocksInitialized { get; set; }
+
+		/// <summary>
+		/// The changes to the holdings this round.
+		/// </summary>
+		protected Dictionary<string, int> HoldingChanges { get; set; }
+
 		#endregion
 
 		#region Public Methods
 
 		/// <summary>
-		/// Initializes the character for the start of a market.
-		/// </summary>
-		/// <param name="stocks">The stocks in the game.</param>
-		public void SetStocksForStartOfMarket(IEnumerable<string> stocks)
-		{
-			m_holdingChanges.Clear();
-			foreach (var stock in stocks)
-			{
-				m_holdingChanges.Add(stock, 0);
-			}
-		}
-
-		/// <summary>
 		/// Gets the divedend amount for this character.
 		/// </summary>
 		/// <param name="stockValue">The value of the stock that is dividending.</param>
-		/// <param name="ogirnalDiv">The original dividend amount.</param>
+		/// <param name="originalDiv">The original dividend amount.</param>
 		/// <returns>The adjusted amout.</returns>
 		public virtual decimal GetDivedendAmount(decimal stockValue, decimal originalDiv)
 		{
@@ -75,7 +72,7 @@ namespace StonkTrader.Models.Game.Characters
 		public void RecordTransaction(PlayerTransactionDto dto)
 		{
 			int amount = dto.StockAmount;
-			m_holdingChanges[dto.StockName] += amount * (dto.IsBuyTransaction ? 1 : -1);
+			HoldingChanges[dto.StockName] += amount * (dto.IsBuyTransaction ? 1 : -1);
 		}
 
 		/// <summary>
@@ -103,9 +100,22 @@ namespace StonkTrader.Models.Game.Characters
 		/// </summary>
 		public void ResetHoldingChanges()
 		{
-			foreach(KeyValuePair<string, int> kvp in m_holdingChanges)
+			foreach(var kvp in HoldingChanges.ToList())
 			{
-				m_holdingChanges[kvp.Key] = 0;
+				HoldingChanges[kvp.Key] = 0;
+			}
+		}
+
+		/// <summary>
+		/// Initialize the stocks.
+		/// </summary>
+		/// <param name="stocks">the stock names.</param>
+		public void InitializeStocks(IEnumerable<string> stocks)
+		{
+			HoldingChanges = new Dictionary<string, int>();
+			foreach(string stock in stocks)
+			{
+				HoldingChanges.Add(stock, 0);
 			}
 		}
 

@@ -89,6 +89,19 @@ namespace StonkTrader.Models.Game.Configuration
 					new StockDto("Pluto", "#f6ddbd"),
 				}
 			},
+			new StockPreset()
+			{
+				Name = "Camping",
+				Stocks = new[]
+				{
+					new StockDto("Canoes", "#993300"),
+					new StockDto("Tents", "#3E54E8"),
+					new StockDto("Campfires", "#c32222"),
+					new StockDto("Marshmallows", "#e6e6e6"),
+					new StockDto("Trees", "#0f8a0f"),
+					new StockDto("Mountains", "#3d475c"),
+				}
+			},
 		};
 
 		static StockPresetProvider()

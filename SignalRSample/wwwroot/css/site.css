@@ -75,8 +75,8 @@ for details on configuring this project to bundle and minify static web assets. 
 
 .roll-text {
 	text-align: center;
-	font-size: 7vh;
-	padding-top: 1vh;
+	font-size: 3vw;
+	padding-top: 1.5vh;
 }
 
 .roll-display {
@@ -95,7 +95,7 @@ for details on configuring this project to bundle and minify static web assets. 
 }
 
 #presenterText {
-   font-size: 7vh;
+   font-size: 4vw;
    text-align: center;
    margin: 0;
 }

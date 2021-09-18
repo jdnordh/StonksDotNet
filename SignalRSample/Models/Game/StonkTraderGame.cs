@@ -2,6 +2,7 @@
 using StonkTrader.Models.Game.Characters;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Timer = System.Timers.Timer;
@@ -155,6 +156,10 @@ namespace Models.Game
 
 		#endregion
 
+		#region Debug
+
+		#endregion
+
 		#region Initialization
 
 		private void GenerateRolls(GameInitializerDto initializer)
@@ -257,7 +262,14 @@ namespace Models.Game
 
 			foreach(Player player in Players.Values)
 			{
-				player.Character.SetStocksForStartOfMarket(GetStockNames());
+				if (player.Character.AreStocksInitialized)
+				{
+					player.Character.ResetHoldingChanges();
+				}
+				else
+				{
+					player.Character.InitializeStocks(GetStockNames());
+				}
 			}
 
 			if (IsMarketHalfTime)
@@ -282,16 +294,20 @@ namespace Models.Game
 		{
 			IsMarketOpen = false;
 
-			// Calculate rebates
-			foreach (Player player in Players.Values)
-			{
-				int rebate = player.Character.CalculateMarketRebateAmount(Stocks);
-				player.Money += rebate;
-			}
-			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
+			await PayRebates();
 			await m_gameEventCommunicator.GameMarketChanged(GetMarketDto());
 
 			m_rollTimer.Start();
+		}
+
+		private async Task PayRebates()
+		{
+			foreach (var player in Players.Values)
+			{
+				player.Money += player.Character.CalculateMarketRebateAmount(Stocks);
+				player.Character.ResetHoldingChanges();
+			}
+			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
 		}
 
 		#endregion
