@@ -21,7 +21,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// <summary>
 		/// The id of this chacter.
 		/// </summary>
-		public override int Id => 7;
+		public override int Id => 1;
 
 		/// <summary>
 		/// Whether or not the character gets a reveal of the first roll of each round.

@@ -10,7 +10,7 @@ namespace StonkTrader.Models.Game.Characters
 	{
 		private const decimal RebateMinValue = 1M;
 		private const int CashAmountToRebate = 4000;
-		private const decimal RebateAmount = 0.15M;
+		private const decimal RebateAmount = 0.2M;
 
 		#region Properties
 

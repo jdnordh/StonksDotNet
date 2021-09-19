@@ -6,7 +6,7 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class HoldMasterCharacter : CharacterBase
 	{
-		private const decimal ExtraDividendPercentage = 0.1M;
+		private const decimal ExtraDividendPercentage = 0.15M;
 
 		#region Properties
 
