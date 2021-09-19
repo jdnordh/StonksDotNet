@@ -41,6 +41,11 @@ namespace StonkTrader.Models.Game.Characters
 		public virtual bool GetsFirstRollReveal => false;
 
 		/// <summary>
+		/// Whether or not the character gets a vote to push down a stock.
+		/// </summary>
+		public virtual bool GetsPushDownVote => false;
+
+		/// <summary>
 		/// If the stocks are initialized.
 		/// </summary>
 		public bool AreStocksInitialized { get; set; }

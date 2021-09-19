@@ -15,8 +15,6 @@ namespace Hubs
 
 		#region Connection
 
-		// TODO Handle signalr reconnect so users don't have to refresh
-
 		public static class UserHandler
 		{
 			public static HashSet<string> ConnectedIds = new HashSet<string>();
@@ -223,13 +221,24 @@ namespace Hubs
 		/// Called when a user previews a roll.
 		/// </summary>
 		/// <param name="connectionId">The connection id.</param>
-		/// <param name="connectionId">The roll dto.</param>
+		/// <param name="rollDto">The roll dto.</param>
 		/// <returns>A completed task.</returns>
 		public async Task RollPreviewResponse(string connectionId, RollDto rollDto)
 		{
 			await Clients.Client(connectionId).SendAsync(ClientMethods.RollPreview, rollDto);
 		}
-		
+
+		/// <summary>
+		/// Called when a user previews a trend.
+		/// </summary>
+		/// <param name="connectionId">The connection id.</param>
+		/// <param name="trendDto">The roll dto.</param>
+		/// <returns>A completed task.</returns>
+		public async Task TrendPreviewResponse(string connectionId, TrendDto trendDto)
+		{
+			await Clients.Client(connectionId).SendAsync(ClientMethods.TrendPreview, trendDto);
+		}
+
 		#endregion
 
 		#region Communication with Clients
@@ -292,6 +301,15 @@ namespace Hubs
 
 		#region Transactions
 
+		public async Task RequestStockPushDown(string stockName)
+		{
+			if (!WorkerManager.Instance.WorkerExists)
+			{
+				return;
+			}
+			await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.StockPushDownRequest, CurrentUserConnectionId, stockName);
+		}
+
 		public async Task RequestRollPreview()
 		{
 			if (!WorkerManager.Instance.WorkerExists)
@@ -299,6 +317,15 @@ namespace Hubs
 				return;
 			}
 			await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.RollPreviewRequest, CurrentUserConnectionId);
+		}
+
+		public async Task RequestTrendPreview()
+		{
+			if (!WorkerManager.Instance.WorkerExists)
+			{
+				return;
+			}
+			await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.TrendPreviewRequest, CurrentUserConnectionId);
 		}
 
 		public async Task RequestTransaction(string stockName, bool isBuy, int amount)

@@ -47,6 +47,10 @@ namespace StonkTrader.Models.Workers
 
 			m_connection.On<string>(GameWorkerRequests.RollPreviewRequest, RollPreview);
 
+			m_connection.On<string>(GameWorkerRequests.TrendPreviewRequest, TrendPreview);
+
+			m_connection.On<string, string>(GameWorkerRequests.StockPushDownRequest, StockPushDown);
+
 			m_connection.On(GameWorkerRequests.GameEndRequest, EndGame);
 
 			await Task.Run(async () => {
@@ -77,6 +81,28 @@ namespace StonkTrader.Models.Workers
 		}
 
 		#region Request Handlers
+
+		private void StockPushDown(string connectionId, string stockName)
+		{
+			if (!m_connectionIdToPlayerIdMap.TryGetValue(connectionId, out var playerId))
+			{
+				return;
+			}
+			m_game.RequestStockPushDown(playerId, stockName);
+		}
+
+		private async Task TrendPreview(string connectionId)
+		{
+			if (!m_connectionIdToPlayerIdMap.TryGetValue(connectionId, out var playerId))
+			{
+				return;
+			}
+			var trendDto = m_game.PreviewRoundTrend(playerId);
+			if (trendDto != null)
+			{
+				await m_connection.InvokeAsync(GameWorkerResponses.TrendPreviewResponse, connectionId, trendDto);
+			}
+		}
 
 		private async Task RollPreview(string connectionId)
 		{

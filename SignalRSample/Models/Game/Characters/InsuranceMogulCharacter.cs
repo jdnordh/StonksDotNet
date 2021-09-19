@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-
+﻿
 namespace StonkTrader.Models.Game.Characters
 {
 	/// <summary>
@@ -25,6 +24,11 @@ namespace StonkTrader.Models.Game.Characters
 		/// The id of this chacter.
 		/// </summary>
 		public override int Id => 6;
+
+		/// <summary>
+		/// Whether or not the character gets a vote to push down a stock.
+		/// </summary>
+		public override bool GetsPushDownVote => true;
 
 		#endregion
 

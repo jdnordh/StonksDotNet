@@ -48,6 +48,9 @@ namespace Models.Game
 		private int m_currentRoundNumber;
 		private int m_currentRollNumber;
 
+		private Dictionary<string, TrendDto> m_roundTrendIndexedByPlayer;
+		private Dictionary<string, string> m_pushDownVotesIndexedByPlayer;
+
 		#endregion
 
 		#region Properties
@@ -101,6 +104,9 @@ namespace Models.Game
 			//m_afterMarketDelayTimer.AutoReset = false;
 
 			GenerateRolls(initializer);
+
+			m_roundTrendIndexedByPlayer = new Dictionary<string, TrendDto>();
+			m_pushDownVotesIndexedByPlayer = new Dictionary<string, string>();
 
 			Stocks = new Dictionary<string, Stock>();
 			foreach (StockDto stockDto in initializer.Stocks)
@@ -227,6 +233,11 @@ namespace Models.Game
 			var player = new Player(playerId, connectionId, username, m_startingMoney, stockNames, 
 				CharacterProvider.GetCharacterForId(characterId));
 
+			if (IsStarted && IsMarketOpen)
+			{
+				player.Character.InitializeStocks(GetStockNames());
+			}
+
 			Players.Add(playerId, player);
 			PlayerInventoryDto inventory = player.GetPlayerInvetory();
 			return inventory;
@@ -274,6 +285,7 @@ namespace Models.Game
 
 			if (IsMarketHalfTime)
 			{
+				SetupHalfTimeRoundTrends();
 				m_marketHalfTimer.Start();
 			}
 			else
@@ -296,7 +308,7 @@ namespace Models.Game
 
 			await PayRebates();
 			await m_gameEventCommunicator.GameMarketChanged(GetMarketDto());
-
+			PushDownStock();
 			m_rollTimer.Start();
 		}
 
@@ -305,9 +317,133 @@ namespace Models.Game
 			foreach (var player in Players.Values)
 			{
 				player.Money += player.Character.CalculateMarketRebateAmount(Stocks);
-				player.Character.ResetHoldingChanges();
 			}
 			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
+		}
+
+		/// <summary>
+		/// Previews the trend of a round if the player has access to it.
+		/// </summary>
+		/// <param name="playerId">The player id.</param>
+		/// <returns>The roll dto, or null if not allowed.</returns>
+		public TrendDto PreviewRoundTrend(string playerId)
+		{
+			if (Players[playerId].Character.GetsHalfTimeTransaction && IsMarketOpen && IsMarketHalfTime)
+			{
+				return m_roundTrendIndexedByPlayer.TryGetValue(playerId, out var trendDto) ? trendDto : m_roundTrendIndexedByPlayer.First().Value;
+			}
+			return null;
+		}
+
+		private void SetupHalfTimeRoundTrends()
+		{
+			var marketCopy = Stocks.ToDictionary(kvp => kvp.Key, kvp => new Stock(kvp.Key));
+			for (int i = m_currentRollNumber; i < m_numberOfRollsPerRound; i++)
+			{
+				Roll roll = m_rolls[m_currentRoundNumber][i];
+				switch (roll.Type)
+				{
+					case RollType.Up:
+					{
+						marketCopy[roll.StockName].IncreaseValue(roll.PercentageAmount);
+						break;
+					}
+					case RollType.Down:
+					{
+						marketCopy[roll.StockName].DecreaseValue(roll.PercentageAmount);
+						break;
+					}
+				}
+			}
+			var trendData = new List<TrendDto>();
+			foreach(var kvp in marketCopy)
+			{
+				if (kvp.Value.Value == 1)
+				{
+					continue;
+				}
+				trendData.Add(new TrendDto(kvp.Key, kvp.Value.Value > 1 ? "Up" : "Down"));
+			}
+			if (trendData.Count == 0)
+			{
+				trendData.Add(new TrendDto("No Information", null, true));
+			}
+
+			m_roundTrendIndexedByPlayer.Clear();
+			var rand = new Random();
+			foreach (var playerKvp in Players)
+			{
+				m_roundTrendIndexedByPlayer.Add(playerKvp.Key, trendData[rand.Next(0, trendData.Count)]);
+			}
+		}
+
+		/// <summary>
+		/// Request a stock push down.
+		/// </summary>
+		/// <param name="playerId">The player id.</param>
+		/// <param name="stockName">The stock to push down.</param>
+		public void RequestStockPushDown(string playerId, string stockName)
+		{
+			if (Players[playerId].Character.GetsPushDownVote && IsMarketOpen && !IsMarketHalfTime)
+			{
+				if (m_pushDownVotesIndexedByPlayer.ContainsKey(playerId))
+				{
+					m_pushDownVotesIndexedByPlayer[playerId] = stockName;
+				}
+				else
+				{
+					m_pushDownVotesIndexedByPlayer.Add(playerId, stockName);
+				}
+			}
+		}
+
+		private void PushDownStock()
+		{
+			var rand = new Random();
+			string stockNameToPushDown;
+			var votes = new Dictionary<string, int>();
+			foreach(var stock in GetStockNames())
+			{
+				votes.Add(stock, 0);
+			}
+			foreach(var voteKvp in m_pushDownVotesIndexedByPlayer)
+			{
+				votes[voteKvp.Value]++;
+			}
+			int maxVotes = votes.Values.Max();
+			var stocksToPushDown = votes.Where(kvp => kvp.Value == maxVotes).Select(kvp => kvp.Key).ToList();
+			if (stocksToPushDown.Count == 1)
+			{
+				stockNameToPushDown = stocksToPushDown[0];
+			}
+			else if (stocksToPushDown.Count > 1)
+			{
+				// Tied, flip a coin
+				int coinFlipWinner = rand.Next(0, stocksToPushDown.Count);
+				stockNameToPushDown = stocksToPushDown[coinFlipWinner];
+			}
+			else
+			{
+				throw new Exception("Bad");
+			}
+
+
+			double result = rand.NextDouble();
+			decimal percentageDown;
+			if (result < 0.4)
+			{
+				percentageDown = 0.1M;
+			}
+			else if (result < 0.75)
+			{
+				percentageDown = 0.2M;
+			}
+			else
+			{
+				percentageDown = 0.3M;
+			}
+			var roll = new Roll(RollType.Down, stockNameToPushDown, percentageDown);
+			m_rolls[m_currentRoundNumber].Insert(1, roll);
 		}
 
 		#endregion
@@ -324,14 +460,14 @@ namespace Models.Game
 		/// </summary>
 		private async Task Roll()
 		{
-			if (m_currentRollNumber == m_numberOfRollsPerRound)
+			//if (m_currentRollNumber == m_numberOfRollsPerRound)
+			if (m_currentRollNumber == m_rolls[m_currentRoundNumber].Count)
 			{
 				m_currentRollNumber = 0;
 				await OpenMarket();
 			}
-			else if (m_currentRollNumber == (m_numberOfRollsPerRound / 2) && ShouldDoHalfTimeMarket && !IsMarketHalfTime)
+			else if (m_currentRollNumber == Math.Ceiling((decimal)m_numberOfRollsPerRound / 2) && ShouldDoHalfTimeMarket && !IsMarketHalfTime)
 			{
-				// TODO This gets stuck
 				IsMarketHalfTime = true;
 				await OpenMarket();
 			}
@@ -362,9 +498,8 @@ namespace Models.Game
 		/// <returns>The roll dto, or null if not allowed.</returns>
 		public RollDto PreviewFirstRoll(string playerId)
 		{
-			if (Players[playerId].Character.GetsFirstRollReveal && IsMarketOpen)
+			if (Players[playerId].Character.GetsFirstRollReveal && IsMarketOpen && !IsMarketHalfTime)
 			{
-				// TODO round number is 1 too large
 				Roll roll = m_rolls[m_currentRoundNumber][0];
 				return RollToRollDto(roll);
 			}

@@ -8,8 +8,11 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class HighRollerCharacter : CharacterBase
 	{
-		private const decimal RebateMaxValue = 0.5M;
-		private const decimal RebateAmount = 0.25M;
+		private const decimal SmallRebateMaxValue = 0.95M;
+		private const decimal SmallRebateAmount = 0.1M;
+
+		private const decimal BigRebateMaxValue = 0.5M;
+		private const decimal BigRebateAmount = 0.25M;
 
 		#region Properties
 
@@ -21,7 +24,8 @@ namespace StonkTrader.Models.Game.Characters
 		/// <summary>
 		/// The name of this chacter.
 		/// </summary>
-		public override string Description => $"This character gets a {Num(RebateAmount * 100)}% rebate on all buys of stocks valued {Num(RebateMaxValue * 100)} or under.";
+		public override string Description => 
+			$"This character gets a {Num(SmallRebateAmount * 100)}% rebate when buying stocks valued {Num(SmallRebateMaxValue * 100)} or under and a {Num(BigRebateAmount * 100)}% rebate when buying stocks valued {Num(BigRebateAmount * 100)} or under, but is payed no divideds.";
 
 		/// <summary>
 		/// The id of this chacter.
@@ -31,6 +35,12 @@ namespace StonkTrader.Models.Game.Characters
 		#endregion
 
 		#region Public Methods
+
+		/// <inheritdoc/>
+		public override decimal GetDivedendAmount(decimal stockValue, decimal originalDiv)
+		{
+			return 0;
+		}
 
 		/// <summary>
 		/// Calculate the rebate amount this character gets at the end of an open market.
@@ -44,11 +54,18 @@ namespace StonkTrader.Models.Game.Characters
 			{
 				var stockName = kvp.Key;
 				var stock = kvp.Value;
-				if (stock.Value <= RebateMaxValue && HoldingChanges[stockName] > 0)
+				decimal rebatePercentage = 0M;
+				if (stock.Value <= BigRebateMaxValue && HoldingChanges[stockName] > 0)
 				{
-					decimal cost = HoldingChanges[stockName] * stock.Value;
-					rebateAmount += cost * RebateAmount;
+					rebatePercentage = BigRebateAmount;
 				}
+				else if (stock.Value <= SmallRebateMaxValue && HoldingChanges[stockName] > 0)
+				{
+					rebatePercentage = SmallRebateAmount;
+				}
+
+				decimal cost = HoldingChanges[stockName] * stock.Value;
+				rebateAmount += cost * rebatePercentage;
 			}
 			return (int)rebateAmount;
 		}

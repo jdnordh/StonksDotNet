@@ -18,6 +18,8 @@ namespace Hubs
 		public const string TransactionFailed = "transactionFailed";
 		public const string Rolled = "rolled";
 		public const string RollPreview = "rollPreview";
+		public const string TrendPreview = "trendPreview";
+		public const string StockPushDown = "stockPushDown";
 	}
 
 	public static class GameWorkerRequests
@@ -28,6 +30,8 @@ namespace Hubs
 		public const string StartGameRequest = "startGameRequest";
 		public const string TransactionRequest = "transactionRequest";
 		public const string RollPreviewRequest = "rollPreviewRequest";
+		public const string TrendPreviewRequest = "trendPreviewRequest";
+		public const string StockPushDownRequest = "stockPushDownRequest";
 		public const string GameEndRequest = "gameEndRequest";
 	}
 
@@ -40,6 +44,8 @@ namespace Hubs
 		public const string GameStarted = "GameStarted";
 
 		public const string RollPreviewResponse = "RollPreviewResponse";
+		public const string TrendPreviewResponse = "TrendPreviewResponse";
+		public const string StockPushDownResponse = "stockPushDownResponse";
 		public const string TransactionPosted = "TransactionPosted";
 		public const string MarketUpdated = "MarketUpdated";
 		public const string PlayerInventoriesUpdated = "PlayerInventoriesUpdated";

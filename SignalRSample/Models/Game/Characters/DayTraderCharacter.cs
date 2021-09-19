@@ -16,7 +16,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// <summary> 
 		/// The name of this chacter.
 		/// </summary>
-		public override string Description => "This character can make additional trades half way through a closed market.";
+		public override string Description => "This character can make additional trades half way through a closed market and gets information about trends.";
 
 		/// <summary>
 		/// The id of this chacter.

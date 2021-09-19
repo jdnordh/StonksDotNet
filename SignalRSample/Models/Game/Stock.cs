@@ -16,10 +16,18 @@ namespace Models.Game
 		public bool IsHalved { get; }
 
 		/// <summary>
-		/// Create a new stock base on a <see cref="StockDto"/> with the deafult value;
+		/// Create a new stock based on a <see cref="StockDto"/> with the deafult value;
 		/// </summary>
 		/// <param name="stockDto">The <see cref="StockDto"/>.</param>
 		public Stock(StockDto stockDto) : this (stockDto.Name, stockDto.Color, stockDto.IsHalved)
+		{
+		}
+
+		/// <summary>
+		/// Create a new stock with a name.
+		/// </summary>
+		/// <param name="name">Thestock name.</param>
+		public Stock(string name) : this(name, null, false)
 		{
 		}
 

@@ -121,6 +121,7 @@ var Connection = {
 		TransactionFailed: "transactionFailed",
 		Rolled: "rolled",
 		RollPreview: "rollPreview",
+		TrendPreview: "trendPreview",
 	},
 	ServerMethods: {
 		CreateGame: "CreateGame",
@@ -129,6 +130,8 @@ var Connection = {
 		EndGame: "EndGame",
 		RequestTransaction: "RequestTransaction",
 		RequestRollPreview: "RequestRollPreview",
+		RequestTrendPreview: "RequestTrendPreview",
+		RequestStockPushDown: "RequestStockPushDown",
 		Reset: "Reset",
 		ReJoin: "ReJoin",
 	},
@@ -147,7 +150,7 @@ var Connection = {
 		Connection.Hub.onreconnecting(function (error) {
 			log('Reconnecting...');
 		});
-		
+
 		Connection.Hub.on(Connection.ClientMethods.GameCreated, function () {
 			Connection.ClientType = Connection.ClientTypes.Creator;
 			ScreenOps.SwitchToStartGameMenu();
@@ -206,6 +209,7 @@ var Connection = {
 		Connection.Hub.on(Connection.ClientMethods.MarketUpdated, function (marketDto) {
 			log('Market updated');
 			Connection.UpdateMarketValues(marketDto);
+			CurrentData.IsHalfTime = marketDto.isHalfTime;
 			if (Connection.ClientType === Connection.ClientTypes.Observer || Connection.ClientType === Connection.ClientTypes.Creator) {
 				Connection.UpdatePlayerInventories(marketDto.playerInventories);
 				Presenter.UpdateChart();
@@ -248,6 +252,17 @@ var Connection = {
 			stockList.prepend(HtmlGeneration.MakeRollPreview(rollDto));
 		});
 
+		Connection.Hub.on(Connection.ClientMethods.TrendPreview, function (trendDto) {
+			log('Trend preview');
+			// Remove button
+			log(trendDto);
+			$(ConstHtmlIds.TrendPreviewButton).remove();
+
+			// Add roll preview
+			let stockList = $(ConstHtmlIds.StockList);
+			stockList.prepend(HtmlGeneration.MakeTrendPreview(trendDto));
+		});
+
 		Connection.Hub.on(Connection.ClientMethods.GameEnded, function () {
 			log('Game ended');
 			Presenter.IsInitialized = false;
@@ -288,7 +303,7 @@ var Connection = {
 
 		Connection.Hub.start().then(function () {
 			Connection.TryReJoinGame();
-			
+
 			ScreenOps.SwitchToMainMenu();
 		}).catch(function (err) {
 			return console.error(err.toString());
@@ -365,6 +380,16 @@ var Connection = {
 	},
 	RequestRollPreview: function () {
 		Connection.Hub.invoke(Connection.ServerMethods.RequestRollPreview).catch(function (err) {
+			return console.error(err.toString());
+		});
+	},
+	RequestTrendPreview: function () {
+		Connection.Hub.invoke(Connection.ServerMethods.RequestTrendPreview).catch(function (err) {
+			return console.error(err.toString());
+		});
+	},
+	RequestStockPushDown: function (stockName) {
+		Connection.Hub.invoke(Connection.ServerMethods.RequestStockPushDown, stockName).catch(function (err) {
 			return console.error(err.toString());
 		});
 	},
@@ -455,6 +480,10 @@ var ConstHtmlIds =
 	InventoryChartSlider: "#inventoryChartSlider",
 	SelectCharacter: "#selectCharacter",
 	RollPreviewButton: "#rollPreviewBtn",
+	TrendPreviewButton: "#trendPreviewBtn",
+	PushDownButton: "#pushDownBtn",
+	PushDownSendButton: "#pushDownSendBtn",
+	PushDownValue: "#pushDownValue",
 	BackButton: "#backButton",
 }
 
@@ -487,7 +516,7 @@ var HtmlGeneration =
 		}
 		html += '</select><button class="btn btn-success buy-sell-button fill grid-column-2 grid-row-2" id="buy">Buy for $';
 		html += initialBuyFor;
-		html += '</button ><button class="btn btn-danger buy-sell-button fill grid-column-2 grid-row-3" id="cancel">Cancel</button></div></div>';
+		html += '</button ><button class="btn btn-outline-danger buy-sell-button fill grid-column-2 grid-row-3" id="cancel">Cancel</button></div></div>';
 		return html;
 	},
 	MakePreSellScreen: function (stockName) {
@@ -508,7 +537,21 @@ var HtmlGeneration =
 		}
 		html += '</select><button class="btn btn-info buy-sell-button fill grid-column-2 grid-row-2" id="sell">Sell for $';
 		html += initialSellFor;
-		html += '</button><button class="btn btn-danger buy-sell-button fill grid-column-2 grid-row-3" id="cancel">Cancel</button></div></div>';
+		html += '</button><button class="btn btn-outline-danger buy-sell-button fill grid-column-2 grid-row-3" id="cancel">Cancel</button></div></div>';
+		return html;
+	},
+	MakePrePushDownScreen: function () {
+		let html = '<div class="fill grid-row-2"><p class="buy-sell-prompt">Choose the stock you want to sabotage.</p><div class="buy-sell-control"><select class="buy-sell-prompt grid-column-2 grid-row-1 fill" name="amount" id="pushDownValue">';
+		for (let stockName in CurrentData.Holdings) {
+			if (CurrentData.Holdings.hasOwnProperty(stockName)) {
+				html += '<option value="';
+				html += stockName;
+				html += '">'
+				html += stockName;
+				html += '</option>';
+			}
+		}
+		html += '</select><button class="btn btn-danger buy-sell-button fill grid-column-2 grid-row-2" id="pushDownSendBtn">Sabotage</button><button class="btn btn-outline-danger buy-sell-button fill grid-column-2 grid-row-3" id="cancel">Cancel</button></div></div>';
 		return html;
 	},
 	MakeWaitingScreen: function (username, money) {
@@ -546,6 +589,12 @@ var HtmlGeneration =
 	MakeRollPreviewButton: function () {
 		return '<div class="roll-preview-banner" id="rollPreviewBtn"><button class="btn btn-primary roll-preview-btn">Tap to see first roll</button></div>';
 	},
+	MakeTrendPreviewButton: function () {
+		return '<div class="roll-preview-banner" id="trendPreviewBtn"><button class="btn btn-primary roll-preview-btn">Tap to see trend</button></div>';
+	},
+	MakePushDownButton: function () {
+		return '<div class="roll-preview-banner" id="pushDownBtn"><button class="btn btn-primary roll-preview-btn">Tap to sabotage</button></div>';
+	},
 	MakeRollPreview: function (rollDto) {
 		let html = '<div class="stock-banner"><p class="grid-column-1 stock-text">';
 		html += rollDto.stockName;
@@ -553,6 +602,18 @@ var HtmlGeneration =
 		html += rollDto.func;
 		html += '</p><p class="grid-column-3 stock-text right-align-p">';
 		html += rollDto.amount;
+		html += '</p></div>';
+		return html;
+	},
+	MakeTrendPreview: function (trendDto) {
+		let html = '<div class="stock-banner"><p class="grid-column-1 stock-text">';
+		if (trendDto.isNoInformation) {
+			html += 'No Information Sucker</p></div>';
+			return html;
+		}
+		html += trendDto.stockName;
+		html += '</p><p class="grid-column-2 stock-text">Trending</p><p class="grid-column-3 stock-text right-align-p">';
+		html += trendDto.direction;
 		html += '</p></div>';
 		return html;
 	},
@@ -634,6 +695,7 @@ var ScreenOps = {
 		MarketOpenSell: "MarketOpenSell",
 		MarketOpenPreBuy: "MarketOpenPreBuy",
 		MarketOpenPreSell: "MarketOpenPreSell",
+		MarketOpenPrePushDown: "MarketOpenPrePushDown",
 		MarketClosed: "MarketClosed",
 		Waiting: "Waiting",
 		GameOver: "GameOver",
@@ -650,6 +712,9 @@ var ScreenOps = {
 		},
 		GameOver: function () {
 			ScreenOps.SwitchToGameOver();
+		},
+		MarketOpenPrePushDown: function () {
+			ScreenOps.SwitchToBuy();
 		}
 	},
 	SwitchToMainMenu: function () {
@@ -766,6 +831,18 @@ var ScreenOps = {
 				Connection.RequestRollPreview();
 			});
 		}
+		else if (CurrentData.CharacterId === 2 && CurrentData.IsHalfTime) {
+			list.append(HtmlGeneration.MakeTrendPreviewButton());
+			$(ConstHtmlIds.TrendPreviewButton).on(clickHandler, function () {
+				Connection.RequestTrendPreview();
+			});
+		}
+		else if (CurrentData.CharacterId === 6) {
+			list.append(HtmlGeneration.MakePushDownButton());
+			$(ConstHtmlIds.PushDownButton).on(clickHandler, function () {
+				ScreenOps.PrePushDown(true);
+			});
+		}
 
 		for (let stockName in CurrentData.StockValues) {
 			if (CurrentData.StockValues.hasOwnProperty(stockName)) {
@@ -794,6 +871,18 @@ var ScreenOps = {
 			list.append(HtmlGeneration.MakeRollPreviewButton());
 			$(ConstHtmlIds.RollPreviewButton).on(clickHandler, function () {
 				Connection.RequestRollPreview();
+			});
+		}
+		else if (CurrentData.CharacterId === 2 && CurrentData.IsHalfTime) {
+			list.append(HtmlGeneration.MakeTrendPreviewButton());
+			$(ConstHtmlIds.TrendPreviewButton).on(clickHandler, function () {
+				Connection.RequestTrendPreview();
+			});
+		}
+		else if (CurrentData.CharacterId === 6) {
+			list.append(HtmlGeneration.MakePushDownButton());
+			$(ConstHtmlIds.PushDownButton).on(clickHandler, function () {
+				ScreenOps.PrePushDown(false);
 			});
 		}
 
@@ -856,6 +945,33 @@ var ScreenOps = {
 		});
 		$(ConstHtmlIds.Cancel).on(clickHandler, function () {
 			ScreenOps.SwitchToSell();
+		});
+	},
+	PrePushDown: function (isBuy) {
+		ScreenOps.State = ScreenOps.States.MarketOpenPrePushDown;
+		let list = $(ConstHtmlIds.StockList);
+		list.empty();
+		list.append(HtmlGeneration.MakePrePushDownScreen());
+
+		// Add handlers
+		$(ConstHtmlIds.PushDownSendButton).on(clickHandler, function () {
+			let stockName = $(ConstHtmlIds.PushDownValue).find(":selected").text();
+			log("Sabotaging " + stockName);
+			Connection.RequestStockPushDown(stockName);
+			if (isBuy) {
+				ScreenOps.SwitchToBuy();
+			}
+			else {
+				ScreenOps.SwitchToSell();
+			}
+		});
+		$(ConstHtmlIds.Cancel).on(clickHandler, function () {
+			if (isBuy) {
+				ScreenOps.SwitchToBuy();
+			}
+			else {
+				ScreenOps.SwitchToSell();
+			}
 		});
 	},
 	SwitchToJoinMenu: function (initialUsername) {
