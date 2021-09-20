@@ -2,7 +2,6 @@
 using StonkTrader.Models.Game.Characters;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Timer = System.Timers.Timer;
@@ -31,6 +30,7 @@ namespace Models.Game
 		private readonly int m_rollTimeInSeconds;
 		private readonly int m_timeBetweenRollsInSeconds;
 		private readonly IGameEventCommunicator m_gameEventCommunicator;
+		private Dictionary<string, Stock> m_stocks;
 
 		// Rolling
 		private List<List<Roll>> m_rolls;
@@ -54,8 +54,6 @@ namespace Models.Game
 		#endregion
 
 		#region Properties
-
-		public Dictionary<string, Stock> Stocks;
 
 		public bool IsStarted { get; private set; }
 
@@ -108,14 +106,16 @@ namespace Models.Game
 			m_roundTrendIndexedByPlayer = new Dictionary<string, TrendDto>();
 			m_pushDownVotesIndexedByPlayer = new Dictionary<string, string>();
 
-			Stocks = new Dictionary<string, Stock>();
+			m_stocks = new Dictionary<string, Stock>();
 			foreach (StockDto stockDto in initializer.Stocks)
 			{
-				Stocks.Add(stockDto.Name, new Stock(stockDto));
+				m_stocks.Add(stockDto.Name, new Stock(stockDto));
 			}
 			IsMarketOpen = false;
 			IsStarted = false;
 		}
+		
+		#endregion
 
 		#region Event Handlers
 
@@ -137,13 +137,13 @@ namespace Models.Game
 			{
 				case RollType.Up:
 				{
-					Stocks[m_currentRoll.StockName].IncreaseValue(m_currentRoll.PercentageAmount);
+					m_stocks[m_currentRoll.StockName].IncreaseValue(m_currentRoll.PercentageAmount);
 					rollMethod = ResolveSplitOrCrash;
 					break;
 				}
 				case RollType.Down:
 				{
-					Stocks[m_currentRoll.StockName].DecreaseValue(m_currentRoll.PercentageAmount);
+					m_stocks[m_currentRoll.StockName].DecreaseValue(m_currentRoll.PercentageAmount);
 					rollMethod = ResolveSplitOrCrash;
 					break;
 				}
@@ -157,12 +157,6 @@ namespace Models.Game
 			}
 			await rollMethod();
 		}
-
-		#endregion
-
-		#endregion
-
-		#region Debug
 
 		#endregion
 
@@ -316,7 +310,7 @@ namespace Models.Game
 		{
 			foreach (var player in Players.Values)
 			{
-				player.Money += player.Character.CalculateMarketRebateAmount(Stocks);
+				player.Money += player.Character.CalculateMarketRebateAmount(m_stocks);
 			}
 			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
 		}
@@ -337,7 +331,7 @@ namespace Models.Game
 
 		private void SetupHalfTimeRoundTrends()
 		{
-			var marketCopy = Stocks.ToDictionary(kvp => kvp.Key, kvp => new Stock(kvp.Key));
+			var marketCopy = m_stocks.ToDictionary(kvp => kvp.Key, kvp => new Stock(kvp.Key));
 			for (int i = m_currentRollNumber; i < m_numberOfRollsPerRound; i++)
 			{
 				Roll roll = m_rolls[m_currentRoundNumber][i];
@@ -399,6 +393,12 @@ namespace Models.Game
 
 		private void PushDownStock()
 		{
+			if (m_pushDownVotesIndexedByPlayer.Count == 0) 
+			{
+				// No votes, so don't push down
+				return;
+			}
+
 			var rand = new Random();
 			string stockNameToPushDown;
 			var votes = new Dictionary<string, int>();
@@ -418,7 +418,7 @@ namespace Models.Game
 			}
 			else if (stocksToPushDown.Count > 1)
 			{
-				// Tied, flip a coin
+				// Tied, pick a random one out of the tied stocks
 				int coinFlipWinner = rand.Next(0, stocksToPushDown.Count);
 				stockNameToPushDown = stocksToPushDown[coinFlipWinner];
 			}
@@ -427,8 +427,9 @@ namespace Models.Game
 				throw new Exception("Bad");
 			}
 
-
 			double result = rand.NextDouble();
+			double percentageVote = maxVotes / Players.Count;
+			result += percentageVote;
 			decimal percentageDown;
 			if (result < 0.4)
 			{
@@ -513,7 +514,7 @@ namespace Models.Game
 		/// <param name="percentage">The percentage to pay out.</param>
 		private async Task PayDividends(string stock, decimal percentage)
 		{
-			if (!Stocks[stock].IsPayingDividends())
+			if (!m_stocks[stock].IsPayingDividends())
 			{
 				return;
 			}
@@ -523,7 +524,7 @@ namespace Models.Game
 				var holdings = player.Holdings[stock];
 				if (holdings > 0)
 				{
-					decimal specificPercentage = player.Character.GetDivedendAmount(Stocks[stock].Value, percentage);
+					decimal specificPercentage = player.Character.GetDivedendAmount(m_stocks[stock].Value, percentage);
 					player.Money += (int)(holdings * specificPercentage);
 					updatedPlayerInvectories.Add((player.ConnectionId, player.GetPlayerInvetory()));
 				}
@@ -538,7 +539,7 @@ namespace Models.Game
 		private async Task ResolveSplitOrCrash()
 		{
 			bool splitOrCrashed = false;
-			foreach (Stock stock in Stocks.Values)
+			foreach (Stock stock in m_stocks.Values)
 			{
 				// If stock crashes, remove all shares
 				if (stock.Value <= 0)
@@ -616,7 +617,7 @@ namespace Models.Game
 			{
 				return false;
 			}
-			if (!Stocks.ContainsKey(stockName))
+			if (!m_stocks.ContainsKey(stockName))
 			{
 				return false;
 			}
@@ -642,7 +643,7 @@ namespace Models.Game
 				return false;
 			}
 			Player player = Players[playerId];
-			var cost = Stocks[stockName].GetValueOfAmount(amountToBuy);
+			var cost = m_stocks[stockName].GetValueOfAmount(amountToBuy);
 			return player.Money >= cost;
 		}
 
@@ -660,7 +661,7 @@ namespace Models.Game
 			{
 				return player.GetPlayerInvetory();
 			}
-			var cost = Stocks[stockName].GetValueOfAmount(amountToBuy);
+			var cost = m_stocks[stockName].GetValueOfAmount(amountToBuy);
 			player.Money -= cost;
 			player.Holdings[stockName] += amountToBuy;
 			player.Character.RecordTransaction(new PlayerTransactionDto(true, amountToBuy, stockName));
@@ -699,7 +700,7 @@ namespace Models.Game
 			{
 				return player.GetPlayerInvetory();
 			}
-			var soldFor = Stocks[stockName].GetValueOfAmount(amountToSell);
+			var soldFor = m_stocks[stockName].GetValueOfAmount(amountToSell);
 			player.Holdings[stockName] -= amountToSell;
 			player.Money += soldFor;
 			player.Character.RecordTransaction(new PlayerTransactionDto(false, amountToSell, stockName));
@@ -733,7 +734,7 @@ namespace Models.Game
 			{
 				foreach (KeyValuePair<string, int> holding in player.Holdings)
 				{
-					player.Money += Stocks[holding.Key].GetValueOfAmount(holding.Value);
+					player.Money += m_stocks[holding.Key].GetValueOfAmount(holding.Value);
 				}
 				player.ClearAllShares();
 			}
@@ -750,7 +751,7 @@ namespace Models.Game
 		public MarketDto GetMarketDto()
 		{
 			var stocksDto = new Dictionary<string, StockDto>();
-			foreach (KeyValuePair<string, Stock> kvp in Stocks)
+			foreach (KeyValuePair<string, Stock> kvp in m_stocks)
 			{
 				stocksDto.Add(kvp.Key, kvp.Value.ToStockDto());
 			}
@@ -799,7 +800,7 @@ namespace Models.Game
 		/// <returns></returns>
 		private List<string> GetStockNames()
 		{
-			return Stocks.Values.Select(stock => stock.Name).ToList();
+			return m_stocks.Values.Select(stock => stock.Name).ToList();
 		}
 
 		/// <summary>

@@ -96,6 +96,7 @@ var CurrentData = {
 	PlayerInventories: {},
 	Money: 0,
 	CharacterId: 0,
+	Temp: {},
 };
 
 var Connection = {
@@ -220,6 +221,7 @@ var Connection = {
 				}
 				else {
 					Presenter.SetMarketClosed();
+					CurrentData.Temp = {};
 				}
 			}
 			else if (Connection.ClientType === Connection.ClientTypes.Player) {
@@ -230,6 +232,7 @@ var Connection = {
 				}
 				else {
 					ScreenOps.SwitchToClosedMarket();
+					CurrentData.Temp = {};
 				}
 			}
 		});
@@ -282,6 +285,7 @@ var Connection = {
 				StockHalves: {},
 				PlayerInventories: {},
 				Money: 0,
+				Temp: {},
 			};
 			ScreenOps.SwitchToMainMenu();
 		});
@@ -541,7 +545,14 @@ var HtmlGeneration =
 		return html;
 	},
 	MakePrePushDownScreen: function () {
-		let html = '<div class="fill grid-row-2"><p class="buy-sell-prompt">Choose the stock you want to sabotage.</p><div class="buy-sell-control"><select class="buy-sell-prompt grid-column-2 grid-row-1 fill" name="amount" id="pushDownValue">';
+		let html = '<div class="fill grid-row-2"><p class="buy-sell-prompt">';
+		if (CurrentData.Temp && CurrentData.Temp.StockToPushDown) {
+			html += 'Change the stock you want to sabotage.';
+		}
+		else {
+			html += 'Choose the stock you want to sabotage.';
+		}
+		html += '</p ><div class="buy-sell-control"><select class="buy-sell-prompt grid-column-2 grid-row-1 fill" name="amount" id="pushDownValue">';
 		for (let stockName in CurrentData.Holdings) {
 			if (CurrentData.Holdings.hasOwnProperty(stockName)) {
 				html += '<option value="';
@@ -593,7 +604,15 @@ var HtmlGeneration =
 		return '<div class="roll-preview-banner" id="trendPreviewBtn"><button class="btn btn-primary roll-preview-btn">Tap to see trend</button></div>';
 	},
 	MakePushDownButton: function () {
-		return '<div class="roll-preview-banner" id="pushDownBtn"><button class="btn btn-primary roll-preview-btn">Tap to sabotage</button></div>';
+		let html = '<div class="roll-preview-banner" id="pushDownBtn"><button class="btn btn-primary roll-preview-btn">';
+		if (CurrentData.Temp && CurrentData.Temp.StockToPushDown) {
+			html += 'Sabotaging ' + CurrentData.Temp.StockToPushDown;
+		}
+		else {
+			html += 'Tap to sabotage';
+		}
+		html += '</button></div>';
+		return html;
 	},
 	MakeRollPreview: function (rollDto) {
 		let html = '<div class="stock-banner"><p class="grid-column-1 stock-text">';
@@ -957,6 +976,7 @@ var ScreenOps = {
 		$(ConstHtmlIds.PushDownSendButton).on(clickHandler, function () {
 			let stockName = $(ConstHtmlIds.PushDownValue).find(":selected").text();
 			log("Sabotaging " + stockName);
+			CurrentData.Temp.StockToPushDown = stockName;
 			Connection.RequestStockPushDown(stockName);
 			if (isBuy) {
 				ScreenOps.SwitchToBuy();

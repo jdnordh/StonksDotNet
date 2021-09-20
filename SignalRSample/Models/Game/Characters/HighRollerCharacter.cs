@@ -9,10 +9,10 @@ namespace StonkTrader.Models.Game.Characters
 	public class HighRollerCharacter : CharacterBase
 	{
 		private const decimal SmallRebateMaxValue = 0.95M;
-		private const decimal SmallRebateAmount = 0.1M;
+		private const decimal SmallRebateAmount = 0.15M;
 
 		private const decimal BigRebateMaxValue = 0.5M;
-		private const decimal BigRebateAmount = 0.25M;
+		private const decimal BigRebateAmount = 0.3M;
 
 		#region Properties
 
