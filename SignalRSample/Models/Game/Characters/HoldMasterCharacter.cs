@@ -21,6 +21,11 @@ namespace StonkTrader.Models.Game.Characters
 		public override string Description => $"This character gets paid {Num(ExtraDividendPercentage * 100)}% more dividends.";
 
 		/// <summary>
+		/// The description of this chacter.
+		/// </summary>
+		public override string DetailedInformation => $"Rework?";
+
+		/// <summary>
 		/// The id of this chacter.
 		/// </summary>
 		public override int Id => 3;

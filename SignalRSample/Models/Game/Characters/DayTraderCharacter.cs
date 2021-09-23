@@ -19,6 +19,11 @@ namespace StonkTrader.Models.Game.Characters
 		public override string Description => "This character can make additional trades half way through a closed market and gets information about trends.";
 
 		/// <summary>
+		/// The description of this chacter.
+		/// </summary>
+		public override string DetailedInformation => $"As the Day Trader, you get to trade at the Half Time market. This is a time to buy and sell when others cannot. Additionally, when the market is open at half time, you get to see a trend of what will happen in the second half of the market.";
+
+		/// <summary>
 		/// The id of this chacter.
 		/// </summary>
 		public override int Id => 2;

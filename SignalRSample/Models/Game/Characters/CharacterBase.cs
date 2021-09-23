@@ -26,6 +26,11 @@ namespace StonkTrader.Models.Game.Characters
 		public abstract string Description { get; }
 
 		/// <summary>
+		/// The description of this chacter.
+		/// </summary>
+		public abstract string DetailedInformation { get; }
+
+		/// <summary>
 		/// The id of this chacter.
 		/// </summary>
 		public abstract int Id { get; }

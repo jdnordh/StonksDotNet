@@ -627,7 +627,7 @@ var HtmlGeneration =
 	MakeTrendPreview: function (trendDto) {
 		let html = '<div class="stock-banner"><p class="grid-column-1 stock-text">';
 		if (trendDto.isNoInformation) {
-			html += 'No Information Sucker</p></div>';
+			html += 'No Information (so sad)</p></div>';
 			return html;
 		}
 		html += trendDto.stockName;

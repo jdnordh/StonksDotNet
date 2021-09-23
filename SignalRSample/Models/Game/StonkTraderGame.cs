@@ -30,17 +30,17 @@ namespace Models.Game
 		private readonly int m_rollTimeInSeconds;
 		private readonly int m_timeBetweenRollsInSeconds;
 		private readonly IGameEventCommunicator m_gameEventCommunicator;
-		private Dictionary<string, Stock> m_stocks;
+		private readonly Dictionary<string, Stock> m_stocks;
 
 		// Rolling
 		private List<List<Roll>> m_rolls;
 		private Roll m_currentRoll;
 
 		// Timers
-		private Timer m_marketTimer;
-		private Timer m_marketHalfTimer;
-		private Timer m_rollTimer;
-		private Timer m_rollPlayerDelayTimer;
+		private readonly Timer m_marketTimer;
+		private readonly Timer m_marketHalfTimer;
+		private readonly Timer m_rollTimer;
+		private readonly Timer m_rollPlayerDelayTimer;
 
 		/// <summary>
 		/// The current round number that starts at 0 for the first round.
@@ -48,8 +48,8 @@ namespace Models.Game
 		private int m_currentRoundNumber;
 		private int m_currentRollNumber;
 
-		private Dictionary<string, TrendDto> m_roundTrendIndexedByPlayer;
-		private Dictionary<string, string> m_pushDownVotesIndexedByPlayer;
+		private readonly Dictionary<string, TrendDto> m_roundTrendIndexedByPlayer;
+		private readonly Dictionary<string, string> m_pushDownVotesIndexedByPlayer;
 
 		#endregion
 

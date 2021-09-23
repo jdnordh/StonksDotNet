@@ -24,6 +24,11 @@ namespace StonkTrader.Models.Game.Characters
 			$"This character gets rebates when buying stocks valued {Num(RebateMaxValue * 100)} or under that are progressively bigger the lower the stock value, but is payed no dividends.";
 
 		/// <summary>
+		/// The description of this chacter.
+		/// </summary>
+		public override string DetailedInformation => $"As the High Roller, you are paid no dividends, but get paid cash back for every stock you buy below 100. The lower the stock value, the more cash you get back.";
+
+		/// <summary>
 		/// The id of this chacter.
 		/// </summary>
 		public override int Id => 4;

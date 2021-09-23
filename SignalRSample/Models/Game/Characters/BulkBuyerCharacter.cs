@@ -25,6 +25,11 @@ namespace StonkTrader.Models.Game.Characters
 		public override string Description => $"This character gets a {Num(RebateAmount * 100)}% rebate on all buys of more than ${Num(CashAmountToRebate)} on stocks valued {Num(RebateMinValue * 100)} or over.";
 
 		/// <summary>
+		/// The description of this chacter.
+		/// </summary>
+		public override string DetailedInformation => $"Rework?";
+
+		/// <summary>
 		/// The id of this chacter.
 		/// </summary>
 		public override int Id => 5;
