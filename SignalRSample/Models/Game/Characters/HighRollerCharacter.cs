@@ -8,11 +8,7 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class HighRollerCharacter : CharacterBase
 	{
-		private const decimal SmallRebateMaxValue = 0.95M;
-		private const decimal SmallRebateAmount = 0.15M;
-
-		private const decimal BigRebateMaxValue = 0.5M;
-		private const decimal BigRebateAmount = 0.3M;
+		private const decimal RebateMaxValue = 0.95M;
 
 		#region Properties
 
@@ -25,7 +21,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// The name of this chacter.
 		/// </summary>
 		public override string Description => 
-			$"This character gets a {Num(SmallRebateAmount * 100)}% rebate when buying stocks valued {Num(SmallRebateMaxValue * 100)} or under and a {Num(BigRebateAmount * 100)}% rebate when buying stocks valued {Num(BigRebateAmount * 100)} or under, but is payed no divideds.";
+			$"This character gets rebates when buying stocks valued {Num(RebateMaxValue * 100)} or under that are progressively bigger the lower the stock value, but is payed no dividends.";
 
 		/// <summary>
 		/// The id of this chacter.
@@ -54,18 +50,13 @@ namespace StonkTrader.Models.Game.Characters
 			{
 				var stockName = kvp.Key;
 				var stock = kvp.Value;
-				decimal rebatePercentage = 0M;
-				if (stock.Value <= BigRebateMaxValue && HoldingChanges[stockName] > 0)
+				if (stock.Value <= RebateMaxValue && HoldingChanges[stockName] > 0)
 				{
-					rebatePercentage = BigRebateAmount;
-				}
-				else if (stock.Value <= SmallRebateMaxValue && HoldingChanges[stockName] > 0)
-				{
-					rebatePercentage = SmallRebateAmount;
+					decimal cost = HoldingChanges[stockName] * stock.Value;
+					decimal rebatePercentage = (1M - stock.Value) / 2;
+					rebateAmount += cost * rebatePercentage;
 				}
 
-				decimal cost = HoldingChanges[stockName] * stock.Value;
-				rebateAmount += cost * rebatePercentage;
 			}
 			return (int)rebateAmount;
 		}
