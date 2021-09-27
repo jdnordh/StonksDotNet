@@ -51,10 +51,20 @@ namespace StonkTrader.Models.Game.Characters
 		public virtual bool GetsPushDownVote => false;
 
 		/// <summary>
+		/// Whether or not the character gets a vote to push down a stock.
+		/// </summary>
+		public virtual bool GetsPrediction => false;
+
+		/// <summary>
 		/// If the stocks are initialized.
 		/// </summary>
 		public bool AreStocksInitialized { get; set; }
 
+		/// <summary>
+		/// The current market prediction.
+		/// </summary>
+		public PredictionDto Prediction { get; set; }
+		
 		/// <summary>
 		/// The changes to the holdings this round.
 		/// </summary>
@@ -106,14 +116,22 @@ namespace StonkTrader.Models.Game.Characters
 		}
 
 		/// <summary>
-		/// Resets the holding changes.
+		/// Called when a prediction is correct.
 		/// </summary>
-		public void ResetHoldingChanges()
+		public virtual void PredictionWasCorrect()
+		{
+		}
+
+		/// <summary>
+		/// Resets any data associated with the round.
+		/// </summary>
+		public void ResetRoundData()
 		{
 			foreach(var kvp in HoldingChanges.ToList())
 			{
 				HoldingChanges[kvp.Key] = 0;
 			}
+			Prediction = null;
 		}
 
 		/// <summary>

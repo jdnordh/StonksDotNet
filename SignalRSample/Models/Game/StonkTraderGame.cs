@@ -63,6 +63,21 @@ namespace Models.Game
 
 		public Dictionary<string, Player> Players;
 
+		private bool ShouldDoHalfTimeMarket
+		{
+			get => Players.Values.Where(p => p.Character.GetsHalfTimeTransaction).Any();
+		}
+
+		private bool ShouldCheckPredictions
+		{
+			get => Players.Values.Where(p => p.Character.GetsPrediction).Any();
+		}
+
+		private bool ShouldPushDownStock
+		{
+			get => Players.Values.Where(p => p.Character.GetsPushDownVote).Any();
+		}
+
 		#endregion
 
 		#region Constructor 
@@ -212,19 +227,14 @@ namespace Models.Game
 		/// <summary>
 		/// Add a player to the game.
 		/// </summary>
-		/// <param name="connectionId">The connection id.</param>
 		/// <param name="username">The username.</param>
 		/// <param name="characterId">The character id.</param>
 		/// <returns>The player's inventory.</returns>
-		public PlayerInventoryDto AddPlayer(string connectionId, string username, int characterId)
+		public PlayerInventoryDto AddPlayer(string username, int characterId)
 		{
-			if (Players.ContainsKey(connectionId))
-			{
-				return null;
-			}
 			var playerId = GetNewPlayerId();
 			List<string> stockNames = GetStockNames();
-			var player = new Player(playerId, connectionId, username, m_startingMoney, stockNames, 
+			var player = new Player(playerId, username, m_startingMoney, stockNames, 
 				CharacterProvider.GetCharacterForId(characterId));
 
 			if (IsStarted && IsMarketOpen)
@@ -269,7 +279,7 @@ namespace Models.Game
 			{
 				if (player.Character.AreStocksInitialized)
 				{
-					player.Character.ResetHoldingChanges();
+					player.Character.ResetRoundData();
 				}
 				else
 				{
@@ -284,6 +294,10 @@ namespace Models.Game
 			}
 			else
 			{
+				if (ShouldCheckPredictions)
+				{
+					await CheckPredictions();
+				}
 				++m_currentRoundNumber;
 				m_marketTimer.Start();
 			}
@@ -302,7 +316,10 @@ namespace Models.Game
 
 			await PayRebates();
 			await m_gameEventCommunicator.GameMarketChanged(GetMarketDto());
-			PushDownStock();
+			if(ShouldPushDownStock)
+			{
+				PushDownStock();
+			}
 			m_rollTimer.Start();
 		}
 
@@ -311,6 +328,71 @@ namespace Models.Game
 			foreach (var player in Players.Values)
 			{
 				player.Money += player.Character.CalculateMarketRebateAmount(m_stocks);
+			}
+			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
+		}
+
+		/// <summary>
+		/// Sets the prediction for a player.
+		/// </summary>
+		/// <param name="playerId">The player id.</param>
+		/// <param name="prediction">The prediction.</param>
+		public void SetPrediction(string playerId, PredictionDto prediction)
+		{
+			if(Players[playerId].Character.GetsPrediction && IsMarketOpen && !IsMarketHalfTime)
+			{
+				Players[playerId].Character.Prediction = prediction;
+			}
+		}
+
+		private async Task CheckPredictions()
+		{
+			if (m_currentRoundNumber < 0)
+			{
+				return;
+			}
+
+			// Dictionary keyed by stock name with value true if the stock value went up.
+			var marketCopy = m_stocks.ToDictionary(kvp => kvp.Key, kvp => new Stock(kvp.Key));
+			var rolls = m_rolls[m_currentRoundNumber];
+			for(int i = 0; i < rolls.Count; i++)
+			{
+				Roll roll = rolls[i];
+				switch(roll.Type)
+				{
+					case RollType.Up:
+					{
+						marketCopy[roll.StockName].IncreaseValue(roll.PercentageAmount);
+						break;
+					}
+					case RollType.Down:
+					{
+						marketCopy[roll.StockName].DecreaseValue(roll.PercentageAmount);
+						break;
+					}
+				}
+			}
+			var correctPredictions = new Dictionary<string, bool>();
+			foreach(var kvp in marketCopy)
+			{
+				if(kvp.Value.Value == 1M)
+				{
+					continue;
+				}
+				correctPredictions.Add(kvp.Key, kvp.Value.Value > 1M);
+			}
+
+			foreach(var player in Players.Values)
+			{
+				var prediction = player.Character.Prediction;
+				if (prediction == null)
+				{
+					continue;
+				}
+				if (correctPredictions.ContainsKey(prediction.StockName) && correctPredictions[prediction.StockName] == prediction.IsUp)
+				{
+					player.Character.PredictionWasCorrect();
+				}
 			}
 			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
 		}
@@ -352,11 +434,11 @@ namespace Models.Game
 			var trendData = new List<TrendDto>();
 			foreach(var kvp in marketCopy)
 			{
-				if (kvp.Value.Value == 1)
+				if (kvp.Value.Value == 1M)
 				{
 					continue;
 				}
-				trendData.Add(new TrendDto(kvp.Key, kvp.Value.Value > 1 ? "Up" : "Down"));
+				trendData.Add(new TrendDto(kvp.Key, kvp.Value.Value > 1M ? "Up" : "Down"));
 			}
 			if (trendData.Count == 0)
 			{
@@ -451,17 +533,11 @@ namespace Models.Game
 
 		#region Dice Rolling
 
-		private bool ShouldDoHalfTimeMarket
-		{
-			get => Players.Values.Where(p => p.Character.GetsHalfTimeTransaction).Any();
-		}
-
 		/// <summary>
 		/// Roll the dice.
 		/// </summary>
 		private async Task Roll()
 		{
-			//if (m_currentRollNumber == m_numberOfRollsPerRound)
 			if (m_currentRollNumber == m_rolls[m_currentRoundNumber].Count)
 			{
 				m_currentRollNumber = 0;
@@ -518,7 +594,6 @@ namespace Models.Game
 			{
 				return;
 			}
-			var updatedPlayerInvectories = new List<(string id, PlayerInventoryDto)>();
 			foreach (Player player in Players.Values)
 			{
 				var holdings = player.Holdings[stock];
@@ -526,11 +601,9 @@ namespace Models.Game
 				{
 					decimal specificPercentage = player.Character.GetDivedendAmount(m_stocks[stock].Value, percentage);
 					player.Money += (int)(holdings * specificPercentage);
-					updatedPlayerInvectories.Add((player.ConnectionId, player.GetPlayerInvetory()));
 				}
 			}
-			PlayerInventoryCollectionDto inventoryCollectionDto = GetInventoryCollectionDto();
-			await m_gameEventCommunicator.PlayerInventoriesUpdated(inventoryCollectionDto);
+			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
 		}
 
 		/// <summary>
@@ -776,7 +849,7 @@ namespace Models.Game
 		private PlayerInventoryCollectionDto GetInventoryCollectionDto()
 		{
 			var inventories = new Dictionary<string, PlayerInventoryDto>();
-
+			
 			foreach (KeyValuePair<string, Player> kvp in Players)
 			{
 				inventories.Add(kvp.Key, kvp.Value.GetPlayerInvetory());

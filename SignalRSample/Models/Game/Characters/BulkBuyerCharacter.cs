@@ -8,8 +8,7 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class BulkBuyerCharacter : CharacterBase
 	{
-		private const decimal RebateMinValue = 1M;
-		private const int CashAmountToRebate = 4000;
+		private const int MinimumBuyAmountToRebate = 4000;
 		private const decimal RebateAmount = 0.2M;
 
 		#region Properties
@@ -22,12 +21,12 @@ namespace StonkTrader.Models.Game.Characters
 		/// <summary>
 		/// The name of this chacter.
 		/// </summary>
-		public override string Description => $"This character gets a {Num(RebateAmount * 100)}% rebate on all buys of more than ${Num(CashAmountToRebate)} on stocks valued {Num(RebateMinValue * 100)} or over.";
+		public override string Description => $"This character gets a {Num(RebateAmount * 100)}% rebate on all buys of ${Num(MinimumBuyAmountToRebate)} or more.";
 
 		/// <summary>
 		/// The description of this chacter.
 		/// </summary>
-		public override string DetailedInformation => $"Rework?";
+		public override string DetailedInformation => $"As the Bulk Buyer, you get {Num(RebateAmount * 100)}% cash back when you spend ${Num(MinimumBuyAmountToRebate)} or more on a single stock. This is based off of the net difference from when the market opens till it closes, so buying ${Num(MinimumBuyAmountToRebate)} and then selling it in the same market time will not give a rebate.";
 
 		/// <summary>
 		/// The id of this chacter.
@@ -52,7 +51,7 @@ namespace StonkTrader.Models.Game.Characters
 				Stock stock = kvp.Value;
 				int holdingChange = HoldingChanges[stockName];
 				var cost = holdingChange * stock.Value;
-				if (stock.Value >= RebateMinValue && cost >= CashAmountToRebate && holdingChange > 0)
+				if (cost >= MinimumBuyAmountToRebate && holdingChange > 0)
 				{
 					rebateAmount += cost * RebateAmount;
 				}

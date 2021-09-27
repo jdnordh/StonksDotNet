@@ -22,7 +22,7 @@ namespace StonkTrader.Models.Workers
 		private HubConnection m_connection;
 
 		private Dictionary<string, string> m_connectionIdToPlayerIdMap = new Dictionary<string, string>();
-		private Dictionary<string, string> m_playerIdConnectionIdMap = new Dictionary<string, string>();
+		private Dictionary<string, string> m_playerIdToConnectionIdMap = new Dictionary<string, string>();
 
 		public GameWorker(ILogger<GameWorker> logger)
 		{
@@ -143,14 +143,15 @@ namespace StonkTrader.Models.Workers
 				await m_connection.SendAsync(GameWorkerResponses.JoinGameFailed, connectionId);
 				return;
 			}
+			if(m_connectionIdToPlayerIdMap.ContainsKey(connectionId))
+			{
+				// Connection id is already registered.
+				return;
+			}
 			if (isPlayer)
 			{
 				m_logger.Log(LogLevel.Information, $"{username} is joining game.");
-				PlayerInventoryDto inventory = m_game.AddPlayer(connectionId, username, characterId);
-				if (inventory == null)
-				{
-					return;
-				}
+				PlayerInventoryDto inventory = m_game.AddPlayer(username, characterId);
 				AddNewPlayer(connectionId, inventory.PlayerId);
 				await m_connection.InvokeAsync(GameWorkerResponses.PlayerJoinedGameResponse, connectionId, inventory);
 				if (m_game.IsStarted)
@@ -173,7 +174,7 @@ namespace StonkTrader.Models.Workers
 				await m_connection.SendAsync(GameWorkerResponses.JoinGameFailed, connectionId);
 				return;
 			}
-			if (!m_playerIdConnectionIdMap.ContainsKey(playerId))
+			if (!m_playerIdToConnectionIdMap.ContainsKey(playerId))
 			{
 				await m_connection.SendAsync(GameWorkerResponses.JoinGameFailed, connectionId);
 				return;
@@ -258,12 +259,12 @@ namespace StonkTrader.Models.Workers
 		private void ClearPlayerIdMaps()
 		{
 			m_connectionIdToPlayerIdMap.Clear();
-			m_playerIdConnectionIdMap.Clear();
+			m_playerIdToConnectionIdMap.Clear();
 		}
 
 		private void UpdateConnectionId(string connectionId, string playerId)
 		{
-			m_playerIdConnectionIdMap[playerId] = connectionId;
+			m_playerIdToConnectionIdMap[playerId] = connectionId;
 			m_connectionIdToPlayerIdMap.Remove(connectionId);
 			m_connectionIdToPlayerIdMap.Add(connectionId, playerId);
 		}
@@ -284,9 +285,9 @@ namespace StonkTrader.Models.Workers
 				m_logger.Log(LogLevel.Error, "Tried to add duplicate connection ID to dictionary.");
 			}
 
-			if (!m_playerIdConnectionIdMap.ContainsKey(playerId))
+			if (!m_playerIdToConnectionIdMap.ContainsKey(playerId))
 			{
-				m_playerIdConnectionIdMap.Add(playerId, connectionId);
+				m_playerIdToConnectionIdMap.Add(playerId, connectionId);
 			}
 			else
 			{
@@ -303,10 +304,11 @@ namespace StonkTrader.Models.Workers
 		{
 			m_logger.Log(LogLevel.Information, "Player inventories updated.");
 
+			// Transform player ids into connection ids.
 			var inventories = new Dictionary<string, PlayerInventoryDto>();
 			foreach(KeyValuePair<string, PlayerInventoryDto> kvp in playerInventoryCollectionDto.Inventories)
 			{
-				inventories.Add(m_playerIdConnectionIdMap[kvp.Key], kvp.Value);
+				inventories.Add(m_playerIdToConnectionIdMap[kvp.Key], kvp.Value);
 			}
 
 			var updatedConnectionIdDto = new PlayerInventoryCollectionDto(inventories);

@@ -1,6 +1,7 @@
 ﻿using Models.DataTransferObjects;
 using StonkTrader.Models.Game.Characters;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Models.Game
 {
@@ -11,41 +12,35 @@ namespace Models.Game
 		/// </summary>
 		public string Id { get; }
 
-		public string ConnectionId { get; }
-
 		public string Username { get;  }
 
 		public int Money { get; set; }
 
-		public Dictionary<string, int> Holdings;
-
-		private List<string> m_stocks;
+		public readonly Dictionary<string, int> Holdings;
 
 		public CharacterBase Character { get; }
 
-		public Player(string id, string connectionId, string username, int startingMoney, List<string> stocks, CharacterBase character)
+		public Player(string id, string username, int startingMoney, List<string> stocks, CharacterBase character)
 		{
 			Id = id;
-			ConnectionId = connectionId;
 			Username = username;
-			m_stocks = stocks;
 			Money = startingMoney;
 			Character = character;
-			ClearAllShares();
+			Holdings = new Dictionary<string, int>(stocks.ToDictionary(s => s, s => 0));
 		}
 
 		public void ClearAllShares()
 		{
-			Holdings = new Dictionary<string, int>();
-			foreach (var stock in m_stocks)
+			foreach(var stockName in Holdings.Keys.ToList())
 			{
-				Holdings.Add(stock, 0);
+				Holdings[stockName] = 0;
 			}
 		}
 
 		public PlayerInventoryDto GetPlayerInvetory()
 		{
-			return new PlayerInventoryDto(Id, Money, Holdings, Username, Character.Id);
+			return new PlayerInventoryDto(Id, Money, Holdings.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
+				Username, new CharacterDto(Character.DetailedInformation, Character.Id));
 		}
 	}
 }

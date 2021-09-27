@@ -225,7 +225,7 @@ var Connection = {
 				}
 			}
 			else if (Connection.ClientType === Connection.ClientTypes.Player) {
-				let canParticipateInHalfTimeMarket = CurrentData.CharacterId === 2;
+				let canParticipateInHalfTimeMarket = CurrentData.Character.id === 2;
 				if ((marketDto.isOpen && !marketDto.isHalfTime) ||
 					(marketDto.isOpen && marketDto.isHalfTime && canParticipateInHalfTimeMarket)) {
 					ScreenOps.SwitchToOpenMarket(marketDto);
@@ -367,13 +367,14 @@ var Connection = {
 		}
 	},
 	UpdateInventory: function (playerInventoryDto) {
+		log(playerInventoryDto);
 		for (let stockName in playerInventoryDto.holdings) {
 			if (playerInventoryDto.holdings.hasOwnProperty(stockName)) {
 				let amount = playerInventoryDto.holdings[stockName];
 				CurrentData.Holdings[stockName] = amount;
 			}
 		}
-		CurrentData.CharacterId = playerInventoryDto.characterId;
+		CurrentData.Character = playerInventoryDto.characterDto;
 		Connection.SetMoney(playerInventoryDto.money);
 		Connection.OnServerUpdate();
 	},
@@ -574,7 +575,9 @@ var HtmlGeneration =
 		return html;
 	},
 	MakeMarketClosedScreen: function (money) {
-		let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1"><p class="market-closed" id="marketOpenClosedHeader">Market Closed</p></div><div class="grid-row-2"><p id="money">$'
+		let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1"><p class="market-closed" id="marketOpenClosedHeader">';
+		html += CurrentData.Username;
+		html += '</p></div><div class="grid-row-2"><p id="money">$'
 		html += money;
 		html += '</p></div></div><div class="grid-row-2 scrollviewer-vertical" id="stockList"></div>';
 		return html;
@@ -844,19 +847,19 @@ var ScreenOps = {
 		list.empty();
 
 		// Add roll preview button if player has privileges
-		if (CurrentData.CharacterId === 1) {
+		if (CurrentData.Character.id === 1) {
 			list.append(HtmlGeneration.MakeRollPreviewButton());
 			$(ConstHtmlIds.RollPreviewButton).on(clickHandler, function () {
 				Connection.RequestRollPreview();
 			});
 		}
-		else if (CurrentData.CharacterId === 2 && CurrentData.IsHalfTime) {
+		else if (CurrentData.Character.id === 2 && CurrentData.IsHalfTime) {
 			list.append(HtmlGeneration.MakeTrendPreviewButton());
 			$(ConstHtmlIds.TrendPreviewButton).on(clickHandler, function () {
 				Connection.RequestTrendPreview();
 			});
 		}
-		else if (CurrentData.CharacterId === 6) {
+		else if (CurrentData.Character.id === 6) {
 			list.append(HtmlGeneration.MakePushDownButton());
 			$(ConstHtmlIds.PushDownButton).on(clickHandler, function () {
 				ScreenOps.PrePushDown(true);
@@ -886,19 +889,19 @@ var ScreenOps = {
 		list.empty();
 
 		// Add roll preview button if player has privileges
-		if (CurrentData.CharacterId === 1) {
+		if (CurrentData.Character.id === 1) {
 			list.append(HtmlGeneration.MakeRollPreviewButton());
 			$(ConstHtmlIds.RollPreviewButton).on(clickHandler, function () {
 				Connection.RequestRollPreview();
 			});
 		}
-		else if (CurrentData.CharacterId === 2 && CurrentData.IsHalfTime) {
+		else if (CurrentData.Character.id === 2 && CurrentData.IsHalfTime) {
 			list.append(HtmlGeneration.MakeTrendPreviewButton());
 			$(ConstHtmlIds.TrendPreviewButton).on(clickHandler, function () {
 				Connection.RequestTrendPreview();
 			});
 		}
-		else if (CurrentData.CharacterId === 6) {
+		else if (CurrentData.Character.id === 6) {
 			list.append(HtmlGeneration.MakePushDownButton());
 			$(ConstHtmlIds.PushDownButton).on(clickHandler, function () {
 				ScreenOps.PrePushDown(false);

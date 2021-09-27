@@ -8,6 +8,9 @@ namespace Models.DataTransferObjects
 	[Serializable]
 	public class PlayerInventoryCollectionDto
 	{
+		/// <summary>
+		/// Player's inventory dtos keyed by their player id.
+		/// </summary>
 		[JsonInclude]
 		[JsonProperty("inventories")]
 		public Dictionary<string, PlayerInventoryDto> Inventories { get; set; }
