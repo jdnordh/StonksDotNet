@@ -38,7 +38,7 @@
 		/// <inheritdoc/>
 		public override string GetDetailedInformation()
 		{
-			return $"Current dividend bonus: {Num(m_currentDividendBonus * 100)}%. As the Master of the Hold, you start off getting {Num(StartingExtraDividendPercentage * 100)}% more dividends. You also have the ability to make market predictions for what will happen in the next round. If you make a correct prediction, your divend bonus will increase by {Num(DividendPercentageIncrease * 100)}%.";
+			return $"Current dividend bonus: {Num(m_currentDividendBonus * 100)}%. As the Master of the Hold, you start off getting {Num(StartingExtraDividendPercentage * 100)}% more dividends. You also have the ability to make market predictions for what will happen in the next round. If you make a correct prediction, your dividend bonus will increase by {Num(DividendPercentageIncrease * 100)}%.";
 		}
 
 		/// <summary>

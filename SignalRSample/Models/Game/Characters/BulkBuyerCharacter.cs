@@ -41,7 +41,7 @@ namespace StonkTrader.Models.Game.Characters
 				int rebateAmount = CalculateMarketRebateAmount();
 				preamble = rebateAmount > 0 ? $"You have qualified for a rebate of ${rebateAmount} this round. " : "You have not qualified for a rebate this round. ";
 			}
-			return $"{preamble}As the Bulk Buyer, you get {Num(RebateAmount * 100)}% cash back when you spend ${Num(MinimumBuyAmountToRebate)} or more on a single stock. This is based off of the net difference from when the market opens till it closes, so buying ${Num(MinimumBuyAmountToRebate)} and then selling it in the same market time will not give a rebate.";
+			return $"{preamble}As the Bulk Buyer, you get {Num(RebateAmount * 100)}% cash back when you spend ${Num(MinimumBuyAmountToRebate)} or more on a single stock. This is based off of the net difference from when the market opens till it closes, so buying ${Num(MinimumBuyAmountToRebate)} of one stock and then selling it in the same market time will not give a rebate.";
 		}
 
 		/// <summary>
