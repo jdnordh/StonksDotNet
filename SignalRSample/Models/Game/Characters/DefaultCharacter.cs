@@ -24,10 +24,15 @@ namespace StonkTrader.Models.Game.Characters
 		/// </summary>
 		public override int Id => 0;
 
-		/// <summary>
-		/// The description of this chacter.
-		/// </summary>
-		public override string DetailedInformation => $"As the default character, you have no special bonuses.";
+		#endregion
+
+		#region Public Methods
+
+		/// <inheritdoc/>
+		public override string GetDetailedInformation()
+		{
+			return $"As the default character, you have no special abilities.";
+		}
 
 		#endregion
 	}

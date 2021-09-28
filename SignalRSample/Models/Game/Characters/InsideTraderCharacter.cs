@@ -19,11 +19,6 @@ namespace StonkTrader.Models.Game.Characters
 		public override string Description => "This character allows you to see the first roll of every round before it is rolled.";
 
 		/// <summary>
-		/// The description of this chacter.
-		/// </summary>
-		public override string DetailedInformation => $"As the Insider Trader, you get to know the first roll of every round.";
-
-		/// <summary>
 		/// The id of this chacter.
 		/// </summary>
 		public override int Id => 1;
@@ -32,6 +27,16 @@ namespace StonkTrader.Models.Game.Characters
 		/// Whether or not the character gets a reveal of the first roll of each round.
 		/// </summary>
 		public override bool GetsFirstRollReveal => true;
+
+		#endregion
+
+		#region Public Methods
+
+		/// <inheritdoc/>
+		public override string GetDetailedInformation()
+		{
+			return $"As the Insider Trader, you get to know the first roll of every round.";
+		}
 
 		#endregion
 	}

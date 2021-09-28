@@ -40,7 +40,7 @@ namespace Models.Game
 		public PlayerInventoryDto GetPlayerInvetory()
 		{
 			return new PlayerInventoryDto(Id, Money, Holdings.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
-				Username, new CharacterDto(Character.DetailedInformation, Character.Id));
+				Username, new CharacterDto(Character.GetDetailedInformation(), Character.Id));
 		}
 	}
 }

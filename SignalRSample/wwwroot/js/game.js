@@ -89,13 +89,16 @@ var Unit = {
 
 var CurrentData = {
 	Username: "StonkMaster",
+	SelectedCharacterId: 0,
+	SelectedCharacterName: "",
 	Holdings: { },
 	StockValues: { },
 	StockColors: { },
 	StockHalves: {},
 	PlayerInventories: {},
 	Money: 0,
-	CharacterId: 0,
+	Character: {},
+	IsCharacterInfoOpen: false,
 	Temp: {},
 };
 
@@ -133,6 +136,7 @@ var Connection = {
 		RequestRollPreview: "RequestRollPreview",
 		RequestTrendPreview: "RequestTrendPreview",
 		RequestStockPushDown: "RequestStockPushDown",
+		RequestMakePrediction: "RequestMakePrediction",
 		Reset: "Reset",
 		ReJoin: "ReJoin",
 	},
@@ -398,6 +402,11 @@ var Connection = {
 			return console.error(err.toString());
 		});
 	},
+	RequestMakePrediction: function (predictionDto) {
+		Connection.Hub.invoke(Connection.ServerMethods.RequestMakePrediction, predictionDto).catch(function (err) {
+			return console.error(err.toString());
+		});
+	},
 	BuyStock: function (stockName, amount) {
 		Connection.RequestTransaction(stockName, true, amount);
 	},
@@ -484,12 +493,20 @@ var ConstHtmlIds =
 	PresenterChartSlider: "#presenterChartSlider",
 	InventoryChartSlider: "#inventoryChartSlider",
 	SelectCharacter: "#selectCharacter",
+	CharacterName: "#characterName",
 	RollPreviewButton: "#rollPreviewBtn",
 	TrendPreviewButton: "#trendPreviewBtn",
 	PushDownButton: "#pushDownBtn",
 	PushDownSendButton: "#pushDownSendBtn",
 	PushDownValue: "#pushDownValue",
+	PredictionButton: "#predictionBtn",
+	PredictionSendButton: "#predictionSendBtn",
+	PredictionStock: "#predictionStock",
+	PredictionDirection: "#predictionDirection",
 	BackButton: "#backButton",
+	JoinGameConfirm: "#joinGameConfirm",
+	CharacterInfoButton: "#characterInfoBtn",
+	CharacterInfoBanner: "#characterInfoBanner",
 }
 
 var HtmlGeneration =
@@ -566,12 +583,33 @@ var HtmlGeneration =
 		html += '</select><button class="btn btn-danger buy-sell-button fill grid-column-2 grid-row-2" id="pushDownSendBtn">Sabotage</button><button class="btn btn-outline-danger buy-sell-button fill grid-column-2 grid-row-3" id="cancel">Cancel</button></div></div>';
 		return html;
 	},
+	MakePrePredictionScreen: function () {
+		let html = '<div class="fill grid-row-2"><p class="buy-sell-prompt">';
+		if (CurrentData.Temp && CurrentData.Temp.Prediction) {
+			html += 'Change your prediction.';
+		}
+		else {
+			html += 'Make a prediction whether a stock will go up or down.';
+		}
+		html += '</p><div class="buy-sell-control"><select class="buy-sell-prompt grid-column-2 grid-row-1 fill" id="predictionStock">';
+		for (let stockName in CurrentData.Holdings) {
+			if (CurrentData.Holdings.hasOwnProperty(stockName)) {
+				html += '<option value="';
+				html += stockName;
+				html += '">'
+				html += stockName;
+				html += '</option>';
+			}
+		}
+		html += '</select><select class="buy-sell-prompt grid-column-2 grid-row-2 fill" id="predictionDirection"><option value="Up">Up</option><option value="Down">Down</option></select><button class="btn btn-warning buy-sell-button fill grid-column-2 grid-row-3" id="predictionSendBtn">Predict</button><button class="btn btn-outline-danger buy-sell-button fill grid-column-2 grid-row-4" id="cancel">Cancel</button></div></div>';
+		return html;
+	},
 	MakeWaitingScreen: function (username, money) {
 		let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1"><p class="market-closed">';
 		html += username;
 		html += '</p></div><div class="grid-row-2"><p id="money">$'
 		html += money;
-		html += '</p></div></div>';
+		html += '</p></div></div><div class="grid-row-2 scrollviewer-vertical" id="stockList"></div>';
 		return html;
 	},
 	MakeMarketClosedScreen: function (money) {
@@ -601,13 +639,24 @@ var HtmlGeneration =
 		return html;
 	},
 	MakeRollPreviewButton: function () {
-		return '<div class="roll-preview-banner" id="rollPreviewBtn"><button class="btn btn-primary roll-preview-btn">Tap to see first roll</button></div>';
+		return '<div class="button-banner" id="rollPreviewBtn"><button class="btn btn-primary roll-preview-btn">Tap to see first roll</button></div>';
 	},
 	MakeTrendPreviewButton: function () {
-		return '<div class="roll-preview-banner" id="trendPreviewBtn"><button class="btn btn-primary roll-preview-btn">Tap to see trend</button></div>';
+		return '<div class="button-banner" id="trendPreviewBtn"><button class="btn btn-primary roll-preview-btn">Tap to see trend</button></div>';
+	},
+	MakePredictionButton: function () {
+		let html = '<div class="button-banner" id="predictionBtn"><button class="btn btn-primary roll-preview-btn">';
+		if (CurrentData.Temp && CurrentData.Temp.Prediction) {
+			html += 'Change Prediction';
+		}
+		else {
+			html += 'Make Prediction';
+		}
+		html += '</button></div>';
+		return html;
 	},
 	MakePushDownButton: function () {
-		let html = '<div class="roll-preview-banner" id="pushDownBtn"><button class="btn btn-primary roll-preview-btn">';
+		let html = '<div class="button-banner" id="pushDownBtn"><button class="btn btn-primary roll-preview-btn">';
 		if (CurrentData.Temp && CurrentData.Temp.StockToPushDown) {
 			html += 'Sabotaging ' + CurrentData.Temp.StockToPushDown;
 		}
@@ -618,24 +667,19 @@ var HtmlGeneration =
 		return html;
 	},
 	MakeRollPreview: function (rollDto) {
-		let html = '<div class="stock-banner"><p class="grid-column-1 stock-text">';
-		html += rollDto.stockName;
-		html += '</p><p class="grid-column-2 stock-text">';
-		html += rollDto.func;
-		html += '</p><p class="grid-column-3 stock-text right-align-p">';
-		html += rollDto.amount;
+		let html = '<div class="text-banner"><p class="stock-text">';
+		html += rollDto.stockName + ' ' + rollDto.func + ' ' + rollDto.amount;
 		html += '</p></div>';
 		return html;
 	},
 	MakeTrendPreview: function (trendDto) {
-		let html = '<div class="stock-banner"><p class="grid-column-1 stock-text">';
+		let html = '<div class="text-banner"><p class="stock-text">';
 		if (trendDto.isNoInformation) {
-			html += 'No Information (so sad)</p></div>';
-			return html;
+			html += 'No Information (so sad)';
 		}
-		html += trendDto.stockName;
-		html += '</p><p class="grid-column-2 stock-text">Trending</p><p class="grid-column-3 stock-text right-align-p">';
-		html += trendDto.direction;
+		else {
+			html += trendDto.stockName + ' Trending ' + trendDto.direction;
+		}
 		html += '</p></div>';
 		return html;
 	},
@@ -708,6 +752,31 @@ var HtmlGeneration =
 	MakeEmptyGameplayGrid: function () {
 		return '<div class="grid-player-main grid-fill" id="mainGrid"></div>';
 	},
+	MakeCharacterInfoButton: function () {
+		let html = '<div class="button-banner"><button id="characterInfoBtn" class="btn btn-outline-primary roll-preview-btn">';
+		if (CurrentData.IsCharacterInfoOpen) {
+			html += 'Hide Character Info';
+		}
+		else {
+			html += 'Show Character Info';
+		}
+		html += '</button></div>';
+		return html;
+	},
+	MakeCharacterInfoBanner: function () {
+		let html = '<div id="characterInfoBanner" class="text-banner"><p class="stock-text">';
+		html += CurrentData.Character.description;
+		html += '</p></div>';
+		return html;
+	},
+	MakeCharacterConfimScreen: function () {
+		let html = '<div class="center-absolute menu-join-grid"><div class="menu-confirm-grid"><h1 class="menu-text">Confirm</h1><br/><p class="menu-text">Username:</p><p class="menu-text"><i>';
+		html += CurrentData.Username;
+		html += '</i></p><br/><p class="menu-text">Character:</p><p class="menu-text"><i>';
+		html += CurrentData.SelectedCharacterName;
+		html += '</i></p><br/><button class="btn btn-primary menu-button" id="joinGameConfirm">Join Game</button><br/><button class="btn btn-outline-primary menu-button" id="backButton">Back</button></div></div>';
+		return html;
+	},
 }
 
 var ScreenOps = {
@@ -718,16 +787,17 @@ var ScreenOps = {
 		MarketOpenPreBuy: "MarketOpenPreBuy",
 		MarketOpenPreSell: "MarketOpenPreSell",
 		MarketOpenPrePushDown: "MarketOpenPrePushDown",
+		MarketOpenPrePrediction: "MarketOpenPrePrediction",
 		MarketClosed: "MarketClosed",
 		Waiting: "Waiting",
 		GameOver: "GameOver",
 	},
 	StateBuildMethod: {
 		MarketOpenBuy: function () {
-			ScreenOps.SwitchToBuy();
+			ScreenOps.SwitchToMarketScreen(true);
 		},
 		MarketOpenSell: function () {
-			ScreenOps.SwitchToSell();
+			ScreenOps.SwitchToMarketScreen(false);
 		},
 		MarketClosed: function () {
 			ScreenOps.SwitchToClosedMarket();
@@ -736,7 +806,10 @@ var ScreenOps = {
 			ScreenOps.SwitchToGameOver();
 		},
 		MarketOpenPrePushDown: function () {
-			ScreenOps.SwitchToBuy();
+			ScreenOps.SwitchToMarketScreen(true);
+		},
+		MarketOpenPrePrediction: function () {
+			ScreenOps.SwitchToMarketScreen(true);
 		}
 	},
 	SwitchToMainMenu: function () {
@@ -783,6 +856,7 @@ var ScreenOps = {
 				}
 			}
 		}
+		ScreenOps.AddCharacterInfoButton();
 	},
 	SwitchToStartGameMenu: function () {
 		let body = $('body');
@@ -812,7 +886,8 @@ var ScreenOps = {
 		Presenter.StartTimer(Number(marketDto.marketCloseTimeInMilliseconds), timerFunc, 1000);
 
 		ScreenOps.AttachOpenMarketTabHandlers();
-		ScreenOps.SwitchToBuy();
+		//ScreenOps.SwitchToBuy();
+		ScreenOps.SwitchToMarketScreen(true);
 	},
 	AttachOpenMarketTabHandlers: function () {
 		$(ConstHtmlIds.BuyTab).on(clickHandler, function () {
@@ -825,7 +900,7 @@ var ScreenOps = {
 				sellButton.removeClass(ConstHtmlIds.TabActive);
 				sellButton.addClass(ConstHtmlIds.TabInactive);
 			}
-			ScreenOps.SwitchToBuy();
+			ScreenOps.SwitchToMarketScreen(true);
 		});
 
 		$(ConstHtmlIds.SellTab).on(clickHandler, function () {
@@ -838,15 +913,16 @@ var ScreenOps = {
 				buyButton.removeClass(ConstHtmlIds.TabActive);
 				buyButton.addClass(ConstHtmlIds.TabInactive);
 			}
-			ScreenOps.SwitchToSell();
+			ScreenOps.SwitchToMarketScreen(false);
 		});
 	},
-	SwitchToBuy: function () {
-		ScreenOps.State = ScreenOps.States.MarketOpenBuy;
+	SwitchToMarketScreen: function (isBuy) {
+		ScreenOps.State = isBuy ? ScreenOps.States.MarketOpenBuy : ScreenOps.States.MarketOpenSell;
+
 		let list = $(ConstHtmlIds.StockList);
 		list.empty();
 
-		// Add roll preview button if player has privileges
+		// Add character ability buttons
 		if (CurrentData.Character.id === 1) {
 			list.append(HtmlGeneration.MakeRollPreviewButton());
 			$(ConstHtmlIds.RollPreviewButton).on(clickHandler, function () {
@@ -859,67 +935,73 @@ var ScreenOps = {
 				Connection.RequestTrendPreview();
 			});
 		}
-		else if (CurrentData.Character.id === 6) {
-			list.append(HtmlGeneration.MakePushDownButton());
-			$(ConstHtmlIds.PushDownButton).on(clickHandler, function () {
-				ScreenOps.PrePushDown(true);
-			});
-		}
-
-		for (let stockName in CurrentData.StockValues) {
-			if (CurrentData.StockValues.hasOwnProperty(stockName)) {
-				let stockValue = CurrentData.StockValues[stockName];
-				let generated = HtmlGeneration.MakeBuyStockBanner(stockName, stockValue);
-				list.append(generated.html);
-				if ((stockValue * 500) / 100 <= CurrentData.Money) {
-					$(generated.id).on(clickHandler, function () {
-						ScreenOps.PreBuyStock(stockName);
-					});
-				}
-				else {
-					// Disable buy button when user doesn't have enough money to buy 500 shares
-					$(generated.id).prop('disabled', true);
-				}
-			}
-		}
-	},
-	SwitchToSell: function () {
-		ScreenOps.State = ScreenOps.States.MarketOpenSell;
-		let list = $(ConstHtmlIds.StockList);
-		list.empty();
-
-		// Add roll preview button if player has privileges
-		if (CurrentData.Character.id === 1) {
-			list.append(HtmlGeneration.MakeRollPreviewButton());
-			$(ConstHtmlIds.RollPreviewButton).on(clickHandler, function () {
-				Connection.RequestRollPreview();
-			});
-		}
-		else if (CurrentData.Character.id === 2 && CurrentData.IsHalfTime) {
-			list.append(HtmlGeneration.MakeTrendPreviewButton());
-			$(ConstHtmlIds.TrendPreviewButton).on(clickHandler, function () {
-				Connection.RequestTrendPreview();
+		else if (CurrentData.Character.id === 3) {
+			list.append(HtmlGeneration.MakePredictionButton());
+			$(ConstHtmlIds.PredictionButton).on(clickHandler, function () {
+				ScreenOps.PrePrediction(isBuy);
 			});
 		}
 		else if (CurrentData.Character.id === 6) {
 			list.append(HtmlGeneration.MakePushDownButton());
 			$(ConstHtmlIds.PushDownButton).on(clickHandler, function () {
-				ScreenOps.PrePushDown(false);
+				ScreenOps.PrePushDown(isBuy);
 			});
 		}
 
-		for (let stockName in CurrentData.Holdings) {
-			if (CurrentData.Holdings.hasOwnProperty(stockName)) {
-				let amountHeld = CurrentData.Holdings[stockName];
-				if (amountHeld > 0) {
-					let generated = HtmlGeneration.MakeSellStockBanner(stockName, amountHeld);
+		if (isBuy) {
+			for (let stockName in CurrentData.StockValues) {
+				if (CurrentData.StockValues.hasOwnProperty(stockName)) {
+					let stockValue = CurrentData.StockValues[stockName];
+					let generated = HtmlGeneration.MakeBuyStockBanner(stockName, stockValue);
 					list.append(generated.html);
-					$(generated.id).on(clickHandler, function () {
-						ScreenOps.PreSellStock(stockName);
-					});
+					if ((stockValue * 500) / 100 <= CurrentData.Money) {
+						$(generated.id).on(clickHandler, function () {
+							ScreenOps.PreBuyStock(stockName);
+						});
+					}
+					else {
+						// Disable buy button when user doesn't have enough money to buy 500 shares
+						$(generated.id).prop('disabled', true);
+					}
 				}
 			}
 		}
+		else {
+			for (let stockName in CurrentData.Holdings) {
+				if (CurrentData.Holdings.hasOwnProperty(stockName)) {
+					let amountHeld = CurrentData.Holdings[stockName];
+					if (amountHeld > 0) {
+						let generated = HtmlGeneration.MakeSellStockBanner(stockName, amountHeld);
+						list.append(generated.html);
+						$(generated.id).on(clickHandler, function () {
+							ScreenOps.PreSellStock(stockName);
+						});
+					}
+				}
+			}
+		}
+		ScreenOps.AddCharacterInfoButton();
+	},
+	AddCharacterInfoButton: function () {
+		let list = $(ConstHtmlIds.StockList);
+		list.append(HtmlGeneration.MakeCharacterInfoButton());
+
+		if (CurrentData.IsCharacterInfoOpen) {
+			list.append(HtmlGeneration.MakeCharacterInfoBanner());
+		}
+
+		$(ConstHtmlIds.CharacterInfoButton).on(clickHandler, function () {
+			if (CurrentData.IsCharacterInfoOpen) {
+				CurrentData.IsCharacterInfoOpen = false;
+				$(ConstHtmlIds.CharacterInfoButton).text("Show Character Info");
+				$(ConstHtmlIds.CharacterInfoBanner).remove();
+			}
+			else {
+				CurrentData.IsCharacterInfoOpen = true;
+				$(ConstHtmlIds.CharacterInfoButton).text("Hide Character Info");
+				list.append(HtmlGeneration.MakeCharacterInfoBanner());
+			}
+		});
 	},
 	PreBuyStock: function (stockName) {
 		ScreenOps.State = ScreenOps.States.MarketOpenPreBuy;
@@ -939,10 +1021,10 @@ var ScreenOps = {
 				return;
 			}
 			Connection.BuyStock(stockName, stockAmount);
-			ScreenOps.SwitchToBuy();
+			ScreenOps.SwitchToMarketScreen(true);
 		});
 		$(ConstHtmlIds.Cancel).on(clickHandler, function () {
-			ScreenOps.SwitchToBuy();
+			ScreenOps.SwitchToMarketScreen(true);
 		});
 	},
 	PreSellStock: function (stockName) {
@@ -963,10 +1045,10 @@ var ScreenOps = {
 				return;
 			}
 			Connection.SellStock(stockName, stockAmount);
-			ScreenOps.SwitchToSell();
+			ScreenOps.SwitchToMarketScreen(false);
 		});
 		$(ConstHtmlIds.Cancel).on(clickHandler, function () {
-			ScreenOps.SwitchToSell();
+			ScreenOps.SwitchToMarketScreen(false);
 		});
 	},
 	PrePushDown: function (isBuy) {
@@ -981,20 +1063,33 @@ var ScreenOps = {
 			log("Sabotaging " + stockName);
 			CurrentData.Temp.StockToPushDown = stockName;
 			Connection.RequestStockPushDown(stockName);
-			if (isBuy) {
-				ScreenOps.SwitchToBuy();
-			}
-			else {
-				ScreenOps.SwitchToSell();
-			}
+			ScreenOps.SwitchToMarketScreen(isBuy);
 		});
 		$(ConstHtmlIds.Cancel).on(clickHandler, function () {
-			if (isBuy) {
-				ScreenOps.SwitchToBuy();
-			}
-			else {
-				ScreenOps.SwitchToSell();
-			}
+			ScreenOps.SwitchToMarketScreen(isBuy);
+		});
+	},
+	PrePrediction: function (isBuy) {
+		ScreenOps.State = ScreenOps.States.MarketOpenPrePrediction;
+		let list = $(ConstHtmlIds.StockList);
+		list.empty();
+		list.append(HtmlGeneration.MakePrePredictionScreen());
+
+		// Add handlers
+		$(ConstHtmlIds.PredictionSendButton).on(clickHandler, function () {
+			let stockName = $(ConstHtmlIds.PredictionStock).find(":selected").text();
+			let direction = $(ConstHtmlIds.PredictionDirection).find(":selected").text();
+			log("Predicting " + stockName + " " + direction);
+			let predictionDto = {
+				stockName: stockName,
+				isUp: direction === "Up"
+			};
+			CurrentData.Temp.Prediction = predictionDto;
+			Connection.RequestMakePrediction(predictionDto);
+			ScreenOps.SwitchToMarketScreen(isBuy);
+		});
+		$(ConstHtmlIds.Cancel).on(clickHandler, function () {
+			ScreenOps.SwitchToMarketScreen(isBuy);
 		});
 	},
 	SwitchToJoinMenu: function (initialUsername) {
@@ -1066,8 +1161,12 @@ var ScreenOps = {
 			let characterAmount = 6;
 			for (let i = 1; i <= characterAmount; i++) {
 				$(ConstHtmlIds.SelectCharacter + i).on(clickHandler, function () {
-					log('Selecting character: ' + i);
-					Connection.JoinGame(CurrentData.Username, i);
+					let name = $(ConstHtmlIds.CharacterName + i).text();
+					log('Selecting character: ' + i + " (" + name + ")");
+					CurrentData.SelectedCharacterId = i;
+					CurrentData.SelectedCharacterName = name;
+					ScreenOps.SwitchToJoinGameConfim();
+					//Connection.JoinGame(CurrentData.Username, i);
 				});
 			}
 
@@ -1082,6 +1181,7 @@ var ScreenOps = {
 		body.empty();
 		body.append(HtmlGeneration.MakeEmptyGameplayGrid());
 		$(ConstHtmlIds.MainGrid).append(HtmlGeneration.MakeWaitingScreen(CurrentData.Username, CurrentData.Money));
+		ScreenOps.AddCharacterInfoButton();
 	},
 	SwitchToParametersMenu: function () {
 		let body = $('body');
@@ -1139,6 +1239,20 @@ var ScreenOps = {
 		$(ConstHtmlIds.EndGameButton).on(clickHandler, function () {
 			Connection.EndGame();
 			ScreenOps.SwitchToMainMenu();
+		});
+	},
+	SwitchToJoinGameConfim: function () {
+		let body = $('body');
+		body.empty();
+		body.append(HtmlGeneration.MakeCharacterConfimScreen());
+
+		$(ConstHtmlIds.JoinGameConfirm).on(clickHandler, function () {
+			log('Joining game...');
+			Connection.JoinGame(CurrentData.Username, CurrentData.SelectedCharacterId);
+		});
+
+		$(ConstHtmlIds.BackButton).on(clickHandler, function () {
+			ScreenOps.SwitchToCharacterSelectMenu();
 		});
 	},
 };
@@ -1579,6 +1693,7 @@ var Presenter = {
 
 $(document).ready(function () {
 	clickHandler = ("ontouchstart" in window ? "touchend" : "click");
+	log('Setting click handler to ' + clickHandler);
 
 	Connection.Init();
 });

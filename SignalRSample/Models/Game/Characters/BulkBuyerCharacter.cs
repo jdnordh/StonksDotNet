@@ -24,11 +24,6 @@ namespace StonkTrader.Models.Game.Characters
 		public override string Description => $"This character gets a {Num(RebateAmount * 100)}% rebate on all buys of ${Num(MinimumBuyAmountToRebate)} or more.";
 
 		/// <summary>
-		/// The description of this chacter.
-		/// </summary>
-		public override string DetailedInformation => $"As the Bulk Buyer, you get {Num(RebateAmount * 100)}% cash back when you spend ${Num(MinimumBuyAmountToRebate)} or more on a single stock. This is based off of the net difference from when the market opens till it closes, so buying ${Num(MinimumBuyAmountToRebate)} and then selling it in the same market time will not give a rebate.";
-
-		/// <summary>
 		/// The id of this chacter.
 		/// </summary>
 		public override int Id => 5;
@@ -37,15 +32,26 @@ namespace StonkTrader.Models.Game.Characters
 
 		#region Public Methods
 
+		/// <inheritdoc/>
+		public override string GetDetailedInformation()
+		{
+			string preamble = "";
+			if (StockValues != null)
+			{
+				int rebateAmount = CalculateMarketRebateAmount();
+				preamble = rebateAmount > 0 ? $"You have qualified for a rebate of ${rebateAmount} this round. " : "You have not qualified for a rebate this round. ";
+			}
+			return $"{preamble}As the Bulk Buyer, you get {Num(RebateAmount * 100)}% cash back when you spend ${Num(MinimumBuyAmountToRebate)} or more on a single stock. This is based off of the net difference from when the market opens till it closes, so buying ${Num(MinimumBuyAmountToRebate)} and then selling it in the same market time will not give a rebate.";
+		}
+
 		/// <summary>
 		/// Calculate the rebate amount this character gets at the end of an open market.
 		/// </summary>
-		/// <param name="stockValues">The current market stock values.</param>
 		/// <returns>The rebate amount.</returns>
-		public override int CalculateMarketRebateAmount(Dictionary<string, Stock> stockValues)
+		public override int CalculateMarketRebateAmount()
 		{
 			decimal rebateAmount = 0;
-			foreach(KeyValuePair<string, Stock> kvp in stockValues)
+			foreach(KeyValuePair<string, Stock> kvp in StockValues)
 			{
 				var stockName = kvp.Key;
 				Stock stock = kvp.Value;

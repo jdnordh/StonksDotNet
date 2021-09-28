@@ -2,6 +2,7 @@
 using Models.Game;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace StonkTrader.Models.Game.Characters
@@ -24,11 +25,6 @@ namespace StonkTrader.Models.Game.Characters
 		/// The description of this chacter.
 		/// </summary>
 		public abstract string Description { get; }
-
-		/// <summary>
-		/// The description of this chacter.
-		/// </summary>
-		public abstract string DetailedInformation { get; }
 
 		/// <summary>
 		/// The id of this chacter.
@@ -68,11 +64,22 @@ namespace StonkTrader.Models.Game.Characters
 		/// <summary>
 		/// The changes to the holdings this round.
 		/// </summary>
-		protected Dictionary<string, int> HoldingChanges { get; set; }
+		protected Dictionary<string, int> HoldingChanges { get; private set; }
+
+		/// <summary>
+		/// The values of stocks in the current market.
+		/// </summary>
+		protected Dictionary<string, Stock> StockValues { get; private set; }
 
 		#endregion
 
 		#region Public Methods
+
+		/// <summary>
+		/// Gets the detailed information about how to play this character.
+		/// </summary>
+		/// <returns>A string with detailed information.</returns>
+		public abstract string GetDetailedInformation();
 
 		/// <summary>
 		/// Gets the divedend amount for this character.
@@ -98,9 +105,8 @@ namespace StonkTrader.Models.Game.Characters
 		/// <summary>
 		/// Calculate the rebate amount this character gets at the end of an open market.
 		/// </summary>
-		/// <param name="stockValues">The current market stock values.</param>
 		/// <returns>The rebate amount.</returns>
-		public virtual int CalculateMarketRebateAmount(Dictionary<string, Stock> stockValues)
+		public virtual int CalculateMarketRebateAmount()
 		{
 			return 0;
 		}
@@ -125,13 +131,23 @@ namespace StonkTrader.Models.Game.Characters
 		/// <summary>
 		/// Resets any data associated with the round.
 		/// </summary>
-		public void ResetRoundData()
+		/// <param name="stockValues">The current market stock values.</param>
+		public void PrepareForOpenMarket(Dictionary<string, Stock> stockValues)
 		{
 			foreach(var kvp in HoldingChanges.ToList())
 			{
 				HoldingChanges[kvp.Key] = 0;
 			}
 			Prediction = null;
+			StockValues = stockValues;
+		}
+
+		/// <summary>
+		/// Prepares for the closed market.
+		/// </summary>
+		public void PrepareForClosedMarket()
+		{
+			StockValues = null;
 		}
 
 		/// <summary>

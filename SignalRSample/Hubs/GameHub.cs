@@ -299,7 +299,16 @@ namespace Hubs
 
 		#endregion
 
-		#region Transactions
+		#region Character Abilities
+
+		public async Task RequestMakePrediction(PredictionDto predictionDto)
+		{
+			if(!WorkerManager.Instance.WorkerExists)
+			{
+				return;
+			}
+			await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.MakePredictionRequest, CurrentUserConnectionId, predictionDto);
+		}
 
 		public async Task RequestStockPushDown(string stockName)
 		{
@@ -327,6 +336,10 @@ namespace Hubs
 			}
 			await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.TrendPreviewRequest, CurrentUserConnectionId);
 		}
+
+		#endregion
+
+		#region Transactions
 
 		public async Task RequestTransaction(string stockName, bool isBuy, int amount)
 		{

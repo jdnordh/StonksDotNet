@@ -32,6 +32,7 @@ namespace Hubs
 		public const string RollPreviewRequest = "rollPreviewRequest";
 		public const string TrendPreviewRequest = "trendPreviewRequest";
 		public const string StockPushDownRequest = "stockPushDownRequest";
+		public const string MakePredictionRequest = "makePredictionRequest";
 		public const string GameEndRequest = "gameEndRequest";
 	}
 
@@ -45,7 +46,6 @@ namespace Hubs
 
 		public const string RollPreviewResponse = "RollPreviewResponse";
 		public const string TrendPreviewResponse = "TrendPreviewResponse";
-		public const string StockPushDownResponse = "stockPushDownResponse";
 		public const string TransactionPosted = "TransactionPosted";
 		public const string MarketUpdated = "MarketUpdated";
 		public const string PlayerInventoriesUpdated = "PlayerInventoriesUpdated";

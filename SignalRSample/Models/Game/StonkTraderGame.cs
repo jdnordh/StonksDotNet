@@ -240,6 +240,7 @@ namespace Models.Game
 			if (IsStarted && IsMarketOpen)
 			{
 				player.Character.InitializeStocks(GetStockNames());
+				player.Character.PrepareForOpenMarket(m_stocks);
 			}
 
 			Players.Add(playerId, player);
@@ -275,18 +276,6 @@ namespace Models.Game
 			}
 			IsMarketOpen = true;
 
-			foreach(Player player in Players.Values)
-			{
-				if (player.Character.AreStocksInitialized)
-				{
-					player.Character.ResetRoundData();
-				}
-				else
-				{
-					player.Character.InitializeStocks(GetStockNames());
-				}
-			}
-
 			if (IsMarketHalfTime)
 			{
 				SetupHalfTimeRoundTrends();
@@ -301,6 +290,7 @@ namespace Models.Game
 				++m_currentRoundNumber;
 				m_marketTimer.Start();
 			}
+			await UpdatePlayerCharacters();
 
 			int timeMultiplier = IsMarketHalfTime ? 500 : 1000;
 			var marketMiliseconds = m_marketOpenTimeInSeconds * timeMultiplier;
@@ -320,14 +310,55 @@ namespace Models.Game
 			{
 				PushDownStock();
 			}
+			await UpdatePlayerCharacters();
+
 			m_rollTimer.Start();
+		}
+
+		private async Task UpdatePlayerCharacters()
+		{
+			foreach(Player player in Players.Values)
+			{
+				if(IsMarketOpen)
+				{
+					if(!player.Character.AreStocksInitialized)
+					{
+						player.Character.InitializeStocks(GetStockNames());
+					}
+					player.Character.PrepareForOpenMarket(m_stocks);
+				}
+				else
+				{
+					player.Character.PrepareForClosedMarket();
+				}
+			}
+			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
+		}
+
+		#endregion
+
+		#region Character Abilities
+
+		/// <summary>
+		/// Previews the first roll of a round if the player has access to it.
+		/// </summary>
+		/// <param name="playerId">The player id.</param>
+		/// <returns>The roll dto, or null if not allowed.</returns>
+		public RollDto PreviewFirstRoll(string playerId)
+		{
+			if(Players[playerId].Character.GetsFirstRollReveal && IsMarketOpen && !IsMarketHalfTime)
+			{
+				Roll roll = m_rolls[m_currentRoundNumber][0];
+				return RollToRollDto(roll);
+			}
+			return null;
 		}
 
 		private async Task PayRebates()
 		{
-			foreach (var player in Players.Values)
+			foreach(var player in Players.Values)
 			{
-				player.Money += player.Character.CalculateMarketRebateAmount(m_stocks);
+				player.Money += player.Character.CalculateMarketRebateAmount();
 			}
 			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
 		}
@@ -337,7 +368,7 @@ namespace Models.Game
 		/// </summary>
 		/// <param name="playerId">The player id.</param>
 		/// <param name="prediction">The prediction.</param>
-		public void SetPrediction(string playerId, PredictionDto prediction)
+		public void MakePrediction(string playerId, PredictionDto prediction)
 		{
 			if(Players[playerId].Character.GetsPrediction && IsMarketOpen && !IsMarketHalfTime)
 			{
@@ -347,7 +378,7 @@ namespace Models.Game
 
 		private async Task CheckPredictions()
 		{
-			if (m_currentRoundNumber < 0)
+			if(m_currentRoundNumber < 0)
 			{
 				return;
 			}
@@ -385,11 +416,11 @@ namespace Models.Game
 			foreach(var player in Players.Values)
 			{
 				var prediction = player.Character.Prediction;
-				if (prediction == null)
+				if(prediction == null)
 				{
 					continue;
 				}
-				if (correctPredictions.ContainsKey(prediction.StockName) && correctPredictions[prediction.StockName] == prediction.IsUp)
+				if(correctPredictions.ContainsKey(prediction.StockName) && correctPredictions[prediction.StockName] == prediction.IsUp)
 				{
 					player.Character.PredictionWasCorrect();
 				}
@@ -404,7 +435,7 @@ namespace Models.Game
 		/// <returns>The roll dto, or null if not allowed.</returns>
 		public TrendDto PreviewRoundTrend(string playerId)
 		{
-			if (Players[playerId].Character.GetsHalfTimeTransaction && IsMarketOpen && IsMarketHalfTime)
+			if(Players[playerId].Character.GetsHalfTimeTransaction && IsMarketOpen && IsMarketHalfTime)
 			{
 				return m_roundTrendIndexedByPlayer.TryGetValue(playerId, out var trendDto) ? trendDto : m_roundTrendIndexedByPlayer.First().Value;
 			}
@@ -414,10 +445,10 @@ namespace Models.Game
 		private void SetupHalfTimeRoundTrends()
 		{
 			var marketCopy = m_stocks.ToDictionary(kvp => kvp.Key, kvp => new Stock(kvp.Key));
-			for (int i = m_currentRollNumber; i < m_numberOfRollsPerRound; i++)
+			for(int i = m_currentRollNumber; i < m_numberOfRollsPerRound; i++)
 			{
 				Roll roll = m_rolls[m_currentRoundNumber][i];
-				switch (roll.Type)
+				switch(roll.Type)
 				{
 					case RollType.Up:
 					{
@@ -434,20 +465,20 @@ namespace Models.Game
 			var trendData = new List<TrendDto>();
 			foreach(var kvp in marketCopy)
 			{
-				if (kvp.Value.Value == 1M)
+				if(kvp.Value.Value == 1M)
 				{
 					continue;
 				}
 				trendData.Add(new TrendDto(kvp.Key, kvp.Value.Value > 1M ? "Up" : "Down"));
 			}
-			if (trendData.Count == 0)
+			if(trendData.Count == 0)
 			{
 				trendData.Add(new TrendDto("No Information", null, true));
 			}
 
 			m_roundTrendIndexedByPlayer.Clear();
 			var rand = new Random();
-			foreach (var playerKvp in Players)
+			foreach(var playerKvp in Players)
 			{
 				m_roundTrendIndexedByPlayer.Add(playerKvp.Key, trendData[rand.Next(0, trendData.Count)]);
 			}
@@ -460,9 +491,9 @@ namespace Models.Game
 		/// <param name="stockName">The stock to push down.</param>
 		public void RequestStockPushDown(string playerId, string stockName)
 		{
-			if (Players[playerId].Character.GetsPushDownVote && IsMarketOpen && !IsMarketHalfTime)
+			if(Players[playerId].Character.GetsPushDownVote && IsMarketOpen && !IsMarketHalfTime)
 			{
-				if (m_pushDownVotesIndexedByPlayer.ContainsKey(playerId))
+				if(m_pushDownVotesIndexedByPlayer.ContainsKey(playerId))
 				{
 					m_pushDownVotesIndexedByPlayer[playerId] = stockName;
 				}
@@ -475,7 +506,7 @@ namespace Models.Game
 
 		private void PushDownStock()
 		{
-			if (m_pushDownVotesIndexedByPlayer.Count == 0) 
+			if(m_pushDownVotesIndexedByPlayer.Count == 0)
 			{
 				// No votes, so don't push down
 				return;
@@ -494,11 +525,11 @@ namespace Models.Game
 			}
 			int maxVotes = votes.Values.Max();
 			var stocksToPushDown = votes.Where(kvp => kvp.Value == maxVotes).Select(kvp => kvp.Key).ToList();
-			if (stocksToPushDown.Count == 1)
+			if(stocksToPushDown.Count == 1)
 			{
 				stockNameToPushDown = stocksToPushDown[0];
 			}
-			else if (stocksToPushDown.Count > 1)
+			else if(stocksToPushDown.Count > 1)
 			{
 				// Tied, pick a random one out of the tied stocks
 				int coinFlipWinner = rand.Next(0, stocksToPushDown.Count);
@@ -513,11 +544,11 @@ namespace Models.Game
 			double percentageVote = maxVotes / Players.Count;
 			result += percentageVote;
 			decimal percentageDown;
-			if (result < 0.4)
+			if(result < 0.4)
 			{
 				percentageDown = 0.1M;
 			}
-			else if (result < 0.75)
+			else if(result < 0.75)
 			{
 				percentageDown = 0.2M;
 			}
@@ -566,21 +597,6 @@ namespace Models.Game
 				// Roll again after set amount of time
 				m_rollTimer.Start();
 			}
-		}
-
-		/// <summary>
-		/// Previews the first roll of a round if the player has access to it.
-		/// </summary>
-		/// <param name="playerId">The player id.</param>
-		/// <returns>The roll dto, or null if not allowed.</returns>
-		public RollDto PreviewFirstRoll(string playerId)
-		{
-			if (Players[playerId].Character.GetsFirstRollReveal && IsMarketOpen && !IsMarketHalfTime)
-			{
-				Roll roll = m_rolls[m_currentRoundNumber][0];
-				return RollToRollDto(roll);
-			}
-			return null;
 		}
 
 		/// <summary>

@@ -51,6 +51,8 @@ namespace StonkTrader.Models.Workers
 
 			m_connection.On<string, string>(GameWorkerRequests.StockPushDownRequest, StockPushDown);
 
+			m_connection.On<string, PredictionDto>(GameWorkerRequests.MakePredictionRequest, MakePrediction);
+
 			m_connection.On(GameWorkerRequests.GameEndRequest, EndGame);
 
 			await Task.Run(async () => {
@@ -81,6 +83,17 @@ namespace StonkTrader.Models.Workers
 		}
 
 		#region Request Handlers
+
+		#region Character Abilities
+
+		private void MakePrediction(string connectionId, PredictionDto predictionDto)
+		{
+			if(!m_connectionIdToPlayerIdMap.TryGetValue(connectionId, out var playerId))
+			{
+				return;
+			}
+			m_game.MakePrediction(playerId, predictionDto);
+		}
 
 		private void StockPushDown(string connectionId, string stockName)
 		{
@@ -116,6 +129,8 @@ namespace StonkTrader.Models.Workers
 				await m_connection.InvokeAsync(GameWorkerResponses.RollPreviewResponse, connectionId, rollDto);
 			}
 		}
+
+		#endregion
 
 		private async Task CreateGame(GameInitializerDto parameters, string creatorConnectionId)
 		{

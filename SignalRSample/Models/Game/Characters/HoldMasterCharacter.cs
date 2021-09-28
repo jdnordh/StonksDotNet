@@ -1,8 +1,4 @@
-﻿
-using System.Linq;
-using Models.DataTransferObjects;
-
-namespace StonkTrader.Models.Game.Characters
+﻿namespace StonkTrader.Models.Game.Characters
 {
 	/// <summary>
 	/// The base class for characters
@@ -26,11 +22,6 @@ namespace StonkTrader.Models.Game.Characters
 		public override string Description => $"This character gets paid {Num(StartingExtraDividendPercentage * 100)}% more dividends. That value can increase by making correct market predictions.";
 
 		/// <summary>
-		/// The description of this chacter.
-		/// </summary>
-		public override string DetailedInformation => $"Current dividend bonus: {Num(m_currentDividendBonus)}. As the Master of the Hold, you start off getting {Num(StartingExtraDividendPercentage * 100)}% more dividends. You also have the ability to make market predictions for what will happen in the next round. If you make a correct prediction, your divend bonus will increase by {Num(DividendPercentageIncrease * 100)}%.";
-
-		/// <summary>
 		/// Whether or not the character gets a vote to push down a stock.
 		/// </summary>
 		public override bool GetsPrediction => true;
@@ -43,6 +34,12 @@ namespace StonkTrader.Models.Game.Characters
 		#endregion
 
 		#region Public Methods
+
+		/// <inheritdoc/>
+		public override string GetDetailedInformation()
+		{
+			return $"Current dividend bonus: {Num(m_currentDividendBonus * 100)}%. As the Master of the Hold, you start off getting {Num(StartingExtraDividendPercentage * 100)}% more dividends. You also have the ability to make market predictions for what will happen in the next round. If you make a correct prediction, your divend bonus will increase by {Num(DividendPercentageIncrease * 100)}%.";
+		}
 
 		/// <summary>
 		/// Gets the divedend amount for this character.

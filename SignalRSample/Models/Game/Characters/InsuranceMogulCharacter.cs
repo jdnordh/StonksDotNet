@@ -21,11 +21,6 @@ namespace StonkTrader.Models.Game.Characters
 		public override string Description => $"This character gets a {Num(CashBonusPercentage * 100)}% bonus for all players shares that are lost during a stock crash and has the ability to sabotage stocks.";
 
 		/// <summary>
-		/// The description of this chacter.
-		/// </summary>
-		public override string DetailedInformation => $"As the Insurance Mogul, each round you get to vote for a stock to sabotage. All players who have chosen the Insurance Mogul get a vote. When the market closes, the votes are counted and the stock with the most votes gets an extra down roll that round. Additionally, if a stock crashes, you are paid $0.20 for each stock that is lost amoung all the players.";
-
-		/// <summary>
 		/// The id of this chacter.
 		/// </summary>
 		public override int Id => 6;
@@ -38,6 +33,12 @@ namespace StonkTrader.Models.Game.Characters
 		#endregion
 
 		#region Public Methods
+
+		/// <inheritdoc/>
+		public override string GetDetailedInformation()
+		{
+			return $"As the Insurance Mogul, each round you get to vote for a stock to sabotage. All players who have chosen the Insurance Mogul get a vote. When the market closes, the votes are counted and the stock with the most votes gets an extra down roll that round. Additionally, if a stock crashes, you are paid $0.20 for each stock that is lost among all the players.";
+		}
 
 		/// <summary>
 		/// Calculate the rebate amount this character gets at after a stock crashes.
