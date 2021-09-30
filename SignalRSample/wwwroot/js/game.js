@@ -875,6 +875,7 @@ var ScreenOps = {
 		mainGrid.append(HtmlGeneration.MakeMarketScreen(CurrentData.Money, true));
 		mainGrid.append(HtmlGeneration.MakeBuyStockBanner());
 
+		// TODO BUG: If the player joins mid-market, the timer does not show up.
 		let timerFunc = function (secondsRemaining) {
 			if (secondsRemaining > 0) {
 				$(ConstHtmlIds.BuySellTimer).text(secondsRemaining + 's');
@@ -886,7 +887,6 @@ var ScreenOps = {
 		Presenter.StartTimer(Number(marketDto.marketCloseTimeInMilliseconds), timerFunc, 1000);
 
 		ScreenOps.AttachOpenMarketTabHandlers();
-		//ScreenOps.SwitchToBuy();
 		ScreenOps.SwitchToMarketScreen(true);
 	},
 	AttachOpenMarketTabHandlers: function () {
@@ -1430,9 +1430,11 @@ var Presenter = {
 		intervalId = setInterval(intervalFunc, intervalLength);
 	},
 	SwitchToPlayerInventoryChart: function () {
+		// TODO Add smooth animation instead
 		$(ConstHtmlIds.PresenterChartSlider).appendTo('#chart-slide-container');
 	},
 	SwitchToMarketChart: function () {
+		// TODO Add smooth animation instead
 		$(ConstHtmlIds.InventoryChartSlider).appendTo('#chart-slide-container');
 	},
 	SetMarketOpen: function (endTime, currentRound, totalRounds, isHalfTime) {

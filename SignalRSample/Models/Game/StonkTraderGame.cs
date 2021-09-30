@@ -17,6 +17,7 @@ namespace Models.Game
 
 		const int SecondsBetweenRolls = 2;
 		const int RollTimeInSeconds = 2;
+		private static readonly List<decimal> s_amountDiceValues = new List<decimal>() { 0.1M, 0.15M, 0.2M, 0.3M };
 
 		#endregion
 
@@ -182,12 +183,7 @@ namespace Models.Game
 			var stockDie = new Die<string>() { Results = initializer.Stocks.Select(stock => stock.Name).ToList() };
 			var amountDie = new Die<decimal>
 			{
-				Results = new List<decimal>
-				{
-					.1M,
-					.2M,
-					.3M,
-				}
+				Results = s_amountDiceValues
 			};
 			var rollDie = new Die<Func<string, decimal, Roll>>
 			{
@@ -383,6 +379,12 @@ namespace Models.Game
 				return;
 			}
 
+			var playersWithPredictions = Players.Values.Where(p => p.Character.Prediction != null).ToList();
+			if (playersWithPredictions.Count == 0)
+			{
+				return;
+			}
+
 			// Dictionary keyed by stock name with value true if the stock value went up.
 			var marketCopy = m_stocks.ToDictionary(kvp => kvp.Key, kvp => new Stock(kvp.Key));
 			var rolls = m_rolls[m_currentRoundNumber];
@@ -403,6 +405,7 @@ namespace Models.Game
 					}
 				}
 			}
+
 			var correctPredictions = new Dictionary<string, bool>();
 			foreach(var kvp in marketCopy)
 			{
@@ -413,13 +416,9 @@ namespace Models.Game
 				correctPredictions.Add(kvp.Key, kvp.Value.Value > 1M);
 			}
 
-			foreach(var player in Players.Values)
+			foreach(var player in playersWithPredictions)
 			{
 				var prediction = player.Character.Prediction;
-				if(prediction == null)
-				{
-					continue;
-				}
 				if(correctPredictions.ContainsKey(prediction.StockName) && correctPredictions[prediction.StockName] == prediction.IsUp)
 				{
 					player.Character.PredictionWasCorrect();
