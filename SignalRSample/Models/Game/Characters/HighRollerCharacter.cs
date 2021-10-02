@@ -41,7 +41,7 @@ namespace StonkTrader.Models.Game.Characters
 				int rebateAmount = CalculateMarketRebateAmount();
 				preamble = rebateAmount > 0 ? $"You have qualified for a rebate of ${rebateAmount} this round. " : "You have not qualified for a rebate this round. ";
 			}
-			return $"{preamble}As the High Roller, you are paid no dividends, but get paid cash back for every stock you buy below 100. The lower the stock value, the more cash you get back.";
+			return $"{preamble}As the High Roller, you are paid no dividends, but get paid cash back for every stock you buy below 100. The lower the stock value, the more cash you get back up to a maximum of 50%.";
 		}
 
 		/// <inheritdoc/>
@@ -63,6 +63,7 @@ namespace StonkTrader.Models.Game.Characters
 				var stock = kvp.Value;
 				if (stock.Value <= RebateMaxValue && HoldingChanges[stockName] > 0)
 				{
+					// TODO Rework this formula???
 					decimal cost = HoldingChanges[stockName] * stock.Value;
 					decimal rebatePercentage = (1M - stock.Value) / 2;
 					rebateAmount += cost * rebatePercentage;

@@ -5,8 +5,8 @@
 	/// </summary>
 	public class HoldMasterCharacter : CharacterBase
 	{
-		private const decimal StartingExtraDividendPercentage = 0.05M;
-		private const decimal DividendPercentageIncrease = 0.1M;
+		private const decimal StartingExtraDividendPercentage = 0.1M;
+		private const decimal DividendPercentageIncrease = 0.15M;
 		private decimal m_currentDividendBonus = StartingExtraDividendPercentage;
 
 		#region Properties

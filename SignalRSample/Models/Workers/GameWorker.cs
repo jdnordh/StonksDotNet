@@ -92,6 +92,7 @@ namespace StonkTrader.Models.Workers
 			{
 				return;
 			}
+			m_logger.Log(LogLevel.Information, $"Prediction made: {predictionDto.StockName} {(predictionDto.IsUp ? "Up" : "Down")}");
 			m_game.MakePrediction(playerId, predictionDto);
 		}
 
