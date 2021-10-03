@@ -1,4 +1,5 @@
 ﻿using Models.Game;
+using System;
 using System.Collections.Generic;
 
 namespace StonkTrader.Models.Game.Characters
@@ -21,7 +22,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// The name of this chacter.
 		/// </summary>
 		public override string Description => 
-			$"This character gets rebates when buying stocks valued {Num(RebateMaxValue * 100)} or under that are progressively bigger the lower the stock value, but is payed no dividends.";
+			$"This character is not paid dividends, but gets rebates when buying stocks under par. The rebates become progressively larger the lower the stock value.";
 
 		/// <summary>
 		/// The id of this chacter.
@@ -41,7 +42,7 @@ namespace StonkTrader.Models.Game.Characters
 				int rebateAmount = CalculateMarketRebateAmount();
 				preamble = rebateAmount > 0 ? $"You have qualified for a rebate of ${rebateAmount} this round. " : "You have not qualified for a rebate this round. ";
 			}
-			return $"{preamble}As the High Roller, you are paid no dividends, but get paid cash back for every stock you buy below 100. The lower the stock value, the more cash you get back up to a maximum of 50%.";
+			return $"{preamble}As the High Roller, you are paid no dividends, but get paid cash back for every stock you buy below 100. The lower the stock value, the more cash you get back up to a maximum of 95%.";
 		}
 
 		/// <inheritdoc/>
@@ -63,14 +64,13 @@ namespace StonkTrader.Models.Game.Characters
 				var stock = kvp.Value;
 				if (stock.Value <= RebateMaxValue && HoldingChanges[stockName] > 0)
 				{
-					// TODO Rework this formula???
 					decimal cost = HoldingChanges[stockName] * stock.Value;
-					decimal rebatePercentage = (1M - stock.Value) / 2;
+					decimal rebatePercentage = 1M - stock.Value;
 					rebateAmount += cost * rebatePercentage;
 				}
 
 			}
-			return (int)rebateAmount;
+			return (int) Math.Round(rebateAmount);
 		}
 
 		#endregion

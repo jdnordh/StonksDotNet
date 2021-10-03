@@ -322,6 +322,11 @@ namespace Models.Game
 						player.Character.InitializeStocks(GetStockNames());
 					}
 					player.Character.PrepareForOpenMarket(m_stocks);
+
+					if(!IsMarketHalfTime)
+					{
+						player.Character.ResetPrediction();
+					}
 				}
 				else
 				{

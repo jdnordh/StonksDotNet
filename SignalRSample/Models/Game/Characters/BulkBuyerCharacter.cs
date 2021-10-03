@@ -1,4 +1,5 @@
 ﻿using Models.Game;
+using System;
 using System.Collections.Generic;
 
 namespace StonkTrader.Models.Game.Characters
@@ -21,7 +22,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// <summary>
 		/// The name of this chacter.
 		/// </summary>
-		public override string Description => $"This character gets a {Num(RebateAmount * 100)}% rebate on all buys of ${Num(MinimumBuyAmountToRebate)} or more.";
+		public override string Description => $"This character gets rebates when buying large amounts stock.";
 
 		/// <summary>
 		/// The id of this chacter.
@@ -62,7 +63,7 @@ namespace StonkTrader.Models.Game.Characters
 					rebateAmount += cost * RebateAmount;
 				}
 			}
-			return (int)rebateAmount;
+			return (int) Math.Round(rebateAmount);
 		}
 
 		#endregion

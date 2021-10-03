@@ -138,7 +138,6 @@ namespace StonkTrader.Models.Game.Characters
 			{
 				HoldingChanges[kvp.Key] = 0;
 			}
-			Prediction = null;
 			StockValues = stockValues;
 		}
 
@@ -148,6 +147,14 @@ namespace StonkTrader.Models.Game.Characters
 		public void PrepareForClosedMarket()
 		{
 			StockValues = null;
+		}
+
+		/// <summary>
+		/// Resets any prediction.
+		/// </summary>
+		public void ResetPrediction()
+		{
+			Prediction = null;
 		}
 
 		/// <summary>

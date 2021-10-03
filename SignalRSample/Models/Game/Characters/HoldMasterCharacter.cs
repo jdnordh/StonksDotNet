@@ -19,7 +19,7 @@
 		/// <summary>
 		/// The name of this chacter.
 		/// </summary>
-		public override string Description => $"This character gets paid {Num(StartingExtraDividendPercentage * 100)}% more dividends. That value can increase by making correct market predictions.";
+		public override string Description => $"This character gets paid extra dividends. That value can increase by making correct market predictions.";
 
 		/// <summary>
 		/// Whether or not the character gets a vote to push down a stock.

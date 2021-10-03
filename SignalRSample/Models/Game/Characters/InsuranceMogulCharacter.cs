@@ -18,7 +18,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// <summary>
 		/// The name of this chacter.
 		/// </summary>
-		public override string Description => $"This character gets a {Num(CashBonusPercentage * 100)}% bonus for all players shares that are lost during a stock crash and has the ability to sabotage stocks.";
+		public override string Description => $"This character gets a cash bonus for all stock shares that are lost during a crash and has the ability to sabotage stocks.";
 
 		/// <summary>
 		/// The id of this chacter.
