@@ -541,7 +541,8 @@ namespace Models.Game
 			}
 			else
 			{
-				throw new Exception("Should not reach this branch.");
+				// No votes cast
+				return;
 			}
 
 			double result = rand.NextDouble();
@@ -556,13 +557,17 @@ namespace Models.Game
 			{
 				percentageDown = 0.25M;
 			}
-			else if(result < 0.8)
+			else if(result < 1)
 			{
 				percentageDown = 0.3M;
 			}
-			else
+			else if(result < 1.5)
 			{
 				percentageDown = 0.35M;
+			}
+			else
+			{
+				percentageDown = 0.4M;
 			}
 			var roll = new Roll(RollType.Down, stockNameToPushDown, percentageDown);
 			m_rolls[m_currentRoundNumber].Insert(1, roll);

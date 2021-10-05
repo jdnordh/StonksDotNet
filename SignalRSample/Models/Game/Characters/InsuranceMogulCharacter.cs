@@ -6,7 +6,7 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class InsuranceMogulCharacter : CharacterBase
 	{
-		private const decimal CashBonusPercentage = 0.3M;
+		private const decimal CashBonusPercentage = 0.25M;
 
 		#region Properties
 
