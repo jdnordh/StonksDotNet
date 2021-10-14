@@ -48,6 +48,7 @@ namespace Models.Game
 		/// </summary>
 		private int m_currentRoundNumber;
 		private int m_currentRollNumber;
+		private long m_currentMarketEndTime;
 
 		private readonly Dictionary<string, TrendDto> m_roundTrendIndexedByPlayer;
 		private readonly Dictionary<string, string> m_pushDownVotesIndexedByPlayer;
@@ -290,9 +291,8 @@ namespace Models.Game
 
 			int timeMultiplier = IsMarketHalfTime ? 500 : 1000;
 			var marketMiliseconds = m_marketOpenTimeInSeconds * timeMultiplier;
-			var marketEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + marketMiliseconds;
+			m_currentMarketEndTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() + marketMiliseconds;
 			MarketDto marketDto = GetMarketDto();
-			marketDto.MarketCloseTimeInMilliseconds = marketEndTime;
 			await m_gameEventCommunicator.GameMarketChanged(marketDto);
 		}
 
@@ -867,6 +867,10 @@ namespace Models.Game
 			if (m_currentRoll != null)
 			{
 				marketDto.RollDto = RollToRollDto(m_currentRoll);
+			}
+			if(IsMarketOpen)
+			{
+				marketDto.MarketCloseTimeInMilliseconds = m_currentMarketEndTime;
 			}
 			return marketDto;
 		}

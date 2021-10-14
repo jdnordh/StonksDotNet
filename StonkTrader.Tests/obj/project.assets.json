@@ -6120,11 +6120,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Repos\\Stonks\\StonkTrader.Tests\\StonkTrader.Tests.csproj",
+      "projectUniqueName": "D:\\Repos\\StonksStable\\StonkTrader.Tests\\StonkTrader.Tests.csproj",
       "projectName": "StonkTrader.Tests",
-      "projectPath": "D:\\Repos\\Stonks\\StonkTrader.Tests\\StonkTrader.Tests.csproj",
+      "projectPath": "D:\\Repos\\StonksStable\\StonkTrader.Tests\\StonkTrader.Tests.csproj",
       "packagesPath": "C:\\Users\\Jordan\\.nuget\\packages\\",
-      "outputPath": "D:\\Repos\\Stonks\\StonkTrader.Tests\\obj\\",
+      "outputPath": "D:\\Repos\\StonksStable\\StonkTrader.Tests\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet\\"

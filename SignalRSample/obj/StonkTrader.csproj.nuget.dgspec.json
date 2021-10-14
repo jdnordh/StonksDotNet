@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Repos\\Stonks\\SignalRSample\\StonkTrader.csproj": {}
+    "D:\\Repos\\StonksStable\\SignalRSample\\StonkTrader.csproj": {}
   },
   "projects": {
-    "D:\\Repos\\Stonks\\SignalRSample\\StonkTrader.csproj": {
+    "D:\\Repos\\StonksStable\\SignalRSample\\StonkTrader.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Repos\\Stonks\\SignalRSample\\StonkTrader.csproj",
+        "projectUniqueName": "D:\\Repos\\StonksStable\\SignalRSample\\StonkTrader.csproj",
         "projectName": "StonkTrader",
-        "projectPath": "D:\\Repos\\Stonks\\SignalRSample\\StonkTrader.csproj",
+        "projectPath": "D:\\Repos\\StonksStable\\SignalRSample\\StonkTrader.csproj",
         "packagesPath": "C:\\Users\\Jordan\\.nuget\\packages\\",
-        "outputPath": "D:\\Repos\\Stonks\\SignalRSample\\obj\\",
+        "outputPath": "D:\\Repos\\StonksStable\\SignalRSample\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet\\"

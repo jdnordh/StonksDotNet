@@ -102,6 +102,32 @@ namespace StonkTrader.Models.Game.Configuration
 					new StockDto("Mountains", "#3d475c"),
 				}
 			},
+			//new StockPreset()
+			//{
+			//	Name = "Jare",
+			//	Stocks = new[]
+			//	{
+			//		new StockDto("Hilary", "#e36e07"),
+			//		new StockDto("Bridges", "#3d475c"),
+			//		new StockDto("Math", "#58138A"),
+			//		new StockDto("Carabiners", "#6B1220"),
+			//		new StockDto("Denver", "#20A2C9"),
+			//		new StockDto("Triangles", "#126B31"),
+			//	}
+			//},
+			new StockPreset()
+			{
+				Name = "Internet",
+				Stocks = new[]
+				{
+					new StockDto("Youtube", "#FF0000"),
+					new StockDto("Instagram", "#833AB4"),
+					new StockDto("Snapchat", "#FFC300"),
+					new StockDto("TikTok", "#25F4EE"),
+					new StockDto("Facebook", "#4267B2"),
+					new StockDto("MySpace", "#117A65"),
+				}
+			},
 		};
 
 		static StockPresetProvider()

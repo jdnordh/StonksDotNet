@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "gMdGnmYHwDN7Z5genQeFj9PgYmY9TW4VnrXMXnbS4aNYCtkvTVkMNSc6YekNplM/UwqMAGpiLjvBJ2MmekhyFA==",
+  "dgSpecHash": "J/HpKP7qYTiBaoH9ir+Uj6chwijRD/i2Psmi3w/3eJXABLGrt/GDkvdYhj5nmr0ePPpu8oAFzEYIDHmLykT58Q==",
   "success": true,
-  "projectFilePath": "D:\\Repos\\Stonks\\SignalRSample\\StonkTrader.csproj",
+  "projectFilePath": "D:\\Repos\\StonksStable\\SignalRSample\\StonkTrader.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Jordan\\.nuget\\packages\\microsoft.aspnetcore.connections.abstractions\\5.0.8\\microsoft.aspnetcore.connections.abstractions.5.0.8.nupkg.sha512",
     "C:\\Users\\Jordan\\.nuget\\packages\\microsoft.aspnetcore.http.connections.client\\5.0.8\\microsoft.aspnetcore.http.connections.client.5.0.8.nupkg.sha512",
