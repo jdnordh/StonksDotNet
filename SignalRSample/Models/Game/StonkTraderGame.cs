@@ -814,7 +814,7 @@ namespace Models.Game
 
 		#region Game End
 
-		private async Task EndGame()
+		public async Task EndGame()
 		{
 			var preSellInventories = GetInventoryCollectionDto();
 			SellAllShares();
@@ -825,6 +825,15 @@ namespace Models.Game
 			// Send inventory update to observer with inventory breakdowns
 			await m_gameEventCommunicator.GameOver(preSellInventories);
 			IsStarted = false;
+
+			try
+			{
+				m_marketTimer.Stop();
+				m_marketHalfTimer.Stop();
+				m_rollTimer.Stop();
+				m_rollPlayerDelayTimer.Stop();
+			}
+			catch { }
 		}
 
 		/// <summary>

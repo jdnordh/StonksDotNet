@@ -363,9 +363,13 @@ namespace Hubs
 
 		#endregion
 
-		public async Task Reset()
+		public async Task Reset(string key)
 		{
-			WorkerManager.Instance.SetWorkerConnectionId(CurrentUserConnectionId);
+			if (key != "yeet")
+			{
+				return;
+			}
+			await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.ResetRequest);
 			await Clients.All.SendAsync(ClientMethods.GameEnded);
 		}
 	}

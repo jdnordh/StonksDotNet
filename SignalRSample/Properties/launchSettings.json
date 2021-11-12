@@ -12,7 +12,8 @@
       "commandName": "IISExpress",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Production"
-      }
+      },
+      "jsWebView2Debugging": false
     },
     "SignalRSample": {
       "commandName": "Project",

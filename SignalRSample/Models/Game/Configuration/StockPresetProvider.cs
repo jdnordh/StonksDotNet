@@ -20,12 +20,12 @@ namespace StonkTrader.Models.Game.Configuration
 				Name="Modern" ,
 				Stocks = new[]
 				{
-					new StockDto("Property", "#228B22"),
-					new StockDto("Oil", "#4682B4"),
-					new StockDto("Dogecoin", "#f2b90d"),
-					new StockDto("Bonds", "#8724a8"),
+					new StockDto("Property", "#026C09"),
+					new StockDto("Oil", "#139CB6"),
+					new StockDto("Materials", "#691331"),
+					new StockDto("Bonds", "#F7434A"),
 					new StockDto("Industry", "#6e6a5f"),
-					new StockDto("Tech", "#990000"),
+					new StockDto("Tech", "#E6C857"),
 				}
 			},
 			new StockPreset()
@@ -59,9 +59,12 @@ namespace StonkTrader.Models.Game.Configuration
 				Name = "Crypto",
 				Stocks = new[]
 				{
-					new StockDto("Bitcoin", "#f2a900"),
-					new StockDto("Ethereum", "#ff5050"),
-					new StockDto("Dogecoin", "#00e6e6"),
+					new StockDto("Bitcoin", "#FFF384"),
+					new StockDto("Litecoin", "#1D282C"),
+					new StockDto("Ethereum", "#308AA2"),
+					new StockDto("Tether", "#D6D6D6"),
+					new StockDto("Binance", "#52C2A7"),
+					new StockDto("Dogecoin", "#68505A"),
 				}
 			},
 			new StockPreset()
@@ -69,11 +72,11 @@ namespace StonkTrader.Models.Game.Configuration
 				Name = "Lord of the Rings",
 				Stocks = new[]
 				{
-					new StockDto("Gondor", "#0086b3"),
-					new StockDto("Rohan", "#cc6600"),
-					new StockDto("Dwarves", "#339966"),
+					new StockDto("Gondor", "#3AAFE8"),
+					new StockDto("Rohan", "#2C93A6"),
+					new StockDto("Dwarves", "#C4C3A2"),
 					new StockDto("Isengard", "#e6e6e6"),
-					new StockDto("Mordor", "#ff1800"),
+					new StockDto("Mordor", "#C32A36"),
 				}
 			},
 			new StockPreset()
@@ -94,27 +97,14 @@ namespace StonkTrader.Models.Game.Configuration
 				Name = "Camping",
 				Stocks = new[]
 				{
-					new StockDto("Canoes", "#993300"),
+					new StockDto("Canoes", "#702601"),
 					new StockDto("Tents", "#3E54E8"),
-					new StockDto("Campfires", "#c32222"),
+					new StockDto("Campfires", "#E63E16"),
 					new StockDto("Marshmallows", "#e6e6e6"),
-					new StockDto("Trees", "#0f8a0f"),
+					new StockDto("Trees", "#38552C"),
 					new StockDto("Mountains", "#3d475c"),
 				}
 			},
-			//new StockPreset()
-			//{
-			//	Name = "Jare",
-			//	Stocks = new[]
-			//	{
-			//		new StockDto("Hilary", "#e36e07"),
-			//		new StockDto("Bridges", "#3d475c"),
-			//		new StockDto("Math", "#58138A"),
-			//		new StockDto("Carabiners", "#6B1220"),
-			//		new StockDto("Denver", "#20A2C9"),
-			//		new StockDto("Triangles", "#126B31"),
-			//	}
-			//},
 			new StockPreset()
 			{
 				Name = "Internet",
@@ -125,7 +115,7 @@ namespace StonkTrader.Models.Game.Configuration
 					new StockDto("Snapchat", "#FFC300"),
 					new StockDto("TikTok", "#25F4EE"),
 					new StockDto("Facebook", "#4267B2"),
-					new StockDto("MySpace", "#117A65"),
+					new StockDto("Google", "#34a853"),
 				}
 			},
 		};

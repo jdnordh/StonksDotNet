@@ -53,6 +53,8 @@ namespace StonkTrader.Models.Workers
 
 			m_connection.On<string, PredictionDto>(GameWorkerRequests.MakePredictionRequest, MakePrediction);
 
+			m_connection.On(GameWorkerRequests.ResetRequest, Reset);
+
 			m_connection.On(GameWorkerRequests.GameEndRequest, EndGame);
 
 			await Task.Run(async () => {
@@ -266,6 +268,16 @@ namespace StonkTrader.Models.Workers
 		{
 			m_logger.Log(LogLevel.Information, "Ending game.");
 			await m_connection.InvokeAsync(GameWorkerResponses.GameEnded);
+		}
+
+		public async Task Reset()
+		{
+			m_logger.Log(LogLevel.Warning, "RESETING");
+			if (m_game != null)
+			{
+				await m_game.EndGame();
+			}
+			m_game = null;
 		}
 
 		#endregion

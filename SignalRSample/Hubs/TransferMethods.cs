@@ -34,6 +34,8 @@ namespace Hubs
 		public const string StockPushDownRequest = "stockPushDownRequest";
 		public const string MakePredictionRequest = "makePredictionRequest";
 		public const string GameEndRequest = "gameEndRequest";
+
+		public const string ResetRequest = "resetRequest";
 	}
 
 	public static class GameWorkerResponses
