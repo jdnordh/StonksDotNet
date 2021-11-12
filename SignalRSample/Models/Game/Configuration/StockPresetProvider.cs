@@ -59,12 +59,12 @@ namespace StonkTrader.Models.Game.Configuration
 				Name = "Crypto",
 				Stocks = new[]
 				{
-					new StockDto("Bitcoin", "#FFF384"),
-					new StockDto("Litecoin", "#1D282C"),
+					new StockDto("Bitcoin", "#E6BD00"),
+					new StockDto("Litecoin", "#3381D8"),
+					new StockDto("Dogecoin", "#68505A"),
 					new StockDto("Ethereum", "#308AA2"),
 					new StockDto("Tether", "#D6D6D6"),
 					new StockDto("Binance", "#52C2A7"),
-					new StockDto("Dogecoin", "#68505A"),
 				}
 			},
 			new StockPreset()
@@ -74,7 +74,8 @@ namespace StonkTrader.Models.Game.Configuration
 				{
 					new StockDto("Gondor", "#3AAFE8"),
 					new StockDto("Rohan", "#2C93A6"),
-					new StockDto("Dwarves", "#C4C3A2"),
+					new StockDto("Dwarves", "#8E7A71"),
+					new StockDto("Goblins", "#F27953"),
 					new StockDto("Isengard", "#e6e6e6"),
 					new StockDto("Mordor", "#C32A36"),
 				}
@@ -99,8 +100,8 @@ namespace StonkTrader.Models.Game.Configuration
 				{
 					new StockDto("Canoes", "#702601"),
 					new StockDto("Tents", "#3E54E8"),
-					new StockDto("Campfires", "#E63E16"),
 					new StockDto("Marshmallows", "#e6e6e6"),
+					new StockDto("Campfires", "#E63E16"),
 					new StockDto("Trees", "#38552C"),
 					new StockDto("Mountains", "#3d475c"),
 				}
