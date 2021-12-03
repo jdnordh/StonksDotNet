@@ -124,12 +124,12 @@ namespace StonkTrader.Models.Game.Configuration
 				Name = "Christmas",
 				Stocks = new[]
 				{
-					new StockDto("Eggnog", "#f6ddbd"),
-					new StockDto("Trees", "#38552C"),
-					new StockDto("Rudolph", "#654321"),
-					new StockDto("Santa", "#FF0000"),
-					new StockDto("Presents", "#1a40eb"),
-					new StockDto("Stockings", "#3AAFE8"),
+					new StockDto("Eggnog", "#F5D695"),
+					new StockDto("Trees", "#2C6125"),
+					new StockDto("Rudolph", "#523B25"),
+					new StockDto("Santa", "#9F171A"),
+					new StockDto("Presents", "#226677"),
+					new StockDto("Snowmen", "#E4F3F3"),
 				}
 			},
 		};
