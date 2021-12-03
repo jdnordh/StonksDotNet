@@ -32,6 +32,8 @@ namespace Hubs
 		public const string RollPreviewRequest = "rollPreviewRequest";
 		public const string TrendPreviewRequest = "trendPreviewRequest";
 		public const string StockPushDownRequest = "stockPushDownRequest";
+		public const string ShortRequest = "shortRequest";
+		public const string CoverShortRequest = "coverShortRequest";
 		public const string MakePredictionRequest = "makePredictionRequest";
 		public const string GameEndRequest = "gameEndRequest";
 

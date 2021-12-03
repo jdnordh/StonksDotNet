@@ -52,14 +52,24 @@ namespace StonkTrader.Models.Game.Characters
 		public virtual bool GetsPrediction => false;
 
 		/// <summary>
+		/// Whether or not the character gets to short a stock.
+		/// </summary>
+		public virtual bool GetsShort => false;
+
+		/// <summary>
 		/// If the stocks are initialized.
 		/// </summary>
 		public bool AreStocksInitialized { get; set; }
 
 		/// <summary>
-		/// The current market prediction.
+		/// The current market prediction. Null if none exists.
 		/// </summary>
 		public PredictionDto Prediction { get; set; }
+
+		/// <summary>
+		/// The current short position. Null if none exists.
+		/// </summary>
+		public ShortDto ShortPosition { get; set; }
 		
 		/// <summary>
 		/// The changes to the holdings this round.

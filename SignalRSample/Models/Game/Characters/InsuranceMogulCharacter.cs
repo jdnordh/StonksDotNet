@@ -6,7 +6,7 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class InsuranceMogulCharacter : CharacterBase
 	{
-		private const decimal CashBonusPercentage = 0.25M;
+		private const decimal CashBonusPercentage = 0.1M;
 
 		#region Properties
 
@@ -18,7 +18,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// <summary>
 		/// The name of this chacter.
 		/// </summary>
-		public override string Description => $"This character gets a cash bonus for all stock shares that are lost during a crash and has the ability to sabotage stocks.";
+		public override string Description => $"This character gets a cash bonus for all stock shares that are lost during a crash and has the ability to short sell stocks.";
 
 		/// <summary>
 		/// The id of this chacter.
@@ -30,6 +30,11 @@ namespace StonkTrader.Models.Game.Characters
 		/// </summary>
 		public override bool GetsPushDownVote => true;
 
+		/// <summary>
+		/// Whether or not the character gets to short a stock.
+		/// </summary>
+		public override bool GetsShort => true;
+
 		#endregion
 
 		#region Public Methods
@@ -37,7 +42,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// <inheritdoc/>
 		public override string GetDetailedInformation()
 		{
-			return $"As the Insurance Mogul, each round you get to vote for a stock to sabotage. All players who have chosen the Insurance Mogul get a vote. When the market closes, the votes are counted and the stock with the most votes gets an extra down roll that round. Additionally, if a stock crashes, you are paid $0.20 for each stock that is lost among all the players.";
+			return $"As the Insurance Mogul, you can short sell stocks. This bets against the stock by selling borrowed shares now, and paying them back later (hopefuly at a lower price). Additionally, if a stock crashes, you are paid ${Num(CashBonusPercentage)} for each stock that is lost among all the players.";
 		}
 
 		/// <summary>

@@ -95,6 +95,7 @@ var CurrentData = {
 	StockValues: { },
 	StockColors: { },
 	StockHalves: {},
+	ShortPosition: {},
 	PlayerInventories: {},
 	Money: 0,
 	Character: {},
@@ -135,7 +136,9 @@ var Connection = {
 		RequestTransaction: "RequestTransaction",
 		RequestRollPreview: "RequestRollPreview",
 		RequestTrendPreview: "RequestTrendPreview",
-		RequestStockPushDown: "RequestStockPushDown",
+		//RequestStockPushDown: "RequestStockPushDown",
+		RequestShort: "RequestShort",
+		RequestCoverShortPosition: "RequestCoverShortPosition",
 		RequestMakePrediction: "RequestMakePrediction",
 		Reset: "Reset",
 		ReJoin: "ReJoin",
@@ -287,6 +290,7 @@ var Connection = {
 				StockValues: {},
 				StockColors: {},
 				StockHalves: {},
+				ShortPosition: {},
 				PlayerInventories: {},
 				Money: 0,
 				Temp: {},
@@ -397,8 +401,18 @@ var Connection = {
 			return console.error(err.toString());
 		});
 	},
-	RequestStockPushDown: function (stockName) {
-		Connection.Hub.invoke(Connection.ServerMethods.RequestStockPushDown, stockName).catch(function (err) {
+	//RequestStockPushDown: function (stockName) {
+	//	Connection.Hub.invoke(Connection.ServerMethods.RequestStockPushDown, stockName).catch(function (err) {
+	//		return console.error(err.toString());
+	//	});
+	//},
+	RequestShort: function (stockName, amount) {
+		Connection.Hub.invoke(Connection.ServerMethods.RequestShort, stockName, Number(amount)).catch(function (err) {
+			return console.error(err.toString());
+		});
+	},
+	RequestCoverShortPosition: function (stockName) {
+		Connection.Hub.invoke(Connection.ServerMethods.RequestCoverShortPosition).catch(function (err) {
 			return console.error(err.toString());
 		});
 	},
@@ -507,6 +521,11 @@ var ConstHtmlIds =
 	JoinGameConfirm: "#joinGameConfirm",
 	CharacterInfoButton: "#characterInfoBtn",
 	CharacterInfoBanner: "#characterInfoBanner",
+	StockShortName: "#stockShortName",
+	StockShortAmount: "#stockShortAmount",
+	StockShortButton: "#stockShortButton",
+	CoverShortPositionButton: "#coverShortPositionButton",
+	ShortButton: "#shortBtn",
 }
 
 var HtmlGeneration =
@@ -655,6 +674,17 @@ var HtmlGeneration =
 		html += '</button></div>';
 		return html;
 	},
+	MakeShortButton: function () {
+		let html = '<div class="button-banner" id="shortBtn"><button class="btn btn-primary roll-preview-btn">';
+		if (CurrentData.ShortPosition.sharesAmount && CurrentData.ShortPosition.sharesAmount > 0) {
+			html += 'Cover Short';
+		}
+		else {
+			html += 'Short Sell';
+		}
+		html += '</button></div>';
+		return html;
+	},
 	MakePushDownButton: function () {
 		let html = '<div class="button-banner" id="pushDownBtn"><button class="btn btn-primary roll-preview-btn">';
 		if (CurrentData.Temp && CurrentData.Temp.StockToPushDown) {
@@ -777,6 +807,66 @@ var HtmlGeneration =
 		html += '</i></p><br/><button class="btn btn-primary menu-button" id="joinGameConfirm">Join Game</button><br/><button class="btn btn-outline-primary menu-button" id="backButton">Back</button></div></div>';
 		return html;
 	},
+	MakeShortStockScreen: function () {
+		let html = '<div class="fill grid-row-2"><p class="buy-sell-prompt">Select the stock you would like to short sell.</p><div class="short-position-selection-grid"><select class="buy-sell-prompt grid-column-2 grid-row-1 fill" id="stockShortName">';
+		let firstStockName = undefined;
+		for (let stockName in CurrentData.Holdings) {
+			if (!firstStockName) {
+				firstStockName = stockName;
+			}
+			if (CurrentData.Holdings.hasOwnProperty(stockName)) {
+				html += '<option value="';
+				html += stockName;
+				html += '">'
+				html += stockName;
+				html += '</option>';
+			}
+		}
+		html += '</select><p class="buy-sell-prompt grid-column-2 grid-row-2">Select the amount.</p><select class="buy-sell-prompt grid-column-2 grid-row-3 fill" id="stockShortAmount">';
+		let stockValue = CurrentData.StockValues[firstStockName];
+		let money = CurrentData.Money;
+		let maxShortAmount = (money * 10000 * 2) / (stockValue * 100);
+		let initialBuyFor = 0;
+		let shortAmounts = [];
+		for (let i = 0; i <= maxShortAmount; i += 1000) {
+			shortAmounts.push(i);
+		}
+		for (let i = shortAmounts.length - 1; i >= 0; i--) {
+			let shortAmount = shortAmounts[i];
+			if (!initialBuyFor) {
+				initialBuyFor = (shortAmount * stockValue) / 200;
+			}
+			html += '<option value="';
+			html += shortAmount;
+			html += '">'
+			html += shortAmount;
+			html += '</option>';
+		}
+		html += '</select><button class="btn btn-warning buy-sell-button fill grid-column-2 grid-row-4" id="stockShortButton">Short for $';
+		html += initialBuyFor;
+		html += '</button><button class="btn btn-outline-danger buy-sell-button fill grid-column-2 grid-row-5" id="cancel">Cancel</button></div></div>';
+		return html;
+	},
+	MakeCoverShortPositionScreen: function () {
+		let stockName = CurrentData.ShortPosition.stockName;
+		let sharesAmount = CurrentData.ShortPosition.sharesAmount;
+		let sellPrice = CurrentData.ShortPosition.sellPrice;
+		let stockValue = CurrentData.StockValues[stockName];
+		let currentCost = sharesAmount * stockValue / 100;
+		let purchasePrice = (sellPrice / 2);
+		let returnPrice = purchasePrice + sellPrice - currentCost;
+
+		let html = '<div class="fill grid-row-2"><div class="short-position-grid"><p class="short-position-header grid-row-1 grid-column-1">Stock:</p><p class="short-position-header-value grid-row-1 grid-column-2">';
+		html += stockName;
+		html += '</p><p class="short-position-header grid-row-2 grid-column-1">Shares:</p><p class="short-position-header-value grid-row-2 grid-column-2">';
+		html += sharesAmount;
+		html += '</p><p class="short-position-header grid-row-3 grid-column-1">Sold For:</p><p class="short-position-header-value grid-row-3 grid-column-2">$';
+		html += sellPrice;
+		html += '</p></div ><p class="short-position-info">Covering your short position now will return you <span class="money-text">$';
+		html += returnPrice;
+		html += '</span>.</p><div class="buy-sell-control"><button class="btn btn-warning buy-sell-button fill grid-column-2 grid-row-1" id="coverShortPositionButton">Cover</button><button class="btn btn-outline-danger buy-sell-button fill grid-column-2 grid-row-2" id="cancel">Cancel</button></div></div>';
+		return html;
+	},
 }
 
 var ScreenOps = {
@@ -875,7 +965,6 @@ var ScreenOps = {
 		mainGrid.append(HtmlGeneration.MakeMarketScreen(CurrentData.Money, true));
 		mainGrid.append(HtmlGeneration.MakeBuyStockBanner());
 
-		// TODO BUG: If the player joins mid-market, the timer does not show up.
 		let timerFunc = function (secondsRemaining) {
 			if (secondsRemaining > 0) {
 				$(ConstHtmlIds.BuySellTimer).text(secondsRemaining + 's');
@@ -942,10 +1031,25 @@ var ScreenOps = {
 			});
 		}
 		else if (CurrentData.Character.id === 6) {
-			list.append(HtmlGeneration.MakePushDownButton());
-			$(ConstHtmlIds.PushDownButton).on(clickHandler, function () {
-				ScreenOps.PrePushDown(isBuy);
-			});
+			//list.append(HtmlGeneration.MakePushDownButton());
+			//$(ConstHtmlIds.PushDownButton).on(clickHandler, function () {
+			//	ScreenOps.PrePushDown(isBuy);
+			//});
+			// Check if the player already has a short position
+			list.append(HtmlGeneration.MakeShortButton());
+
+			// Attach handlers
+			log(CurrentData.ShortPosition);
+			if (CurrentData.ShortPosition.sharesAmount && CurrentData.ShortPosition.sharesAmount > 0) {
+				$(ConstHtmlIds.ShortButton).on(clickHandler, function () {
+					ScreenOps.PreCoverShort(isBuy);
+				});
+			}
+			else {
+				$(ConstHtmlIds.ShortButton).on(clickHandler, function () {
+					ScreenOps.PreShort(isBuy);
+				});
+			}
 		}
 
 		if (isBuy) {
@@ -1090,6 +1194,77 @@ var ScreenOps = {
 		});
 		$(ConstHtmlIds.Cancel).on(clickHandler, function () {
 			ScreenOps.SwitchToMarketScreen(isBuy);
+		});
+	},
+	PreShort: function (isBuy) {
+		ScreenOps.State = ScreenOps.States.MarketOpenPrePrediction;
+		let list = $(ConstHtmlIds.StockList);
+		list.empty();
+		list.append(HtmlGeneration.MakeShortStockScreen());
+
+		// Attach handlers
+		$(ConstHtmlIds.Cancel).on(clickHandler, function () {
+			ScreenOps.SwitchToMarketScreen(isBuy);
+		});
+
+		$(ConstHtmlIds.StockShortButton).on(clickHandler, function () {
+			let stockName = $(ConstHtmlIds.StockShortName).find(":selected").text();
+			let sharesAmount = $(ConstHtmlIds.StockShortAmount).find(":selected").text();
+			CurrentData.ShortPosition.stockName = stockName;
+			CurrentData.ShortPosition.sharesAmount = sharesAmount;
+			let stockValue = CurrentData.StockValues[stockName];
+			CurrentData.ShortPosition.sellPrice = stockValue * sharesAmount / 100;
+			Connection.RequestShort(stockName, sharesAmount);
+			ScreenOps.SwitchToMarketScreen(isBuy);
+		});
+
+		$(ConstHtmlIds.StockShortName).change(function () {
+			// Replace the amount options based on the value of the stock
+			let stockName = $(ConstHtmlIds.StockShortName).find(":selected").text();
+			let stockValue = CurrentData.StockValues[stockName];
+			let money = CurrentData.Money;
+			let maxShortAmount = (money * 10000 * 2) / (stockValue * 100);
+			let initialBuyFor = 0;
+			let shortAmounts = [];
+			for (let i = 0; i <= maxShortAmount; i += 1000) {
+				shortAmounts.push(i);
+			}
+			let amountSelector = $(ConstHtmlIds.StockShortAmount);
+			amountSelector.empty();
+			for (let i = shortAmounts.length - 1; i >= 0; i--) {
+				let shortAmount = shortAmounts[i];
+				if (!initialBuyFor) {
+					initialBuyFor = (shortAmount * stockValue) / 200;
+				}
+				amountSelector.append($('<option></option>').attr('value', shortAmount).text(shortAmount));
+			}
+			$(ConstHtmlIds.StockShortButton).text('Short for $' + initialBuyFor);
+		});
+
+		$(ConstHtmlIds.StockShortAmount).change(function () {
+			// Set the cost
+			let stockName = $(ConstHtmlIds.StockShortName).find(":selected").text();
+			let sharesAmount = $(ConstHtmlIds.StockShortAmount).find(":selected").text();
+			let stockValue = CurrentData.StockValues[stockName];
+			let cost = sharesAmount * stockValue / 200;
+			$(ConstHtmlIds.StockShortButton).text('Short for $' + cost);
+		});
+	},
+	PreCoverShort: function (isBuy) {
+		ScreenOps.State = ScreenOps.States.MarketOpenPrePrediction;
+		let list = $(ConstHtmlIds.StockList);
+		list.empty();
+		list.append(HtmlGeneration.MakeCoverShortPositionScreen());
+
+		// Attach handlers
+		$(ConstHtmlIds.Cancel).on(clickHandler, function () {
+			ScreenOps.SwitchToMarketScreen(isBuy);
+		});
+
+		$(ConstHtmlIds.CoverShortPositionButton).on(clickHandler, function () {
+			Connection.RequestCoverShortPosition();
+			ScreenOps.SwitchToMarketScreen(isBuy);
+			CurrentData.ShortPosition = {};
 		});
 	},
 	SwitchToJoinMenu: function (initialUsername) {
@@ -1653,7 +1828,7 @@ var Presenter = {
 						},
 						display: function (ctx) {
 							let value = Number(ctx.dataset.data[ctx.dataIndex]);
-							return value > 0;
+							return value !== 0;
 						}
 					}
 				},

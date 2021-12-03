@@ -316,7 +316,26 @@ namespace Hubs
 			{
 				return;
 			}
+			return;
 			await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.StockPushDownRequest, CurrentUserConnectionId, stockName);
+		}
+
+		public async Task RequestShort(string stockName, int amount)
+		{
+			if(!WorkerManager.Instance.WorkerExists)
+			{
+				return;
+			}
+			await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.ShortRequest, CurrentUserConnectionId, stockName, amount);
+		}
+
+		public async Task RequestCoverShortPosition()
+		{
+			if(!WorkerManager.Instance.WorkerExists)
+			{
+				return;
+			}
+			await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.CoverShortRequest, CurrentUserConnectionId);
 		}
 
 		public async Task RequestRollPreview()

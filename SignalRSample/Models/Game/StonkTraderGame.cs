@@ -341,6 +341,65 @@ namespace Models.Game
 		#region Character Abilities
 
 		/// <summary>
+		/// Shorts a stock.
+		/// </summary>
+		/// <param name="playerId">The player id.</param>
+		/// <param name="stockName">The stock name to short.</param>
+		/// <param name="sharesToShort">The amount of shares to short.</param>
+		/// <returns>The player's updated inventory if successful, or null if unsuccessful.</returns>
+		public PlayerInventoryDto ShortStock(string playerId, string stockName, int sharesToShort)
+		{
+			var player = Players[playerId];
+			if(player.Character.GetsShort && IsMarketOpen && !IsMarketHalfTime)
+			{
+				if (player.Character.ShortPosition == null)
+				{
+					var stock = m_stocks[stockName];
+					var sharesSoldPrice = stock.Value * sharesToShort;
+					var purchasePrice = sharesSoldPrice * 0.5M;
+					if (purchasePrice > player.Money)
+					{
+						return null;
+					}
+
+					player.Character.ShortPosition = new ShortDto(stockName, sharesToShort, (int)purchasePrice, (int)sharesSoldPrice);
+					player.Money -= (int)purchasePrice;
+					return player.GetPlayerInvetory();
+				}
+			}
+			return null;
+		}
+
+		/// <summary>
+		/// Covers a short position.
+		/// </summary>
+		/// <param name="playerId">The player id.</param>
+		/// <returns>The player's updated inventory if successful, or null if unsuccessful.</returns>
+		public PlayerInventoryDto CoverShortPosition(string playerId)
+		{
+			var player = Players[playerId];
+			if(player.Character.GetsShort && IsMarketOpen && !IsMarketHalfTime)
+			{
+				return CoverShortPrivate(playerId);
+			}
+			return null;
+		}
+
+		private PlayerInventoryDto CoverShortPrivate(string playerId)
+		{
+			var player = Players[playerId];
+			if(player.Character.ShortPosition != null)
+			{
+				var shortPosition = player.Character.ShortPosition;
+				var stock = m_stocks[player.Character.ShortPosition.StockName];
+				player.Money += (int)(shortPosition.PurchasePrice + shortPosition.SharesSoldPrice - shortPosition.SharesAmount * stock.Value);
+				player.Character.ShortPosition = null;
+				return player.GetPlayerInvetory();
+			}
+			return null;
+		}
+
+		/// <summary>
 		/// Previews the first roll of a round if the player has access to it.
 		/// </summary>
 		/// <param name="playerId">The player id.</param>
@@ -631,6 +690,13 @@ namespace Models.Game
 					decimal specificPercentage = player.Character.GetDivedendAmount(m_stocks[stock].Value, percentage);
 					player.Money += (int)(holdings * specificPercentage);
 				}
+
+				// Pay back shorted stocks dividends
+				var shortPosition = player.Character.ShortPosition;
+				if (shortPosition != null && shortPosition.StockName == stock)
+				{
+					player.Money -= (int)(shortPosition.SharesAmount * percentage);
+				}
 			}
 			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
 		}
@@ -816,6 +882,15 @@ namespace Models.Game
 
 		public async Task EndGame()
 		{
+			// Cover all short positions
+			foreach(var player in Players.Values)
+			{
+				if (player.Character.ShortPosition != null)
+				{
+					CoverShortPrivate(player.Id);
+				}
+			}
+
 			var preSellInventories = GetInventoryCollectionDto();
 			SellAllShares();
 

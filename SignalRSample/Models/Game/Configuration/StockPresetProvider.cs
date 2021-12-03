@@ -119,6 +119,19 @@ namespace StonkTrader.Models.Game.Configuration
 					new StockDto("Google", "#34a853"),
 				}
 			},
+			new StockPreset()
+			{
+				Name = "Christmas",
+				Stocks = new[]
+				{
+					new StockDto("Eggnog", "#f6ddbd"),
+					new StockDto("Trees", "#38552C"),
+					new StockDto("Rudolph", "#654321"),
+					new StockDto("Santa", "#FF0000"),
+					new StockDto("Presents", "#1a40eb"),
+					new StockDto("Stockings", "#3AAFE8"),
+				}
+			},
 		};
 
 		static StockPresetProvider()

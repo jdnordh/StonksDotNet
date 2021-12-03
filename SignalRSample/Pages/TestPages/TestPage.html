@@ -1,4 +1,5 @@
-﻿<html lang="en"><head>
+﻿<html lang="en">
+<head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Stonk Trader</title>
@@ -9,19 +10,25 @@
 </head>
 
 <body>
-	<div class="center-absolute menu-join-grid">
-		<div class="menu-confirm-grid">
-			<h1 class="menu-text">Confirm</h1>
-			<br />
-			<p class="menu-text">Username:</p>
-			<p class="menu-text"><i>StonkMaster</i></p>
-			<br />
-			<p class="menu-text">Character:</p>
-			<p class="menu-text"><i>Inside Trader</i></p>
-			<br />
-			<button class="btn btn-primary menu-button" id="joinGameConfirm">Join Game</button>
-			<br />
-			<button class="btn btn-outline-primary menu-button">Back</button>
+	<div class="grid-row-2 scrollviewer-vertical" id="stockList">
+		<div class="fill grid-row-2">
+			<p class="buy-sell-prompt">Select the stock you would like to short sell.</p>
+			<div class="short-position-selection-grid">
+				<select class="buy-sell-prompt grid-column-2 grid-row-1 fill" id="stockShortName">
+					<option value="Property">Property</option>
+					<option value="Oil">Oil</option>
+					<option value="Materials">Materials</option>
+					<option value="Bonds">Bonds</option>
+					<option value="Industry">Industry</option>
+					<option value="Tech">Tech</option>
+				</select>
+				<p class="buy-sell-prompt grid-column-2 grid-row-2">Select the amount.</p>
+				<select class="buy-sell-prompt grid-column-2 grid-row-3 fill" id="stockShortAmount">
+					<option value="1000">1000</option>
+				</select>
+				<button class="btn btn-warning buy-sell-button fill grid-column-2 grid-row-4" id="stockShortButton">Short for $500</button>
+				<button class="btn btn-outline-danger buy-sell-button fill grid-column-2 grid-row-5" id="cancel">Cancel</button>
+			</div>
 		</div>
 	</div>
 </body>
