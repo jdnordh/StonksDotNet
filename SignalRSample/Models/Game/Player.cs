@@ -20,6 +20,8 @@ namespace Models.Game
 
 		public CharacterBase Character { get; }
 
+		public ShortDto ShortPosition { get; set; }
+
 		public Player(string id, string username, int startingMoney, List<string> stocks, CharacterBase character)
 		{
 			Id = id;
@@ -40,7 +42,7 @@ namespace Models.Game
 		public PlayerInventoryDto GetPlayerInvetory()
 		{
 			return new PlayerInventoryDto(Id, Money, Holdings.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
-				Username, new CharacterDto(Character.GetDetailedInformation(), Character.Id));
+				Username, new CharacterDto(Character.GetDetailedInformation(), Character.Id), ShortPosition);
 		}
 	}
 }

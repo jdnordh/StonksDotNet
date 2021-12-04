@@ -6,6 +6,8 @@ namespace Models.Game
 	public class Stock
 	{
 		private const decimal DefaultStockValue = 1M;
+		private const decimal MaxValue = 2M;
+		private const decimal MinValue = 0M;
 
 		public decimal Value { get; private set; }
 
@@ -48,11 +50,19 @@ namespace Models.Game
 		public void IncreaseValue(decimal increment)
 		{
 			Value += increment;
+			if (Value > MaxValue)
+			{
+				Value = MaxValue;
+			}
 		}
 
 		public void DecreaseValue(decimal decrement)
 		{
 			Value -= decrement;
+			if(Value < MinValue)
+			{
+				Value = MinValue;
+			}
 		}
 
 		public void ResetValue()

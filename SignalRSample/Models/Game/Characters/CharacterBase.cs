@@ -13,6 +13,7 @@ namespace StonkTrader.Models.Game.Characters
 	public abstract class CharacterBase
 	{
 		protected readonly static Func<decimal, string> Num = (d) => d.ToString("N0");
+		protected readonly static Func<decimal, string> Money = (d) => d.ToString("C");
 
 		#region Properties
 

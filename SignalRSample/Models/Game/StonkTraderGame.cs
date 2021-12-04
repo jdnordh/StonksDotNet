@@ -352,7 +352,7 @@ namespace Models.Game
 			var player = Players[playerId];
 			if(player.Character.GetsShort && IsMarketOpen && !IsMarketHalfTime)
 			{
-				if (player.Character.ShortPosition == null)
+				if (player.ShortPosition == null)
 				{
 					var stock = m_stocks[stockName];
 					var sharesSoldPrice = stock.Value * sharesToShort;
@@ -362,7 +362,8 @@ namespace Models.Game
 						return null;
 					}
 
-					player.Character.ShortPosition = new ShortDto(stockName, sharesToShort, (int)purchasePrice, (int)sharesSoldPrice);
+					player.ShortPosition = new ShortDto(stockName, sharesToShort, (int)purchasePrice, (int)sharesSoldPrice);
+					player.Character.ShortPosition = player.ShortPosition;
 					player.Money -= (int)purchasePrice;
 					return player.GetPlayerInvetory();
 				}
@@ -388,12 +389,12 @@ namespace Models.Game
 		private PlayerInventoryDto CoverShortPrivate(string playerId)
 		{
 			var player = Players[playerId];
-			if(player.Character.ShortPosition != null)
+			if(player.ShortPosition != null)
 			{
-				var shortPosition = player.Character.ShortPosition;
-				var stock = m_stocks[player.Character.ShortPosition.StockName];
+				var shortPosition = player.ShortPosition;
+				var stock = m_stocks[shortPosition.StockName];
 				player.Money += (int)(shortPosition.PurchasePrice + shortPosition.SharesSoldPrice - shortPosition.SharesAmount * stock.Value);
-				player.Character.ShortPosition = null;
+				player.ShortPosition = player.Character.ShortPosition = null;
 				return player.GetPlayerInvetory();
 			}
 			return null;
@@ -718,6 +719,12 @@ namespace Models.Game
 					{
 						totalSharesLost += player.Holdings[stock.Name];
 						player.Holdings[stock.Name] = 0;
+
+						// Cover all short positions on the stock
+						if(player.Character.ShortPosition != null && player.Character.ShortPosition.StockName == stock.Name)
+						{
+							CoverShortPrivate(player.Id);
+						}
 					}
 
 					// Payout rebates
@@ -729,7 +736,6 @@ namespace Models.Game
 							player.Money += crashRebate;
 						}
 					}
-
 					splitOrCrashed = true;
 					stock.ResetValue();
 				}
@@ -739,6 +745,15 @@ namespace Models.Game
 					foreach (Player player in Players.Values)
 					{
 						player.Holdings[stock.Name] = player.Holdings[stock.Name] * 2;
+
+						// Continue to grow the short position's terribleness
+						// TODO This is not yet reflected on the client side
+						// TODO Maybe have the short position be part of the inventory so it can be determined by the server side only
+						if(player.ShortPosition != null && player.ShortPosition.StockName == stock.Name)
+						{
+							player.ShortPosition.SharesAmount *= 2;
+							player.Character.ShortPosition = player.ShortPosition;
+						}
 					}
 					splitOrCrashed = true;
 					stock.ResetValue();

@@ -17,10 +17,12 @@ namespace Models.DataTransferObjects
 		public string PlayerId { get; set; }
 
 		[JsonInclude]
-		// TODO I renamed this and changed it from an int to a CharacterDto. Switch usages in the client and build errors on server side. Yeet.
-		//[JsonProperty("characterId")]
 		[JsonProperty("characterDto")]
 		public CharacterDto CharacterDto { get; set; }
+
+		[JsonInclude]
+		[JsonProperty("shortPositionDto")]
+		public ShortDto ShortPositionDto { get; set; }
 
 		[JsonInclude]
 		[JsonProperty("money")]
@@ -30,13 +32,14 @@ namespace Models.DataTransferObjects
 		[JsonProperty("holdings")]
 		public Dictionary<string, int> Holdings { get; }
 
-		public PlayerInventoryDto(string playerId, int money, Dictionary<string, int> holdings, string username, CharacterDto characterDto)
+		public PlayerInventoryDto(string playerId, int money, Dictionary<string, int> holdings, string username, CharacterDto characterDto, ShortDto shortPositionDto)
 		{
 			PlayerId = playerId;
 			Money = money;
 			Holdings = holdings;
 			Username = username;
 			CharacterDto = characterDto;
+			ShortPositionDto = shortPositionDto;
 		}
 	}
 }

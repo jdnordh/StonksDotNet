@@ -13,7 +13,7 @@ namespace Models.DataTransferObjects
 
 		[JsonInclude]
 		[JsonProperty("sharesAmount")]
-		public int SharesAmount{ get; }
+		public int SharesAmount{ get; set; }
 
 		[JsonInclude]
 		[JsonProperty("purchasePrice")]
@@ -23,11 +23,11 @@ namespace Models.DataTransferObjects
 		[JsonProperty("sharesSoldPrice")]
 		public int SharesSoldPrice { get; }
 
-		public ShortDto(string stockName, int sharesAmount, int puchasePrice, int sharesSoldPrice)
+		public ShortDto(string stockName, int sharesAmount, int purchasePrice, int sharesSoldPrice)
 		{
 			StockName = stockName;
 			SharesAmount = sharesAmount;
-			PurchasePrice = puchasePrice;
+			PurchasePrice = purchasePrice;
 			SharesSoldPrice = sharesSoldPrice;
 		}
 	}

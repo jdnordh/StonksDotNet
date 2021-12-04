@@ -95,7 +95,7 @@ var CurrentData = {
 	StockValues: { },
 	StockColors: { },
 	StockHalves: {},
-	ShortPosition: {},
+	ShortPosition: null,
 	PlayerInventories: {},
 	Money: 0,
 	Character: {},
@@ -290,7 +290,7 @@ var Connection = {
 				StockValues: {},
 				StockColors: {},
 				StockHalves: {},
-				ShortPosition: {},
+				ShortPosition: null,
 				PlayerInventories: {},
 				Money: 0,
 				Temp: {},
@@ -382,6 +382,9 @@ var Connection = {
 				CurrentData.Holdings[stockName] = amount;
 			}
 		}
+		log('Incoming short position:');
+		log(playerInventoryDto.shortPositionDto);
+		CurrentData.ShortPosition = playerInventoryDto.shortPositionDto;
 		CurrentData.Character = playerInventoryDto.characterDto;
 		Connection.SetMoney(playerInventoryDto.money);
 		Connection.OnServerUpdate();
@@ -411,7 +414,7 @@ var Connection = {
 			return console.error(err.toString());
 		});
 	},
-	RequestCoverShortPosition: function (stockName) {
+	RequestCoverShortPosition: function () {
 		Connection.Hub.invoke(Connection.ServerMethods.RequestCoverShortPosition).catch(function (err) {
 			return console.error(err.toString());
 		});
@@ -676,7 +679,7 @@ var HtmlGeneration =
 	},
 	MakeShortButton: function () {
 		let html = '<div class="button-banner" id="shortBtn"><button class="btn btn-primary roll-preview-btn">';
-		if (CurrentData.ShortPosition.sharesAmount && CurrentData.ShortPosition.sharesAmount > 0) {
+		if (CurrentData.ShortPosition) {
 			html += 'Cover Short';
 		}
 		else {
@@ -850,10 +853,10 @@ var HtmlGeneration =
 	MakeCoverShortPositionScreen: function () {
 		let stockName = CurrentData.ShortPosition.stockName;
 		let sharesAmount = CurrentData.ShortPosition.sharesAmount;
-		let sellPrice = CurrentData.ShortPosition.sellPrice;
+		let sellPrice = CurrentData.ShortPosition.sharesSoldPrice;
+		let purchasePrice = CurrentData.ShortPosition.purchasePrice;
 		let stockValue = CurrentData.StockValues[stockName];
 		let currentCost = sharesAmount * stockValue / 100;
-		let purchasePrice = (sellPrice / 2);
 		let returnPrice = purchasePrice + sellPrice - currentCost;
 
 		let html = '<div class="fill grid-row-2"><div class="short-position-grid"><p class="short-position-header grid-row-1 grid-column-1">Stock:</p><p class="short-position-header-value grid-row-1 grid-column-2">';
@@ -1040,7 +1043,7 @@ var ScreenOps = {
 
 			// Attach handlers
 			log(CurrentData.ShortPosition);
-			if (CurrentData.ShortPosition.sharesAmount && CurrentData.ShortPosition.sharesAmount > 0) {
+			if (CurrentData.ShortPosition) {
 				$(ConstHtmlIds.ShortButton).on(clickHandler, function () {
 					ScreenOps.PreCoverShort(isBuy);
 				});
@@ -1210,10 +1213,6 @@ var ScreenOps = {
 		$(ConstHtmlIds.StockShortButton).on(clickHandler, function () {
 			let stockName = $(ConstHtmlIds.StockShortName).find(":selected").text();
 			let sharesAmount = $(ConstHtmlIds.StockShortAmount).find(":selected").text();
-			CurrentData.ShortPosition.stockName = stockName;
-			CurrentData.ShortPosition.sharesAmount = sharesAmount;
-			let stockValue = CurrentData.StockValues[stockName];
-			CurrentData.ShortPosition.sellPrice = stockValue * sharesAmount / 100;
 			Connection.RequestShort(stockName, sharesAmount);
 			ScreenOps.SwitchToMarketScreen(isBuy);
 		});
@@ -1264,7 +1263,6 @@ var ScreenOps = {
 		$(ConstHtmlIds.CoverShortPositionButton).on(clickHandler, function () {
 			Connection.RequestCoverShortPosition();
 			ScreenOps.SwitchToMarketScreen(isBuy);
-			CurrentData.ShortPosition = {};
 		});
 	},
 	SwitchToJoinMenu: function (initialUsername) {

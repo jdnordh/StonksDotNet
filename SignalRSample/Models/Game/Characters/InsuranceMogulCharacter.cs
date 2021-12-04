@@ -42,7 +42,12 @@ namespace StonkTrader.Models.Game.Characters
 		/// <inheritdoc/>
 		public override string GetDetailedInformation()
 		{
-			return $"As the Insurance Mogul, you can short sell stocks. This bets against the stock by selling borrowed shares now, and paying them back later (hopefuly at a lower price). Additionally, if a stock crashes, you are paid ${Num(CashBonusPercentage)} for each stock that is lost among all the players.";
+			string shortInfo = "";
+			if (ShortPosition != null)
+			{
+				shortInfo = $"Currently shorting {ShortPosition.SharesAmount} {ShortPosition.StockName}. ";
+			}
+			return $"{shortInfo}As the Insurance Mogul, you can short sell stocks. This bets against the stock by selling borrowed shares now, and paying them back later (hopefuly at a lower share price). Additionally, if a stock crashes, you are paid {Money(CashBonusPercentage)} for each stock that is lost among all the players.";
 		}
 
 		/// <summary>
