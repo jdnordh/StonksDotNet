@@ -35,7 +35,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// <inheritdoc/>
 		public override string GetDetailedInformation()
 		{
-			return $"As the Day Trader, you get to trade in the Half Time market. This is a time to buy and sell when others cannot. Additionally, when the market is open at half time, you get to see a trend of what will happen in the second half of the market.";
+			return $"As the Day Trader, you get to trade in the Half Time market. This is an exclusive open market halfway through the rounds. Additionally, during half time, you get to see a trend of what will happen in the second half of the round.";
 		}
 
 		#endregion

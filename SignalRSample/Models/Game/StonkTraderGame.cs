@@ -17,7 +17,8 @@ namespace Models.Game
 
 		const int SecondsBetweenRolls = 2;
 		const int RollTimeInSeconds = 2;
-		private static readonly List<decimal> s_amountDiceValues = new List<decimal>() { 0.1M, 0.15M, 0.2M, 0.3M };
+		private static readonly List<decimal> s_amountDiceValues = new List<decimal>() { 0.1M, 0.15M, 0.2M, 0.3M }; // Average: 0.1875
+		private static readonly List<decimal> s_stableAmountDiceValues = new List<decimal>() { 0.1M, 0.15M, 0.2M}; // Average: 0.15
 
 		#endregion
 
@@ -186,6 +187,11 @@ namespace Models.Game
 			{
 				Results = s_amountDiceValues
 			};
+			var stableAmountDie = new Die<decimal>
+			{
+				Results = s_stableAmountDiceValues
+			};
+			
 			var rollDie = new Die<Func<string, decimal, Roll>>
 			{
 				Results = new List<Func<string, decimal, Roll>>
@@ -212,7 +218,7 @@ namespace Models.Game
 				for (int rollNum = 0; rollNum < m_numberOfRollsPerRound; rollNum++)
 				{
 					var stockName = stockDie.Roll();
-					var amount = amountDie.Roll();
+					var amount = rollNum < (m_numberOfRollsPerRound / 2) ? amountDie.Roll() : stableAmountDie.Roll();
 					var roll = rollDie.Roll();
 					var rollResult = roll(stockName, amount);
 
@@ -714,26 +720,20 @@ namespace Models.Game
 				if (stock.Value <= 0)
 				{
 					// Reset stock holdings of crashed stock
-					int totalSharesLost = 0;
 					foreach (Player player in Players.Values)
 					{
-						totalSharesLost += player.Holdings[stock.Name];
+						var sharesLost = player.Holdings[stock.Name];
+						if (sharesLost > 0)
+						{
+							// Payout rebates
+							player.Money += player.Character.CalculateCrashRebateAmount(sharesLost);
+						}
 						player.Holdings[stock.Name] = 0;
 
 						// Cover all short positions on the stock
 						if(player.Character.ShortPosition != null && player.Character.ShortPosition.StockName == stock.Name)
 						{
 							CoverShortPrivate(player.Id);
-						}
-					}
-
-					// Payout rebates
-					if (totalSharesLost > 0)
-					{
-						foreach (Player player in Players.Values)
-						{
-							int crashRebate = player.Character.CalculateCrashRebateAmount(totalSharesLost);
-							player.Money += crashRebate;
 						}
 					}
 					splitOrCrashed = true;

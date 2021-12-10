@@ -125,9 +125,9 @@ namespace StonkTrader.Models.Game.Characters
 		/// <summary>
 		/// Calculate the rebate amount this character gets at after a stock crashes.
 		/// </summary>
-		/// <param name="totalSharesLost">The total shares that were lost.</param>
+		/// <param name="sharesLost">The shares that were lost by the player.</param>
 		/// <returns>The rebate amount.</returns>
-		public virtual int CalculateCrashRebateAmount(int totalSharesLost)
+		public virtual int CalculateCrashRebateAmount(int sharesLost)
 		{
 			return 0;
 		}

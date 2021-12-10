@@ -6,7 +6,6 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class DefaultCharacter : CharacterBase
 	{
-
 		#region Properties
 
 		/// <summary>
@@ -31,7 +30,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// <inheritdoc/>
 		public override string GetDetailedInformation()
 		{
-			return $"As the default character, you have no special abilities. Sucks to be you";
+			return "As the default character, you have no special abilities. It would suck to be you right now.";
 		}
 
 		#endregion

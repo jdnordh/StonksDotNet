@@ -10,6 +10,7 @@ namespace StonkTrader.Models.Game.Characters
 	public class HighRollerCharacter : CharacterBase
 	{
 		private const decimal RebateMaxValue = 0.95M;
+		private const decimal DividendSubtraction = 0.1M;
 
 		#region Properties
 
@@ -22,7 +23,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// The name of this chacter.
 		/// </summary>
 		public override string Description => 
-			$"This character is not paid dividends, but gets rebates when buying stocks under par. The rebates become progressively larger the lower the stock value.";
+			$"This character is paid less dividends, but gets rebates when buying stocks under par. The rebates become progressively larger the lower the stock value.";
 
 		/// <summary>
 		/// The id of this chacter.
@@ -42,13 +43,14 @@ namespace StonkTrader.Models.Game.Characters
 				int rebateAmount = CalculateMarketRebateAmount();
 				preamble = rebateAmount > 0 ? $"You have qualified for a rebate of ${rebateAmount} this round. " : "You have not qualified for a rebate this round. ";
 			}
-			return $"{preamble}As the High Roller, you are paid no dividends, but get paid cash back for every stock you buy below 100. The lower the stock value, the more cash you get back up to a maximum of 95%.";
+			return $"{preamble}As the High Roller, you are paid {Num(100 * DividendSubtraction)}% less dividends, but get cash back for every share you buy of a stock below 100. The lower the stock value, the more cash you get back up to a maximum of 95%.";
 		}
 
 		/// <inheritdoc/>
 		public override decimal GetDivedendAmount(decimal stockValue, decimal originalDiv)
 		{
-			return 0;
+			var divPercentage = originalDiv - DividendSubtraction;
+			return divPercentage >= 0 ? divPercentage : 0;
 		}
 
 		/// <summary>

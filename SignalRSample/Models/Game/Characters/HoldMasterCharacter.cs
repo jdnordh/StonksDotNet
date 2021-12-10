@@ -19,7 +19,7 @@
 		/// <summary>
 		/// The name of this chacter.
 		/// </summary>
-		public override string Description => $"This character gets paid extra dividends. That value can increase by making correct market predictions.";
+		public override string Description => $"This character gets paid extra dividends. The extra dividend amount increases by making correct market predictions.";
 
 		/// <summary>
 		/// Whether or not the character gets a vote to push down a stock.
@@ -38,7 +38,7 @@
 		/// <inheritdoc/>
 		public override string GetDetailedInformation()
 		{
-			return $"Current dividend bonus: {Num(m_currentDividendBonus * 100)}%. As the Master of the Hold, you start off getting {Num(StartingExtraDividendPercentage * 100)}% more dividends. You also have the ability to make market predictions for what will happen in the next round. If you make a correct prediction, your dividend bonus will increase by {Num(DividendPercentageIncrease * 100)}%.";
+			return $"Current dividend bonus: {Num(m_currentDividendBonus * 100)}%. As the Master of the Hold, you start off being paid {Num(StartingExtraDividendPercentage * 100)}% more dividends. You also have the ability to make one market prediction each round. If you correctly predict a stock's movement in the next round, your dividend bonus will increase by {Num(DividendPercentageIncrease * 100)}%.";
 		}
 
 		/// <summary>

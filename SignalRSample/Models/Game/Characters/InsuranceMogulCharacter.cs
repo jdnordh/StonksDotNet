@@ -6,7 +6,7 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class InsuranceMogulCharacter : CharacterBase
 	{
-		private const decimal CashBonusPercentage = 0.1M;
+		private const decimal CashBonusPercentage = 0.15M;
 
 		#region Properties
 
@@ -18,7 +18,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// <summary>
 		/// The name of this chacter.
 		/// </summary>
-		public override string Description => $"This character gets a cash bonus for all stock shares that are lost during a crash and has the ability to short sell stocks.";
+		public override string Description => $"This character can short sell stocks and gets a cash bonus for shares lost in a stock crash. WARNING: This is an advanced character.";
 
 		/// <summary>
 		/// The id of this chacter.
@@ -47,17 +47,17 @@ namespace StonkTrader.Models.Game.Characters
 			{
 				shortInfo = $"Currently shorting {ShortPosition.SharesAmount} {ShortPosition.StockName}. ";
 			}
-			return $"{shortInfo}As the Insurance Mogul, you can short sell stocks. This bets against the stock by selling borrowed shares now, and paying them back later (hopefuly at a lower share price). Additionally, if a stock crashes, you are paid {Money(CashBonusPercentage)} for each stock that is lost among all the players.";
+			return $"{shortInfo}As the Insurance Mogul, you can short sell stocks which is like betting against it. This works by selling borrowed shares now and paying them back later (hopefuly at a lower share price). Additionally, if a stock crashes, you are paid {Money(CashBonusPercentage)} for each share that you lose.";
 		}
 
 		/// <summary>
 		/// Calculate the rebate amount this character gets at after a stock crashes.
 		/// </summary>
-		/// <param name="totalSharesLost">The total shares that were lost.</param>
+		/// <param name="sharesLost">The shares that were lost by the player.</param>
 		/// <returns>The rebate amount.</returns>
-		public override int CalculateCrashRebateAmount(int totalSharesLost)
+		public override int CalculateCrashRebateAmount(int sharesLost)
 		{
-			return (int)(totalSharesLost * CashBonusPercentage);
+			return (int)(sharesLost * CashBonusPercentage);
 		}
 
 		#endregion

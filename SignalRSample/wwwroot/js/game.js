@@ -342,19 +342,29 @@ var Connection = {
 	},
 	UpdatePlayerInventories: function (inventoryDto) {
 		// Update player inventories
+		//log('Inventories:');
+		//log(inventoryDto);
 		for (let id in inventoryDto.inventories) {
 			if (inventoryDto.inventories.hasOwnProperty(id)) {
 				let inventory = inventoryDto.inventories[id];
+				let shortValue = 0;
+				if (inventory.shortPositionDto) {
+					shortValue = inventory.shortPositionDto.purchasePrice + inventory.shortPositionDto.sharesSoldPrice - (inventory.shortPositionDto.sharesAmount * CurrentData.StockValues[inventory.shortPositionDto.stockName] / 100);
+					//log('Short value: ' + shortValue);
+				}
+
 				CurrentData.PlayerInventories[id] = {
 					username: inventory.username,
-					money: inventory.money,
-					holdings: {}
+					money: inventory.money + shortValue,
+					holdings: {},
+					netWorth: inventory.money + shortValue,
 				};
 
 				for (let stockName in inventory.holdings) {
 					if (inventory.holdings.hasOwnProperty(stockName)) {
 						let amountHeld = inventory.holdings[stockName];
 						CurrentData.PlayerInventories[id].holdings[stockName] = amountHeld;
+						CurrentData.PlayerInventories[id].netWorth += CurrentData.StockValues[stockName] * amountHeld
 					}
 				}
 			}
@@ -375,15 +385,15 @@ var Connection = {
 		}
 	},
 	UpdateInventory: function (playerInventoryDto) {
-		log(playerInventoryDto);
+		//log(playerInventoryDto);
 		for (let stockName in playerInventoryDto.holdings) {
 			if (playerInventoryDto.holdings.hasOwnProperty(stockName)) {
 				let amount = playerInventoryDto.holdings[stockName];
 				CurrentData.Holdings[stockName] = amount;
 			}
 		}
-		log('Incoming short position:');
-		log(playerInventoryDto.shortPositionDto);
+		//log('Incoming short position:');
+		//log(playerInventoryDto.shortPositionDto);
 		CurrentData.ShortPosition = playerInventoryDto.shortPositionDto;
 		CurrentData.Character = playerInventoryDto.characterDto;
 		Connection.SetMoney(playerInventoryDto.money);
@@ -436,13 +446,13 @@ var Connection = {
 		});
 	},
 	JoinGame: function (username, characterId) {
-		log('Joining game as ' + username);
+		//log('Joining game as ' + username);
 		Connection.Hub.invoke(Connection.ServerMethods.JoinGame, username, true, characterId).catch(function (err) {
 			return console.error(err.toString());
 		});
 	},
 	JoinGameObserver: function () {
-		log('Joining game as Observer');
+		//log('Joining game as Observer');
 		Connection.Hub.invoke(Connection.ServerMethods.JoinGame, "", false, 0).catch(function (err) {
 			return console.error(err.toString());
 		});
@@ -1042,7 +1052,7 @@ var ScreenOps = {
 			list.append(HtmlGeneration.MakeShortButton());
 
 			// Attach handlers
-			log(CurrentData.ShortPosition);
+			//log(CurrentData.ShortPosition);
 			if (CurrentData.ShortPosition) {
 				$(ConstHtmlIds.ShortButton).on(clickHandler, function () {
 					ScreenOps.PreCoverShort(isBuy);
@@ -1167,9 +1177,9 @@ var ScreenOps = {
 		// Add handlers
 		$(ConstHtmlIds.PushDownSendButton).on(clickHandler, function () {
 			let stockName = $(ConstHtmlIds.PushDownValue).find(":selected").text();
-			log("Sabotaging " + stockName);
+			//log("Sabotaging " + stockName);
 			CurrentData.Temp.StockToPushDown = stockName;
-			Connection.RequestStockPushDown(stockName);
+			//Connection.RequestStockPushDown(stockName);
 			ScreenOps.SwitchToMarketScreen(isBuy);
 		});
 		$(ConstHtmlIds.Cancel).on(clickHandler, function () {
@@ -1186,7 +1196,7 @@ var ScreenOps = {
 		$(ConstHtmlIds.PredictionSendButton).on(clickHandler, function () {
 			let stockName = $(ConstHtmlIds.PredictionStock).find(":selected").text();
 			let direction = $(ConstHtmlIds.PredictionDirection).find(":selected").text();
-			log("Predicting " + stockName + " " + direction);
+			//log("Predicting " + stockName + " " + direction);
 			let predictionDto = {
 				stockName: stockName,
 				isUp: direction === "Up"
@@ -1330,12 +1340,12 @@ var ScreenOps = {
 		body.empty();
 		body.load('/Game/Characters #menu-character-container', function () {
 			// Attach handlers
-			log('Characters loaded callback');
+			//log('Characters loaded callback');
 			let characterAmount = 6;
 			for (let i = 1; i <= characterAmount; i++) {
 				$(ConstHtmlIds.SelectCharacter + i).on(clickHandler, function () {
 					let name = $(ConstHtmlIds.CharacterName + i).text();
-					log('Selecting character: ' + i + " (" + name + ")");
+					//log('Selecting character: ' + i + " (" + name + ")");
 					CurrentData.SelectedCharacterId = i;
 					CurrentData.SelectedCharacterName = name;
 					ScreenOps.SwitchToJoinGameConfim();
@@ -1361,7 +1371,7 @@ var ScreenOps = {
 		body.empty();
 		body.load('/Game/CreateGame #parameters-menu', function () {
 			// Attach handlers
-			log('CreateGame loaded callback');
+			//log('CreateGame loaded callback');
 			$(ConstHtmlIds.CreateGameWithParameters).on(clickHandler, function () {
 				let marketTime = Number($(ConstHtmlIds.ParamMarketOpenTime).val());
 				let startingMoney = Number($(ConstHtmlIds.ParamStartingMoney).val());
@@ -1394,7 +1404,7 @@ var ScreenOps = {
 			let getPresetName = function (preset) {
 				// The preset name is in a hidden input, so grab it
 				let name = $('#preset' + preset).val();
-				log('Preset name: ' + name);
+				//log('Preset name: ' + name);
 				return name;
 			};
 			$(ConstHtmlIds.ParamStockPresets).on('input', function () {
@@ -1420,7 +1430,7 @@ var ScreenOps = {
 		body.append(HtmlGeneration.MakeCharacterConfimScreen());
 
 		$(ConstHtmlIds.JoinGameConfirm).on(clickHandler, function () {
-			log('Joining game...');
+			//log('Joining game...');
 			Connection.JoinGame(CurrentData.Username, CurrentData.SelectedCharacterId);
 		});
 
@@ -1491,9 +1501,6 @@ var Presenter = {
 								scaleID: 'yAxes',
 								value: 150,
 								borderColor: 'rgba(0, 0, 0, 0)',
-								enter: function (c, e) {
-									log(c.element);
-								},
 								label: {
 									rotation: Config.DividendLabelAngle,
 									content: 'DIVIDENDS PAYABLE',
@@ -1549,7 +1556,7 @@ var Presenter = {
 	CreateCharts: function () {
 		Presenter.OneTimeInit();
 		if (Presenter.Chart) {
-			log('Chart was already created')
+			//log('Chart was already created')
 			return;
 		}
 		let body = $('body');
@@ -1745,30 +1752,19 @@ var Presenter = {
 		let sortedUserInventories = [];
 
 		let comparer = function (lhs, rhs) {
-			if (lhs.NetWorth < rhs.NetWorth) {
-				return 1;
-			}
-			else if (lhs.NetWorth > rhs.NetWorth) {
-				return -1;
-			}
-			return 0;
+			return lhs.netWorth - rhs.netWorth;
+			//if (lhs.netWorth < rhs.netWorth) {
+			//	return 1;
+			//}
+			//else if (lhs.netWorth > rhs.netWorth) {
+			//	return -1;
+			//}
+			//return 0;
 		};
 
 		for (let id in CurrentData.PlayerInventories) {
 			if (CurrentData.PlayerInventories.hasOwnProperty(id)) {
-				let inventory = CurrentData.PlayerInventories[id];
-				inventory.NetWorth = 0;
-				inventory.NetWorth += inventory.money;
-
-				// Add stock holdings as worth, not shares
-				for (let stockName in inventory.holdings) {
-					if (inventory.holdings.hasOwnProperty(stockName)) {
-						let amountHeld = inventory.holdings[stockName];
-						let shareWorth = CurrentData.StockValues[stockName];
-						inventory.NetWorth += (amountHeld * shareWorth) / 100;
-					}
-				}
-				sortedUserInventories.push(inventory);
+				sortedUserInventories.push(CurrentData.PlayerInventories[id]);
 			}
 		}
 		sortedUserInventories.sort(comparer);
