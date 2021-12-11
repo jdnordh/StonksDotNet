@@ -267,6 +267,7 @@ for details on configuring this project to bundle and minify static web assets. 
 p {
 	padding-left: 5px;
 	padding-right: 5px;
+   margin: 0;
 }
 
 .market-closed {
@@ -494,12 +495,25 @@ body {
 }
 
 #money {
-    font-size: 6vh;
-    text-align: center;
-    font-weight: 700;
-    color: green;
+   font-size: 8vw;
+   text-align: center;
+   font-weight: 700;
+}
+
+.money-cash-text {
+   color: green;
+}
+
+.money-net-worth-text {
+   color: teal;
 }
 
 .money-text{
    color: green;
+}
+
+.flex-box-center-content{
+   display: flex;
+   justify-content: center;
+   align-items: center;
 }

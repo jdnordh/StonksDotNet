@@ -236,7 +236,7 @@ namespace StonkTrader.Models.Workers
 
 			Player player = m_game.Players[playerId];
 			UpdateConnectionId(connectionId, playerId);
-			await m_connection.InvokeAsync(GameWorkerResponses.PlayerJoinedGameResponse, connectionId, player.GetPlayerInvetory());
+			await m_connection.InvokeAsync(GameWorkerResponses.PlayerJoinedGameResponse, connectionId, m_game.GetPlayerInventory(playerId));
 
 			m_logger.Log(LogLevel.Information, $"{player.Username} is re-joining game.");
 

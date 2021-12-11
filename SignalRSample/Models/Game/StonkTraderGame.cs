@@ -247,7 +247,7 @@ namespace Models.Game
 			}
 
 			Players.Add(playerId, player);
-			PlayerInventoryDto inventory = player.GetPlayerInvetory();
+			PlayerInventoryDto inventory = player.GetPlayerInventory(m_stocks);
 			return inventory;
 		}
 
@@ -371,7 +371,7 @@ namespace Models.Game
 					player.ShortPosition = new ShortDto(stockName, sharesToShort, (int)purchasePrice, (int)sharesSoldPrice);
 					player.Character.ShortPosition = player.ShortPosition;
 					player.Money -= (int)purchasePrice;
-					return player.GetPlayerInvetory();
+					return player.GetPlayerInventory(m_stocks);
 				}
 			}
 			return null;
@@ -401,7 +401,7 @@ namespace Models.Game
 				var stock = m_stocks[shortPosition.StockName];
 				player.Money += (int)(shortPosition.PurchasePrice + shortPosition.SharesSoldPrice - shortPosition.SharesAmount * stock.Value);
 				player.ShortPosition = player.Character.ShortPosition = null;
-				return player.GetPlayerInvetory();
+				return player.GetPlayerInventory(m_stocks);
 			}
 			return null;
 		}
@@ -842,14 +842,14 @@ namespace Models.Game
 			Player player = Players[playerId];
 			if (!IsBuyOkay(playerId, stockName, amountToBuy))
 			{
-				return player.GetPlayerInvetory();
+				return player.GetPlayerInventory(m_stocks);
 			}
 			var cost = m_stocks[stockName].GetValueOfAmount(amountToBuy);
 			player.Money -= cost;
 			player.Holdings[stockName] += amountToBuy;
 			player.Character.RecordTransaction(new PlayerTransactionDto(true, amountToBuy, stockName));
 
-			return player.GetPlayerInvetory();
+			return player.GetPlayerInventory(m_stocks);
 		}
 
 		/// <summary>
@@ -881,14 +881,14 @@ namespace Models.Game
 			Player player = Players[playerId];
 			if (!IsSellOkay(playerId, stockName, amountToSell))
 			{
-				return player.GetPlayerInvetory();
+				return player.GetPlayerInventory(m_stocks);
 			}
 			var soldFor = m_stocks[stockName].GetValueOfAmount(amountToSell);
 			player.Holdings[stockName] -= amountToSell;
 			player.Money += soldFor;
 			player.Character.RecordTransaction(new PlayerTransactionDto(false, amountToSell, stockName));
 
-			return player.GetPlayerInvetory();
+			return player.GetPlayerInventory(m_stocks);
 		}
 
 		#endregion
@@ -984,7 +984,7 @@ namespace Models.Game
 			
 			foreach (KeyValuePair<string, Player> kvp in Players)
 			{
-				inventories.Add(kvp.Key, kvp.Value.GetPlayerInvetory());
+				inventories.Add(kvp.Key, kvp.Value.GetPlayerInventory(m_stocks));
 			}
 
 			return new PlayerInventoryCollectionDto(inventories);
@@ -1016,6 +1016,16 @@ namespace Models.Game
 		private RollDto RollToRollDto(Roll roll)
 		{
 			return new RollDto(roll.StockName, roll.Type.ToString(), (int)(roll.PercentageAmount * 100), m_rollTimeInSeconds);
+		}
+
+		/// <summary>
+		/// Get the inventory for the given player id.
+		/// </summary>
+		/// <param name="playerId">The player id.</param>
+		/// <returns>A player inventory.</returns>
+		public PlayerInventoryDto GetPlayerInventory(string playerId)
+		{
+			return Players[playerId].GetPlayerInventory(m_stocks);
 		}
 
 		#endregion

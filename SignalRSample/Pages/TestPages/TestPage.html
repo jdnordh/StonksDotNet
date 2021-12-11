@@ -10,26 +10,39 @@
 </head>
 
 <body>
-	<div class="grid-row-2 scrollviewer-vertical" id="stockList">
-		<div class="fill grid-row-2">
-			<p class="buy-sell-prompt">Select the stock you would like to short sell.</p>
-			<div class="short-position-selection-grid">
-				<select class="buy-sell-prompt grid-column-2 grid-row-1 fill" id="stockShortName">
-					<option value="Property">Property</option>
-					<option value="Oil">Oil</option>
-					<option value="Materials">Materials</option>
-					<option value="Bonds">Bonds</option>
-					<option value="Industry">Industry</option>
-					<option value="Tech">Tech</option>
-				</select>
-				<p class="buy-sell-prompt grid-column-2 grid-row-2">Select the amount.</p>
-				<select class="buy-sell-prompt grid-column-2 grid-row-3 fill" id="stockShortAmount">
-					<option value="1000">1000</option>
-				</select>
-				<button class="btn btn-warning buy-sell-button fill grid-column-2 grid-row-4" id="stockShortButton">Short for $500</button>
-				<button class="btn btn-outline-danger buy-sell-button fill grid-column-2 grid-row-5" id="cancel">Cancel</button>
+	<div class="grid-player-main grid-fill" id="mainGrid">
+		<div class="grid-row-1 grid-fill buy-sell-div">
+			<div class="grid-row-1 buy-sell-buttons" id="buySell">
+				<button type="button" class="grid-column-2 buy-sell-text btn btn-primary" id="buyTab">Buy</button>
+				<p class="grid-column-3 buy-sell-timer" id="buySellTimer">49s</p>
+				<button type="button" class="grid-column-4 buy-sell-text btn btn-outline-primary" id="sellTab">Sell</button>
+			</div>
+			<div class="grid-row-2 money-grid">
+				<p class="money-grid-col-1 money-grid-row-1">Wallet:</p>
+				<p id="money" class="money-grid-col-2 money-grid-row-1">$5000</p>
+				<!--<p class="money-grid-col-1 money-grid-row-2">Net Worth:</p>
+				<p id="netWorth" class="money-grid-col-2 money-grid-row-2">$5000</p>-->
 			</div>
 		</div>
-	</div>
+	<div class="grid-row-2 scrollviewer-vertical" id="stockList">
+		<div class="stock-banner">
+			<p class="grid-column-1 stock-text">Property</p>
+			<p class="grid-column-2 stock-text">1.00</p>
+			<button type="button" class="grid-column-3 btn btn-success stock-text buy-sell-banner-button" id="Propertybuy">Buy</button>
+		</div>
+		<div class="stock-banner">
+			<p class="grid-column-1 stock-text">Oil</p>
+			<p class="grid-column-2 stock-text">1.00</p> 
+			<button type="button" class="grid-column-3 btn btn-success stock-text buy-sell-banner-button" id="Oilbuy">Buy</button>
+		</div>
+		<div class="stock-banner">
+			<p class="grid-column-1 stock-text">Materials</p>
+			<p class="grid-column-2 stock-text">1.00</p>
+			<button type="button" class="grid-column-3 btn btn-success stock-text buy-sell-banner-button" id="Materialsbuy">Buy</button>
+		</div>
+		<div class="stock-banner">
+			<p class="grid-column-1 stock-text">Bonds</p>
+			<p class="grid-column-2 stock-text">1.00</p>
+			<button type="button" class="grid-column-3 btn btn-success stock-text buy-sell-banner-button" id="Bondsbuy">Buy</button></div><div class="stock-banner"><p class="grid-column-1 stock-text">Industry</p><p class="grid-column-2 stock-text">1.00</p> <button type="button" class="grid-column-3 btn btn-success stock-text buy-sell-banner-button" id="Industrybuy">Buy</button></div><div class="stock-banner"><p class="grid-column-1 stock-text">Tech</p><p class="grid-column-2 stock-text">1.00</p> <button type="button" class="grid-column-3 btn btn-success stock-text buy-sell-banner-button" id="Techbuy">Buy</button></div><div class="button-banner"><button id="characterInfoBtn" class="btn btn-outline-primary roll-preview-btn">Show Character Info</button></div></div></div>
 </body>
 </html>

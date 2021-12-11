@@ -1,4 +1,5 @@
-﻿using Models.DataTransferObjects;
+﻿using Microsoft.AspNetCore.HttpOverrides;
+using Models.DataTransferObjects;
 using StonkTrader.Models.Game.Characters;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,9 +40,27 @@ namespace Models.Game
 			}
 		}
 
-		public PlayerInventoryDto GetPlayerInvetory()
+		public int GetShortValue(Dictionary<string, Stock> stocks)
 		{
-			return new PlayerInventoryDto(Id, Money, Holdings.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
+			int shortValue = 0;
+			if(ShortPosition != null)
+			{
+				shortValue = ShortPosition.PurchasePrice + ShortPosition.SharesSoldPrice - stocks[ShortPosition.StockName].GetValueOfAmount(ShortPosition.SharesAmount);
+			}
+			return shortValue;
+		}
+
+		public PlayerInventoryDto GetPlayerInventory(Dictionary<string, Stock> stocks)
+		{
+			int shortValue = GetShortValue(stocks);
+			int visualMoney = Money + shortValue;
+			int netWorth = visualMoney;
+			foreach(var holdingKvp in Holdings)
+			{
+				netWorth += stocks[holdingKvp.Key].GetValueOfAmount(holdingKvp.Value);
+			}
+
+			return new PlayerInventoryDto(Id, Money, visualMoney, netWorth, Holdings.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
 				Username, new CharacterDto(Character.GetDetailedInformation(), Character.Id), ShortPosition);
 		}
 	}

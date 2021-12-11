@@ -218,6 +218,7 @@ var Connection = {
 			log('Market updated');
 			Connection.UpdateMarketValues(marketDto);
 			CurrentData.IsHalfTime = marketDto.isHalfTime;
+			CurrentData.IsMarketOpen = marketDto.isOpen;
 			if (Connection.ClientType === Connection.ClientTypes.Observer || Connection.ClientType === Connection.ClientTypes.Creator) {
 				Connection.UpdatePlayerInventories(marketDto.playerInventories);
 				Presenter.UpdateChart();
@@ -346,6 +347,8 @@ var Connection = {
 		//log(inventoryDto);
 		for (let id in inventoryDto.inventories) {
 			if (inventoryDto.inventories.hasOwnProperty(id)) {
+				CurrentData.PlayerInventories[id] = inventoryDto.inventories[id];
+				/*
 				let inventory = inventoryDto.inventories[id];
 				let shortValue = 0;
 				if (inventory.shortPositionDto) {
@@ -367,6 +370,7 @@ var Connection = {
 						CurrentData.PlayerInventories[id].netWorth += CurrentData.StockValues[stockName] * amountHeld
 					}
 				}
+				*/
 			}
 		}
 	},
@@ -396,7 +400,7 @@ var Connection = {
 		//log(playerInventoryDto.shortPositionDto);
 		CurrentData.ShortPosition = playerInventoryDto.shortPositionDto;
 		CurrentData.Character = playerInventoryDto.characterDto;
-		Connection.SetMoney(playerInventoryDto.money);
+		Connection.SetMoney(playerInventoryDto.money, playerInventoryDto.netWorth);
 		Connection.OnServerUpdate();
 	},
 	RequestTransaction: function (stockName, isBuy, amount) {
@@ -473,9 +477,15 @@ var Connection = {
 			updateMethod();
 		}
 	},
-	SetMoney: function (money) {
+	SetMoney: function (money, netWorth) {
 		CurrentData.Money = money;
-		$(ConstHtmlIds.Money).text('$' + money);
+		CurrentData.NetWorth = netWorth;
+		if (CurrentData.IsMarketOpen) {
+			$(ConstHtmlIds.Money).text('Cash: $' + money);
+		}
+		else {
+			$(ConstHtmlIds.Money).text('Net Worth: $' + netWorth);
+		}
 	},
 };
 
@@ -639,21 +649,21 @@ var HtmlGeneration =
 	MakeWaitingScreen: function (username, money) {
 		let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1"><p class="market-closed">';
 		html += username;
-		html += '</p></div><div class="grid-row-2"><p id="money">$'
+		html += '</p></div><div class="grid-row-2 flex-box-center-content"><p id="money" class="money-cash-text">Cash: $'
 		html += money;
 		html += '</p></div></div><div class="grid-row-2 scrollviewer-vertical" id="stockList"></div>';
 		return html;
 	},
-	MakeMarketClosedScreen: function (money) {
+	MakeMarketClosedScreen: function () {
 		let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1"><p class="market-closed" id="marketOpenClosedHeader">';
 		html += CurrentData.Username;
-		html += '</p></div><div class="grid-row-2"><p id="money">$'
-		html += money;
+		html += '</p></div><div class="grid-row-2 flex-box-center-content"><p id="money" class="money-net-worth-text">Net Worth: $'
+		html += CurrentData.NetWorth;
 		html += '</p></div></div><div class="grid-row-2 scrollviewer-vertical" id="stockList"></div>';
 		return html;
 	},
 	MakeGameOverScreen: function (money) {
-		let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1"><p class="market-closed" id="marketOpenClosedHeader">Game Over</p></div><div class="grid-row-2"><p id="money">$'
+		let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1"><p class="market-closed" id="marketOpenClosedHeader">Game Over</p></div><div class="grid-row-2 flex-box-center-content"><p id="money" class="money-net-worth-text">Net Worth: $';
 		html += money;
 		html += '</p></div></div><div class="grid-row-2 scrollviewer-vertical" id="stockList"></div>';
 		return html;
@@ -661,11 +671,12 @@ var HtmlGeneration =
 	MakeMarketScreen: function (money, isBuy) {
 		let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1 buy-sell-buttons" id ="buySell"><button type="button" class="grid-column-2 buy-sell-text btn ';
 		if (isBuy) {
-			html += 'btn-primary" id="buyTab">Buy</button><p class="grid-column-3 buy-sell-timer" id="buySellTimer"></p><button type="button" class="grid-column-4 buy-sell-text btn btn-outline-primary" id="sellTab">Sell</button></div><div class="grid-row-2"><p id="money">$';
+			html += 'btn-primary" id="buyTab">Buy</button><p class="grid-column-3 buy-sell-timer" id="buySellTimer"></p><button type="button" class="grid-column-4 buy-sell-text btn btn-outline-primary" id="sellTab">';
 		}
 		else {
-			html += 'btn-outline-primary" id="buyTab">Buy</button><p class="grid-column-3 buy-sell-timer" id="buySellTimer"></p><button type="button" class="grid-column-4 buy-sell-text btn btn-primary" id="sellTab">Sell</button></div><div class="grid-row-2"><p id="money">$';
+			html += 'btn-outline-primary" id="buyTab">Buy</button><p class="grid-column-3 buy-sell-timer" id="buySellTimer"></p><button type="button" class="grid-column-4 buy-sell-text btn btn-primary" id="sellTab">';
 		}
+		html += 'Sell</button></div><div class="grid-row-2 flex-box-center-content"><p id="money" class="money-cash-text">Cash: $';
 		html += money;
 		html += '</p></div></div><div class="grid-row-2 scrollviewer-vertical" id="stockList"></div>';
 		return html;
@@ -948,7 +959,7 @@ var ScreenOps = {
 		ScreenOps.State = ScreenOps.States.MarketClosed;
 		let mainGrid = $(ConstHtmlIds.MainGrid);
 		mainGrid.empty();
-		mainGrid.append(HtmlGeneration.MakeMarketClosedScreen(CurrentData.Money));
+		mainGrid.append(HtmlGeneration.MakeMarketClosedScreen());
 		let list = $(ConstHtmlIds.StockList);
 
 		for (let stockName in CurrentData.Holdings) {
@@ -1752,14 +1763,13 @@ var Presenter = {
 		let sortedUserInventories = [];
 
 		let comparer = function (lhs, rhs) {
-			return lhs.netWorth - rhs.netWorth;
-			//if (lhs.netWorth < rhs.netWorth) {
-			//	return 1;
-			//}
-			//else if (lhs.netWorth > rhs.netWorth) {
-			//	return -1;
-			//}
-			//return 0;
+			if (lhs.netWorth < rhs.netWorth) {
+				return 1;
+			}
+			else if (lhs.netWorth > rhs.netWorth) {
+				return -1;
+			}
+			return 0;
 		};
 
 		for (let id in CurrentData.PlayerInventories) {
@@ -1767,7 +1777,17 @@ var Presenter = {
 				sortedUserInventories.push(CurrentData.PlayerInventories[id]);
 			}
 		}
+		log('User inventories pre sort:');
+		log(sortedUserInventories);
 		sortedUserInventories.sort(comparer);
+		log('User inventories post sort:');
+		log(sortedUserInventories);
+
+		// Take only top 10 player inventories
+		if (sortedUserInventories.length > 10) {
+			sortedUserInventories = sortedUserInventories.slice(0, 9);
+			log('Trimmed user inventories.');
+		}
 
 		// Add user data
 		for (let i = 0; i < sortedUserInventories.length; i++) {
@@ -1776,7 +1796,7 @@ var Presenter = {
 			labels.push(inventory.username);
 
 			// Add money
-			datasetObject[moneyKey].data.push(inventory.money);
+			datasetObject[moneyKey].data.push(inventory.visualMoney);
 
 			// Add stock holdings as worth, not shares
 			for (let stockName in inventory.holdings) {

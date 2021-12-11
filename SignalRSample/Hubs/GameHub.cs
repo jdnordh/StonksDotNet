@@ -317,7 +317,7 @@ namespace Hubs
 				return;
 			}
 			return;
-			await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.StockPushDownRequest, CurrentUserConnectionId, stockName);
+			//await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.StockPushDownRequest, CurrentUserConnectionId, stockName);
 		}
 
 		public async Task RequestShort(string stockName, int amount)
