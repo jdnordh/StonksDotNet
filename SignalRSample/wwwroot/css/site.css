@@ -171,21 +171,21 @@ for details on configuring this project to bundle and minify static web assets. 
 .short-position-header{
    text-align: right;
    padding: 5px;
-   font-size: 8vw;
+   font-size: min(8vw, 50px);
    margin: 0;
 }
 
 .short-position-header-value {
    text-align: left;
    padding: 5px;
-   font-size: 8vw;
+   font-size: min(8vw, 50px);
    margin: 0;
 }
 
 .short-position-info {
    text-align: center;
    padding: 10px;
-   font-size: 7vw;
+   font-size: min(6vw, 50px);
    margin: 0;
 }
 
@@ -281,7 +281,6 @@ p {
    display: grid;
    grid-template-columns: 10% 80%;
    grid-template-rows: 33% 33% 33%;
-   grid-column-gap: 1vh;
    grid-row-gap: 3vh;
 	width: 100%;
 }
@@ -495,7 +494,7 @@ body {
 }
 
 #money {
-   font-size: 8vw;
+   font-size: min(8vw, 50px);
    text-align: center;
    font-weight: 700;
 }
