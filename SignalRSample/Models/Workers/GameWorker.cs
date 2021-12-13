@@ -156,10 +156,10 @@ namespace StonkTrader.Models.Workers
 			{
 				return;
 			}
-			var rollDto = m_game.PreviewFirstRoll(playerId);
-			if (rollDto != null)
+			var rollPreviewDto = m_game.PreviewInsiderRolls(playerId);
+			if (rollPreviewDto != null)
 			{
-				await m_connection.InvokeAsync(GameWorkerResponses.RollPreviewResponse, connectionId, rollDto);
+				await m_connection.InvokeAsync(GameWorkerResponses.RollPreviewResponse, connectionId, rollPreviewDto);
 			}
 		}
 
@@ -388,13 +388,22 @@ namespace StonkTrader.Models.Workers
 		}
 
 		/// <inheritdoc/>
-		public async Task GameOver(PlayerInventoryCollectionDto inventoryCollectionDto)
+		public async Task GameOver(PlayerInventoryCollectionDto inventoryCollectionDto, Dictionary<string, MessageDto> messages)
 		{
 			m_logger.Log(LogLevel.Information, "Game over.");
+			await m_connection.InvokeAsync(GameWorkerResponses.GameOver, inventoryCollectionDto);
+			foreach(var kvp in messages)
+			{
+				await m_connection.InvokeAsync(GameWorkerResponses.SendMessageToPlayer, m_playerIdToConnectionIdMap[kvp.Key], kvp.Value);
+			}
 			ClearPlayerIdMaps();
 			m_game = null;
 			m_creatorConnectionId = null;
-			await m_connection.InvokeAsync(GameWorkerResponses.GameOver, inventoryCollectionDto);
+		}
+
+		public async Task SendMessageToPlayer(string playerId, MessageDto message)
+		{
+			await m_connection.InvokeAsync(GameWorkerResponses.SendMessageToPlayer, m_playerIdToConnectionIdMap[playerId], message);
 		}
 
 		#endregion

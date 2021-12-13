@@ -157,6 +157,17 @@ namespace Hubs
 		}
 
 		/// <summary>
+		/// Send a messages to an individual client.
+		/// </summary>
+		/// <param name="connectionId">The connection Id.</param>
+		/// <param name="message">The message dto.</param>
+		/// <returns>A completed task.</returns>
+		public async Task SendMessageToPlayer(string connectionId, MessageDto message)
+		{
+			await Clients.Client(connectionId).SendAsync(ClientMethods.IncomingMessage, message);
+		}
+
+		/// <summary>
 		/// Called when the player inventories are updated.
 		/// </summary>
 		/// <param name="marketDto">The market dto.</param>
@@ -221,11 +232,11 @@ namespace Hubs
 		/// Called when a user previews a roll.
 		/// </summary>
 		/// <param name="connectionId">The connection id.</param>
-		/// <param name="rollDto">The roll dto.</param>
+		/// <param name="rollPreviewDto">The roll preview dto.</param>
 		/// <returns>A completed task.</returns>
-		public async Task RollPreviewResponse(string connectionId, RollDto rollDto)
+		public async Task RollPreviewResponse(string connectionId, RollPreviewDto rollPreviewDto)
 		{
-			await Clients.Client(connectionId).SendAsync(ClientMethods.RollPreview, rollDto);
+			await Clients.Client(connectionId).SendAsync(ClientMethods.RollPreview, rollPreviewDto);
 		}
 
 		/// <summary>

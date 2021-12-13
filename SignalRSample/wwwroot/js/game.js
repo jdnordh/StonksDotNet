@@ -127,6 +127,7 @@ var Connection = {
 		Rolled: "rolled",
 		RollPreview: "rollPreview",
 		TrendPreview: "trendPreview",
+		IncomingMessage: "incomingMessage",
 	},
 	ServerMethods: {
 		CreateGame: "CreateGame",
@@ -198,11 +199,18 @@ var Connection = {
 				Presenter.CreateCharts();
 			}
 		});
-
+		
 		Connection.Hub.on(Connection.ClientMethods.InventoryUpdated, function (playerInventoryDto) {
 			log('Inventory updated');
 			if (Connection.ClientType === Connection.ClientTypes.Player) {
 				Connection.UpdateInventory(playerInventoryDto);
+			}
+		});
+		Connection.Hub.on(Connection.ClientMethods.IncomingMessage, function (messageDto) {
+			log('Incoming message');
+			log(messageDto);
+			if (Connection.ClientType === Connection.ClientTypes.Player) {
+				ScreenOps.ShowMessage(messageDto);
 			}
 		});
 
@@ -253,14 +261,14 @@ var Connection = {
 			}
 		});
 
-		Connection.Hub.on(Connection.ClientMethods.RollPreview, function (rollDto) {
+		Connection.Hub.on(Connection.ClientMethods.RollPreview, function (rollPreviewDto) {
 			log('Roll preview');
 			// Remove button
 			$(ConstHtmlIds.RollPreviewButton).remove();
 
 			// Add roll preview
 			let stockList = $(ConstHtmlIds.StockList);
-			stockList.prepend(HtmlGeneration.MakeRollPreview(rollDto));
+			stockList.prepend(HtmlGeneration.MakeRollPreview(rollPreviewDto));
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.TrendPreview, function (trendDto) {
@@ -286,7 +294,7 @@ var Connection = {
 				Presenter.InventoryChart = undefined;
 			}
 			CurrentData = {
-				Username: "StonkMaster",
+				Username: "",
 				Holdings: {},
 				StockValues: {},
 				StockColors: {},
@@ -682,7 +690,7 @@ var HtmlGeneration =
 		return html;
 	},
 	MakeRollPreviewButton: function () {
-		return '<div class="button-banner" id="rollPreviewBtn"><button class="btn btn-primary roll-preview-btn">Tap to see first roll</button></div>';
+		return '<div class="button-banner" id="rollPreviewBtn"><button class="btn btn-primary roll-preview-btn">Tap to preview rolls</button></div>';
 	},
 	MakeTrendPreviewButton: function () {
 		return '<div class="button-banner" id="trendPreviewBtn"><button class="btn btn-primary roll-preview-btn">Tap to see trend</button></div>';
@@ -720,9 +728,21 @@ var HtmlGeneration =
 		html += '</button></div>';
 		return html;
 	},
-	MakeRollPreview: function (rollDto) {
-		let html = '<div class="text-banner"><p class="stock-text">';
-		html += rollDto.stockName + ' ' + rollDto.func + ' ' + rollDto.amount;
+	MakeRollPreview: function (rollPreviewDto) {
+		let html = '';
+		for (let i = 0; i < rollPreviewDto.rolls.length; i++) {
+			let rollDto = rollPreviewDto.rolls[i];
+			html += '<div class="text-banner"><p class="stock-text">';
+			html += rollDto.stockName + ' ' + rollDto.func + ' ' + rollDto.amount;
+			html += '</p></div>';
+		}
+		return html;
+	},
+	MakeMessage: function (messageDto) {
+		let html = '<div class="text-banner"><p class="stock-text" style="color:';
+		html += messageDto.color;
+		html += ';">';
+		html += messageDto.message;
 		html += '</p></div>';
 		return html;
 	},
@@ -1448,6 +1468,10 @@ var ScreenOps = {
 		$(ConstHtmlIds.BackButton).on(clickHandler, function () {
 			ScreenOps.SwitchToCharacterSelectMenu();
 		});
+	},
+	ShowMessage: function (message) {
+		let stockList = $(ConstHtmlIds.StockList);
+		stockList.prepend(HtmlGeneration.MakeMessage(message));
 	},
 };
 

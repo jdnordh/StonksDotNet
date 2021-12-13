@@ -50,15 +50,21 @@ namespace Models.Game
 			return shortValue;
 		}
 
-		public PlayerInventoryDto GetPlayerInventory(Dictionary<string, Stock> stocks)
+		public int CalculateNetWorth(Dictionary<string, Stock> stocks)
 		{
 			int shortValue = GetShortValue(stocks);
-			int visualMoney = Money + shortValue;
-			int netWorth = visualMoney;
+			int netWorth = Money + shortValue;
 			foreach(var holdingKvp in Holdings)
 			{
 				netWorth += stocks[holdingKvp.Key].GetValueOfAmount(holdingKvp.Value);
 			}
+			return netWorth;
+		}
+
+		public PlayerInventoryDto GetPlayerInventory(Dictionary<string, Stock> stocks)
+		{
+			int visualMoney = Money + GetShortValue(stocks);
+			int netWorth = CalculateNetWorth(stocks);
 
 			return new PlayerInventoryDto(Id, Money, visualMoney, netWorth, Holdings.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
 				Username, new CharacterDto(Character.GetDetailedInformation(), Character.Id), ShortPosition);

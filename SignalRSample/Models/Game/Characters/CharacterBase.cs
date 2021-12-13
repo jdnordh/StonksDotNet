@@ -40,7 +40,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// <summary>
 		/// Whether or not the character gets a reveal of the first roll of each round.
 		/// </summary>
-		public virtual bool GetsFirstRollReveal => false;
+		public virtual bool GetsRollPreviews => false;
 
 		/// <summary>
 		/// Whether or not the character gets a vote to push down a stock.
@@ -137,6 +137,21 @@ namespace StonkTrader.Models.Game.Characters
 		/// </summary>
 		public virtual void PredictionWasCorrect()
 		{
+		}
+
+		/// <summary>
+		/// Called when rolls are previewed.
+		/// </summary>
+		public virtual void PreviewedRolls()
+		{
+		}
+
+		/// <summary>
+		/// Checks the amount the player should be audited.
+		/// </summary>
+		public virtual decimal GetAuditPercentage()
+		{
+			return 0M;
 		}
 
 		/// <summary>

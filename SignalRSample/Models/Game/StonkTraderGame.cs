@@ -3,6 +3,7 @@ using StonkTrader.Models.Game.Characters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 using Timer = System.Timers.Timer;
 
@@ -19,6 +20,7 @@ namespace Models.Game
 		const int RollTimeInSeconds = 2;
 		private static readonly List<decimal> s_amountDiceValues = new List<decimal>() { 0.1M, 0.15M, 0.2M, 0.3M }; // Average: 0.1875
 		private static readonly List<decimal> s_stableAmountDiceValues = new List<decimal>() { 0.1M, 0.15M, 0.2M}; // Average: 0.15
+		private const string ErrorColor = "#690d1c";
 
 		#endregion
 
@@ -52,6 +54,7 @@ namespace Models.Game
 		private long m_currentMarketEndTime;
 
 		private readonly Dictionary<string, TrendDto> m_roundTrendIndexedByPlayer;
+		private readonly Dictionary<string, RollPreviewDto> m_roundRollPreviewIndexedByPlayerId;
 		private readonly Dictionary<string, string> m_pushDownVotesIndexedByPlayer;
 
 		#endregion
@@ -122,6 +125,7 @@ namespace Models.Game
 			GenerateRolls(initializer);
 
 			m_roundTrendIndexedByPlayer = new Dictionary<string, TrendDto>();
+			m_roundRollPreviewIndexedByPlayerId = new Dictionary<string, RollPreviewDto>();
 			m_pushDownVotesIndexedByPlayer = new Dictionary<string, string>();
 
 			m_stocks = new Dictionary<string, Stock>();
@@ -293,6 +297,9 @@ namespace Models.Game
 				++m_currentRoundNumber;
 				m_marketTimer.Start();
 			}
+			// Clear previews
+			m_roundRollPreviewIndexedByPlayerId.Clear();
+
 			await UpdatePlayerCharacters();
 
 			int timeMultiplier = IsMarketHalfTime ? 500 : 1000;
@@ -411,12 +418,33 @@ namespace Models.Game
 		/// </summary>
 		/// <param name="playerId">The player id.</param>
 		/// <returns>The roll dto, or null if not allowed.</returns>
-		public RollDto PreviewFirstRoll(string playerId)
+		public RollPreviewDto PreviewInsiderRolls(string playerId)
 		{
-			if(Players[playerId].Character.GetsFirstRollReveal && IsMarketOpen && !IsMarketHalfTime)
+			if(Players[playerId].Character.GetsRollPreviews && IsMarketOpen && !IsMarketHalfTime)
 			{
-				Roll roll = m_rolls[m_currentRoundNumber][0];
-				return RollToRollDto(roll);
+				if (m_roundRollPreviewIndexedByPlayerId.TryGetValue(playerId, out var rollPreviewDto))
+				{
+					return rollPreviewDto;
+				}
+				var rand = new Random();
+				int halfRound = m_rolls[m_currentRoundNumber].Count / 2;
+				int rollIndex1 = rand.Next(0, halfRound);
+				int rollIndex2 = rollIndex1 + 1;
+				if (rollIndex2 >= halfRound)
+				{
+					rollIndex2 = 0;
+				}
+				var rollPreview =  new RollPreviewDto() 
+				{
+					Rolls = new RollDto[]
+					{
+						RollToRollDto(m_rolls[m_currentRoundNumber][rollIndex1]),
+						RollToRollDto(m_rolls[m_currentRoundNumber][rollIndex2]),
+					}
+				};
+				m_roundRollPreviewIndexedByPlayerId.Add(playerId, rollPreview);
+				Players[playerId].Character.PreviewedRolls();
+				return rollPreview;
 			}
 			return null;
 		}
@@ -906,6 +934,25 @@ namespace Models.Game
 				}
 			}
 
+			// Check for audits
+			var messages = new Dictionary<string, MessageDto>();
+			foreach(var player in Players.Values)
+			{
+				var auditPercentage = player.Character.GetAuditPercentage();
+				if(auditPercentage > 0)
+				{
+					int auditAmount = (int)(player.CalculateNetWorth(m_stocks) * auditPercentage);
+					player.Money -= auditAmount;
+
+					var message = new MessageDto()
+					{
+						Message = $"You've been audited! You lost ${auditAmount}.",
+						Color = ErrorColor
+					};
+					messages.Add(player.Id, message);
+				}
+			}
+
 			var preSellInventories = GetInventoryCollectionDto();
 			SellAllShares();
 
@@ -913,7 +960,8 @@ namespace Models.Game
 			await m_gameEventCommunicator.PlayerInventoriesUpdated(GetInventoryCollectionDto());
 
 			// Send inventory update to observer with inventory breakdowns
-			await m_gameEventCommunicator.GameOver(preSellInventories);
+			await m_gameEventCommunicator.GameOver(preSellInventories, messages);
+
 			IsStarted = false;
 
 			try
