@@ -28,6 +28,8 @@ namespace StonkTrader.Models.Game.Characters
 		/// </summary>
 		public override bool GetsHalfTimeTransaction => true;
 
+		public override bool GetsAnalyze => true;
+
 		#endregion
 
 		#region Public Methods
@@ -35,7 +37,8 @@ namespace StonkTrader.Models.Game.Characters
 		/// <inheritdoc/>
 		public override string GetDetailedInformation()
 		{
-			return $"As the Day Trader, you get to trade in the Half Time market. This is an exclusive open market halfway through the rounds. Additionally, during half time, you get to see a trend of what will happen in the second half of the round.";
+			string preamble = AnalyzedStock == null ? "" : $"Currently analyzing {AnalyzedStock.Name}. ";
+			return $"{preamble}As the Day Trader, you get to trade in the Half Time market. This is an exclusive open market halfway through the rounds. Additionally, during half time, you get to see a trend of what will happen to the analyzed stock in the second half of the round.";
 		}
 
 		#endregion

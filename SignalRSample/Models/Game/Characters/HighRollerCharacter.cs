@@ -9,8 +9,7 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class HighRollerCharacter : CharacterBase
 	{
-		private const decimal RebateMaxValue = 0.95M;
-		private const decimal DividendSubtraction = 0.1M;
+		private const decimal MaxStockValueToPayRebates = 1.1M;
 
 		#region Properties
 
@@ -23,7 +22,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// The name of this chacter.
 		/// </summary>
 		public override string Description => 
-			$"This character is paid less dividends, but gets rebates when buying stocks under par. The rebates become progressively larger the lower the stock value.";
+			$"This character gets rebates when buying stocks under par. The rebates become progressively larger the lower the stock value.";
 
 		/// <summary>
 		/// The id of this chacter.
@@ -43,14 +42,7 @@ namespace StonkTrader.Models.Game.Characters
 				int rebateAmount = CalculateMarketRebateAmount();
 				preamble = rebateAmount > 0 ? $"You have qualified for a rebate of ${rebateAmount} this round. " : "You have not qualified for a rebate this round. ";
 			}
-			return $"{preamble}As the High Roller, you are paid {Num(100 * DividendSubtraction)}% less dividends, but get cash back for every share you buy of a stock below 100. The lower the stock value, the more cash you get back up to a maximum of 95%.";
-		}
-
-		/// <inheritdoc/>
-		public override decimal GetDivedendAmount(decimal stockValue, decimal originalDiv)
-		{
-			var divPercentage = originalDiv - DividendSubtraction;
-			return divPercentage >= 0 ? divPercentage : 0;
+			return $"{preamble}As the High Roller, you get cash back for every share you buy of a stock below or equal to {Num(MaxStockValueToPayRebates * 100)}. The lower the stock value, the more cash you get back up to a maximum of 95%.";
 		}
 
 		/// <summary>
@@ -64,10 +56,18 @@ namespace StonkTrader.Models.Game.Characters
 			{
 				var stockName = kvp.Key;
 				var stock = kvp.Value;
-				if (stock.Value <= RebateMaxValue && HoldingChanges[stockName] > 0)
+				if (stock.Value <= MaxStockValueToPayRebates && HoldingChanges[stockName] > 0)
 				{
 					decimal cost = HoldingChanges[stockName] * stock.Value;
-					decimal rebatePercentage = 1M - stock.Value;
+					decimal rebatePercentage;
+					if (stock.Value >= 0.95M)
+					{
+						rebatePercentage = 0.1M;
+					}
+					else 
+					{
+						rebatePercentage = 1M - stock.Value;
+					}
 					rebateAmount += cost * rebatePercentage;
 				}
 

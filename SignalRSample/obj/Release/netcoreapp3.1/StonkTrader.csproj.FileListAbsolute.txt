@@ -140,8 +140,6 @@ D:\Repos\StonksStable\SignalRSample\obj\Release\netcoreapp3.1\StonkTrader.MvcApp
 D:\Repos\StonksStable\SignalRSample\obj\Release\netcoreapp3.1\StonkTrader.RazorAssemblyInfo.cache
 D:\Repos\StonksStable\SignalRSample\obj\Release\netcoreapp3.1\StonkTrader.RazorAssemblyInfo.cs
 D:\Repos\StonksStable\SignalRSample\obj\Release\netcoreapp3.1\staticwebassets\StonkTrader.StaticWebAssets.Manifest.cache
-D:\Repos\StonksStable\SignalRSample\obj\Release\netcoreapp3.1\staticwebassets\StonkTrader.StaticWebAssets.xml
-D:\Repos\StonksStable\SignalRSample\obj\Release\netcoreapp3.1\scopedcss\bundle\StonkTrader.styles.css
 D:\Repos\StonksStable\SignalRSample\obj\Release\netcoreapp3.1\StonkTrader.TagHelpers.input.cache
 D:\Repos\StonksStable\SignalRSample\obj\Release\netcoreapp3.1\StonkTrader.TagHelpers.output.cache
 D:\Repos\StonksStable\SignalRSample\obj\Release\netcoreapp3.1\StonkTrader.RazorCoreGenerate.cache

@@ -35,6 +35,7 @@ namespace Hubs
 		public const string StockPushDownRequest = "stockPushDownRequest";
 		public const string ShortRequest = "shortRequest";
 		public const string CoverShortRequest = "coverShortRequest";
+		public const string AnalyzeRequest = "analyzeRequest";
 		public const string MakePredictionRequest = "makePredictionRequest";
 		public const string GameEndRequest = "gameEndRequest";
 

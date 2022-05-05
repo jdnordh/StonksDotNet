@@ -113,8 +113,9 @@ namespace StonkTrader.Models.Game.Configuration
 				{
 					new StockDto("Youtube", "#FF0000"),
 					new StockDto("Instagram", "#833AB4"),
-					new StockDto("Snapchat", "#FFC300"),
+					//new StockDto("Snapchat", "#FFC300"),
 					new StockDto("TikTok", "#25F4EE"),
+					new StockDto("Twitter", "#1DA1F2"),
 					new StockDto("Facebook", "#4267B2"),
 					new StockDto("Google", "#34a853"),
 				}
@@ -132,6 +133,58 @@ namespace StonkTrader.Models.Game.Configuration
 					new StockDto("Snowmen", "#E4F3F3"),
 				}
 			},
+			//new StockPreset()
+			//{
+			//	Name = "Hawkeye",
+			//	Stocks = new[]
+			//	{
+			//		new StockDto("Clint", "#252530"),
+			//		new StockDto("Kate", "#3731a3"),
+			//		new StockDto("Bows", "#993300"),
+			//		new StockDto("Arrows", "#3099c2"),
+			//		new StockDto("Tracksuits", "#9c0808"),
+			//		new StockDto("Kingpin", "#cf712d"),
+			//	}
+			//},
+			new StockPreset()
+			{
+				Name = "Catan",
+				Stocks = new[]
+				{
+					new StockDto("Wood", "#5FB40A"),
+					new StockDto("Brick", "#9C4300"),
+					new StockDto("Wheat", "#F5C342"),
+					new StockDto("Sheep", "#86E93D"),
+					new StockDto("Ore", "#6A6E8D"),
+					new StockDto("Robber", "#0A0A0A"),
+				}
+			},
+			//new StockPreset()
+			//{
+			//	Name = "Matt",
+			//	Stocks = new[]
+			//	{
+			//		new StockDto("Julianna", "#8F64C5"),
+			//		new StockDto("Apple", "#C0C0C0"),
+			//		new StockDto("Toyota", "#B5A566"),
+			//		new StockDto("Vans", "#2D84E3"),
+			//		new StockDto("Coding", "#20A03A"),
+			//		new StockDto("HappyMeals", "#BE1717"),
+			//	}
+			//},
+			//new StockPreset()
+			//{
+			//	Name = "Scott",
+			//	Stocks = new[]
+			//	{
+			//		new StockDto("Heather", "#d9cd77"),
+			//		new StockDto("Approachability", "#0f7522"),
+			//		new StockDto("Laubencakes", "#7a4e2c"),
+			//		new StockDto("Minivans", "#fa4300"),
+			//		new StockDto("Blinds", "#5e5e5e"),
+			//		new StockDto("Defiance", "#960000"),
+			//	}
+			//},
 		};
 
 		static StockPresetProvider()

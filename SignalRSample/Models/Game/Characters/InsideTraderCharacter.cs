@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Collections.Generic;
 
 namespace StonkTrader.Models.Game.Characters
 {
@@ -8,10 +9,12 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class InsideTraderCharacter : CharacterBase
 	{
-		private readonly static decimal[] AuditChanceSpecificIncreases = { 0 };
-		private const decimal AuditChanceGeneralIncrease = 0.1M;
-		private const decimal AuditPercentage = 0.4M;
+		private const decimal MaxAuditChance = 0.4M;
+		private const decimal AuditPercentage = 0.3M;
+		private const int RoundsPerFreePreview = 5;
 
+		private int m_riskFreePreviews;
+		private decimal m_auditChanceIncrease;
 		private decimal m_auditChance = 0M;
 		private int m_rollPreviewTimes = 0;
 
@@ -42,11 +45,18 @@ namespace StonkTrader.Models.Game.Characters
 		#region Public Methods
 
 		/// <inheritdoc/>
+		protected override void GameRoundsSet()
+		{
+			m_riskFreePreviews = GameRounds / RoundsPerFreePreview;
+			m_auditChanceIncrease = MaxAuditChance / (decimal)(GameRounds - m_riskFreePreviews);
+		}
+
+		/// <inheritdoc/>
 		public override string GetDetailedInformation()
 		{
 			string preamble = $"You currently have a {Num(m_auditChance * 100)}% chance of being audited. ";
-			bool isPlural = AuditChanceSpecificIncreases.Length != 1;
-			return $"{preamble}As the Insider Trader, you get inside information on market changes in the upcoming round. The first {(isPlural ? AuditChanceSpecificIncreases.Length + " " : " ")}preview{(isPlural ? "s" : "")} {(isPlural ? "are" : "is")} risk free, but after that every time you preview you have an increased chance of being audited at the end of the game. Being audited will lose you {Num(AuditPercentage * 100)}% of your net worth.";
+			bool isPlural = m_riskFreePreviews != 1;
+			return $"{preamble}As the Insider Trader, you get inside information on market changes in the upcoming round. The first {(isPlural ? m_riskFreePreviews + " " : " ")}preview{(isPlural ? "s" : "")} {(isPlural ? "are" : "is")} risk free, but after that every time you preview you have an increased chance of being audited at the end of the game. Being audited will lose you {Num(AuditPercentage * 100)}% of your net worth.";
 		}
 
 		/// <summary>
@@ -54,13 +64,9 @@ namespace StonkTrader.Models.Game.Characters
 		/// </summary>
 		public override void PreviewedRolls()
 		{
-			if (m_rollPreviewTimes < AuditChanceSpecificIncreases.Length)
+			if (m_rollPreviewTimes >= m_riskFreePreviews && m_auditChance < 1M)
 			{
-				m_auditChance += AuditChanceSpecificIncreases[m_rollPreviewTimes];
-			}
-			else if (m_auditChance < 1M)
-			{
-				m_auditChance += AuditChanceGeneralIncrease;
+				m_auditChance += m_auditChanceIncrease;
 
 				if(m_auditChance > 1M)
 				{

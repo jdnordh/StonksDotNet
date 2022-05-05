@@ -74,6 +74,10 @@ var GameAudio = {
 	},
 };
 
+var Balance = {
+	ShortingMargin: 4,
+}
+
 var Unit = {
 	PercentToDecimal: function (percentage) {
 		return percentage / 100;
@@ -139,6 +143,7 @@ var Connection = {
 		RequestTrendPreview: "RequestTrendPreview",
 		//RequestStockPushDown: "RequestStockPushDown",
 		RequestShort: "RequestShort",
+		RequestAnalyze: "RequestAnalyze",
 		RequestCoverShortPosition: "RequestCoverShortPosition",
 		RequestMakePrediction: "RequestMakePrediction",
 		Reset: "Reset",
@@ -436,6 +441,11 @@ var Connection = {
 			return console.error(err.toString());
 		});
 	},
+	RequestAnalyze: function (stockName) {
+		Connection.Hub.invoke(Connection.ServerMethods.RequestAnalyze, stockName).catch(function (err) {
+			return console.error(err.toString());
+		});
+	},
 	RequestCoverShortPosition: function () {
 		Connection.Hub.invoke(Connection.ServerMethods.RequestCoverShortPosition).catch(function (err) {
 			return console.error(err.toString());
@@ -557,6 +567,11 @@ var ConstHtmlIds =
 	StockShortButton: "#stockShortButton",
 	CoverShortPositionButton: "#coverShortPositionButton",
 	ShortButton: "#shortBtn",
+
+
+	AnalyzeButton: "#analyzeBtn",
+	AnalyzeStock: "#analyzeStock",
+	AnalyzeSendButton: "#analyzeSendBtn",
 }
 
 var HtmlGeneration =
@@ -652,6 +667,28 @@ var HtmlGeneration =
 			}
 		}
 		html += '</select><select class="buy-sell-prompt grid-column-2 grid-row-2 fill" id="predictionDirection"><option value="Up">Up</option><option value="Down">Down</option></select><button class="btn btn-warning buy-sell-button fill grid-column-2 grid-row-3" id="predictionSendBtn">Predict</button><button class="btn btn-outline-danger buy-sell-button fill grid-column-2 grid-row-4" id="cancel">Cancel</button></div></div>';
+		return html;
+	},
+	MakeAnalyzeButton: function () {
+		let html = '<div class="button-banner" id="analyzeBtn"><button class="btn btn-primary roll-preview-btn">';
+		html += 'Tap to Analyze';
+		html += '</button></div>';
+		return html;
+	},
+	MakeAnalyzeScreen: function () {
+		let html = '<div class="fill grid-row-2"><p class="buy-sell-prompt">';
+		html += 'Analyze a stock.';
+		html += '</p><div class="buy-sell-control"><select class="buy-sell-prompt grid-column-2 grid-row-1 fill" id="analyzeStock">';
+		for (let stockName in CurrentData.Holdings) {
+			if (CurrentData.Holdings.hasOwnProperty(stockName)) {
+				html += '<option value="';
+				html += stockName;
+				html += '">'
+				html += stockName;
+				html += '</option>';
+			}
+		}
+		html += '</select><button class="btn btn-warning buy-sell-button fill grid-column-2 grid-row-3" id="analyzeSendBtn">Analyze</button><button class="btn btn-outline-danger buy-sell-button fill grid-column-2 grid-row-4" id="cancel">Cancel</button></div></div>';
 		return html;
 	},
 	MakeWaitingScreen: function (username, money) {
@@ -869,7 +906,7 @@ var HtmlGeneration =
 		html += '</select><p class="buy-sell-prompt grid-column-2 grid-row-2">Select the amount.</p><select class="buy-sell-prompt grid-column-2 grid-row-3 fill" id="stockShortAmount">';
 		let stockValue = CurrentData.StockValues[firstStockName];
 		let money = CurrentData.Money;
-		let maxShortAmount = (money * 10000 * 2) / (stockValue * 100);
+		let maxShortAmount = (money * 10000 * Balance.ShortingMargin) / (stockValue * 100);
 		let initialBuyFor = 0;
 		let shortAmounts = [];
 		for (let i = 0; i <= maxShortAmount; i += 1000) {
@@ -878,7 +915,7 @@ var HtmlGeneration =
 		for (let i = shortAmounts.length - 1; i >= 0; i--) {
 			let shortAmount = shortAmounts[i];
 			if (!initialBuyFor) {
-				initialBuyFor = (shortAmount * stockValue) / 200;
+				initialBuyFor = (shortAmount * stockValue) / (Balance.ShortingMargin * 100);
 			}
 			html += '<option value="';
 			html += shortAmount;
@@ -899,6 +936,11 @@ var HtmlGeneration =
 		let stockValue = CurrentData.StockValues[stockName];
 		let currentCost = sharesAmount * stockValue / 100;
 		let returnPrice = purchasePrice + sellPrice - currentCost;
+
+		// Insurance on negative returns...
+		if (returnPrice < 0) {
+			returnPrice *= 0.1;
+        }
 
 		let html = '<div class="fill grid-row-2"><div class="short-position-grid"><p class="short-position-header grid-row-1 grid-column-1">Stock:</p><p class="short-position-header-value grid-row-1 grid-column-2">';
 		html += stockName;
@@ -1062,11 +1104,19 @@ var ScreenOps = {
 				Connection.RequestRollPreview();
 			});
 		}
-		else if (CurrentData.Character.id === 2 && CurrentData.IsHalfTime) {
-			list.append(HtmlGeneration.MakeTrendPreviewButton());
-			$(ConstHtmlIds.TrendPreviewButton).on(clickHandler, function () {
-				Connection.RequestTrendPreview();
-			});
+		else if (CurrentData.Character.id === 2) {
+			if (CurrentData.IsHalfTime) {
+				list.append(HtmlGeneration.MakeTrendPreviewButton());
+				$(ConstHtmlIds.TrendPreviewButton).on(clickHandler, function () {
+					Connection.RequestTrendPreview();
+				});
+			}
+			else {
+				list.append(HtmlGeneration.MakeAnalyzeButton());
+				$(ConstHtmlIds.AnalyzeButton).on(clickHandler, function () {
+					ScreenOps.PreAnalyze(isBuy);
+				});
+            }
 		}
 		else if (CurrentData.Character.id === 3) {
 			list.append(HtmlGeneration.MakePredictionButton());
@@ -1081,6 +1131,13 @@ var ScreenOps = {
 			//});
 			// Check if the player already has a short position
 			list.append(HtmlGeneration.MakeShortButton());
+
+			//if (CurrentData.IsHalfTime) {
+			//	list.append(HtmlGeneration.MakeTrendPreviewButton());
+			//	$(ConstHtmlIds.TrendPreviewButton).on(clickHandler, function () {
+			//		Connection.RequestTrendPreview();
+			//	});
+			//}
 
 			// Attach handlers
 			//log(CurrentData.ShortPosition);
@@ -1240,6 +1297,23 @@ var ScreenOps = {
 			ScreenOps.SwitchToMarketScreen(isBuy);
 		});
 	},
+	PreAnalyze: function (isBuy) {
+		ScreenOps.State = ScreenOps.States.MarketOpenPrePrediction;
+		let list = $(ConstHtmlIds.StockList);
+		list.empty();
+		list.append(HtmlGeneration.MakeAnalyzeScreen());
+
+		// Add handlers
+		$(ConstHtmlIds.AnalyzeSendButton).on(clickHandler, function () {
+			let stockName = $(ConstHtmlIds.AnalyzeStock).find(":selected").text();
+			log("Analyzing " + stockName);
+			Connection.RequestAnalyze(stockName);
+			ScreenOps.SwitchToMarketScreen(isBuy);
+		});
+		$(ConstHtmlIds.Cancel).on(clickHandler, function () {
+			ScreenOps.SwitchToMarketScreen(isBuy);
+		});
+	},
 	PreShort: function (isBuy) {
 		ScreenOps.State = ScreenOps.States.MarketOpenPrePrediction;
 		let list = $(ConstHtmlIds.StockList);
@@ -1263,7 +1337,7 @@ var ScreenOps = {
 			let stockName = $(ConstHtmlIds.StockShortName).find(":selected").text();
 			let stockValue = CurrentData.StockValues[stockName];
 			let money = CurrentData.Money;
-			let maxShortAmount = (money * 10000 * 2) / (stockValue * 100);
+			let maxShortAmount = (money * 10000 * Balance.ShortingMargin) / (stockValue * 100);
 			let initialBuyFor = 0;
 			let shortAmounts = [];
 			for (let i = 0; i <= maxShortAmount; i += 1000) {
@@ -1274,7 +1348,7 @@ var ScreenOps = {
 			for (let i = shortAmounts.length - 1; i >= 0; i--) {
 				let shortAmount = shortAmounts[i];
 				if (!initialBuyFor) {
-					initialBuyFor = (shortAmount * stockValue) / 200;
+					initialBuyFor = (shortAmount * stockValue) / (Balance.ShortingMargin * 100);
 				}
 				amountSelector.append($('<option></option>').attr('value', shortAmount).text(shortAmount));
 			}

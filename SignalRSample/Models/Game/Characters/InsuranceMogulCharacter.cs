@@ -6,7 +6,8 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class InsuranceMogulCharacter : CharacterBase
 	{
-		private const decimal CashBonusPercentage = 0.15M;
+		private const decimal CashBonusPercentage = 0.25M;
+		public const decimal ShortingMargin = 4M;
 
 		#region Properties
 
@@ -24,11 +25,6 @@ namespace StonkTrader.Models.Game.Characters
 		/// The id of this chacter.
 		/// </summary>
 		public override int Id => 6;
-
-		/// <summary>
-		/// Whether or not the character gets a vote to push down a stock.
-		/// </summary>
-		public override bool GetsPushDownVote => true;
 
 		/// <summary>
 		/// Whether or not the character gets to short a stock.
@@ -59,6 +55,7 @@ namespace StonkTrader.Models.Game.Characters
 		{
 			return (int)(sharesLost * CashBonusPercentage);
 		}
+
 
 		#endregion
 	}

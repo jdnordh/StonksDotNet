@@ -3,6 +3,7 @@ using Models.DataTransferObjects;
 using StonkTrader.Models.Connection;
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -340,6 +341,15 @@ namespace Hubs
 			await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.ShortRequest, CurrentUserConnectionId, stockName, amount);
 		}
 
+		public async Task RequestAnalyze(string stockName)
+		{
+			if(!WorkerManager.Instance.WorkerExists)
+			{
+				return;
+			}
+			await Clients.Group(GameThreadsGroup).SendAsync(GameWorkerRequests.AnalyzeRequest, CurrentUserConnectionId, stockName);
+		}
+
 		public async Task RequestCoverShortPosition()
 		{
 			if(!WorkerManager.Instance.WorkerExists)
@@ -392,6 +402,19 @@ namespace Hubs
 		}
 
 		#endregion
+
+		public void Test(object o)
+		{
+			var t = o.GetType();
+			if (o is JsonElement je)
+			{
+				var prop1 = je.GetProperty("param1");
+				var int1 = prop1.GetInt32();
+
+				var prop2 = je.GetProperty("param2");
+				var string1 = prop2.GetString();
+			}
+		}
 
 		public async Task Reset(string key)
 		{

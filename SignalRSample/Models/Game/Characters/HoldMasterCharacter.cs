@@ -5,8 +5,9 @@
 	/// </summary>
 	public class HoldMasterCharacter : CharacterBase
 	{
+		private const decimal MaxExtraDividends = 1M;
 		private const decimal StartingExtraDividendPercentage = 0.1M;
-		private const decimal DividendPercentageIncrease = 0.15M;
+		private decimal m_dividendPercentageIncrease;
 		private decimal m_currentDividendBonus = StartingExtraDividendPercentage;
 
 		#region Properties
@@ -36,9 +37,15 @@
 		#region Public Methods
 
 		/// <inheritdoc/>
+		protected override void GameRoundsSet()
+		{
+			m_dividendPercentageIncrease = (MaxExtraDividends - StartingExtraDividendPercentage) / (decimal)GameRounds;
+		}
+
+		/// <inheritdoc/>
 		public override string GetDetailedInformation()
 		{
-			return $"Current dividend bonus: {Num(m_currentDividendBonus * 100)}%. As the Master of the Hold, you start off being paid {Num(StartingExtraDividendPercentage * 100)}% more dividends. You also have the ability to make one market prediction each round. If you correctly predict a stock's movement in the next round, your dividend bonus will increase by {Num(DividendPercentageIncrease * 100)}%.";
+			return $"Current dividend bonus: {Num(m_currentDividendBonus * 100)}%. As the Master of the Hold, you start off being paid {Num(StartingExtraDividendPercentage * 100)}% more dividends. You also have the ability to make one market prediction each round. If you correctly predict a stock's movement in the next round, your dividend bonus will increase by {Num(m_dividendPercentageIncrease * 100)}%.";
 		}
 
 		/// <summary>
@@ -57,7 +64,7 @@
 		/// </summary>
 		public override void PredictionWasCorrect()
 		{
-			m_currentDividendBonus += DividendPercentageIncrease;
+			m_currentDividendBonus += m_dividendPercentageIncrease;
 		}
 
 		#endregion

@@ -3,7 +3,6 @@ using StonkTrader.Models.Game.Characters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using System.Threading.Tasks;
 using Timer = System.Timers.Timer;
 
@@ -18,7 +17,7 @@ namespace Models.Game
 
 		const int SecondsBetweenRolls = 2;
 		const int RollTimeInSeconds = 2;
-		private static readonly List<decimal> s_amountDiceValues = new List<decimal>() { 0.1M, 0.15M, 0.2M, 0.3M }; // Average: 0.1875
+		private static readonly List<decimal> s_amountDiceValues = new List<decimal>() { 0.1M, 0.15M, 0.2M, 0.25M, 0.3M }; // Average: 0.2
 		private static readonly List<decimal> s_stableAmountDiceValues = new List<decimal>() { 0.1M, 0.15M, 0.2M}; // Average: 0.15
 		private const string ErrorColor = "#690d1c";
 
@@ -81,7 +80,7 @@ namespace Models.Game
 
 		private bool ShouldPushDownStock
 		{
-			get => Players.Values.Where(p => p.Character.GetsPushDownVote).Any();
+			get => false;// Players.Values.Where(p => p.Character.GetsPushDownVote).Any();
 		}
 
 		#endregion
@@ -244,6 +243,8 @@ namespace Models.Game
 			var player = new Player(playerId, username, m_startingMoney, stockNames, 
 				CharacterProvider.GetCharacterForId(characterId));
 
+			player.Character.SetGameRounds(m_numberOfRounds);
+
 			if (IsStarted && IsMarketOpen)
 			{
 				player.Character.InitializeStocks(GetStockNames());
@@ -354,6 +355,23 @@ namespace Models.Game
 		#region Character Abilities
 
 		/// <summary>
+		/// Analyze a stock.
+		/// </summary>
+		/// <param name="playerId">The player id.</param>
+		/// <param name="stockName">The stock name to analyze.</param>
+		public void AnalyzeStock(string playerId, string stockName)
+		{
+			var player = Players[playerId];
+			if(player.Character.GetsAnalyze && IsMarketOpen && !IsMarketHalfTime)
+			{
+				if (m_stocks.TryGetValue(stockName, out var stock))
+				{
+					player.Character.AnalyzedStock = stock;
+				}
+			}
+		}
+
+		/// <summary>
 		/// Shorts a stock.
 		/// </summary>
 		/// <param name="playerId">The player id.</param>
@@ -369,7 +387,7 @@ namespace Models.Game
 				{
 					var stock = m_stocks[stockName];
 					var sharesSoldPrice = stock.Value * sharesToShort;
-					var purchasePrice = sharesSoldPrice * 0.5M;
+					decimal purchasePrice = sharesSoldPrice / InsuranceMogulCharacter.ShortingMargin;
 					if (purchasePrice > player.Money)
 					{
 						return null;
@@ -406,7 +424,16 @@ namespace Models.Game
 			{
 				var shortPosition = player.ShortPosition;
 				var stock = m_stocks[shortPosition.StockName];
-				player.Money += (int)(shortPosition.PurchasePrice + shortPosition.SharesSoldPrice - shortPosition.SharesAmount * stock.Value);
+
+				int adjustment = (int)(shortPosition.PurchasePrice + shortPosition.SharesSoldPrice - shortPosition.SharesAmount * stock.Value);
+
+				// Insurance if you lose money...
+				// TODO Check if this is even worth it
+				if (adjustment < 0)
+				{
+					adjustment = (int)(adjustment * 0.1M);
+				}
+				player.Money += adjustment;
 				player.ShortPosition = player.Character.ShortPosition = null;
 				return player.GetPlayerInventory(m_stocks);
 			}
@@ -429,10 +456,10 @@ namespace Models.Game
 				var rand = new Random();
 				int halfRound = m_rolls[m_currentRoundNumber].Count / 2;
 				int rollIndex1 = rand.Next(0, halfRound);
-				int rollIndex2 = rollIndex1 + 1;
-				if (rollIndex2 >= halfRound)
+				int rollIndex2 = rollIndex1;
+				while (rollIndex2 == rollIndex1)
 				{
-					rollIndex2 = 0;
+					rollIndex2 = rand.Next(0, halfRound);
 				}
 				var rollPreview =  new RollPreviewDto() 
 				{
@@ -576,9 +603,29 @@ namespace Models.Game
 
 			m_roundTrendIndexedByPlayer.Clear();
 			var rand = new Random();
-			foreach(var playerKvp in Players)
+			foreach(var playerKvp in Players.Where(p => p.Value.Character.GetsHalfTimeTransaction))
 			{
-				m_roundTrendIndexedByPlayer.Add(playerKvp.Key, trendData[rand.Next(0, trendData.Count)]);
+				if(!playerKvp.Value.Character.GetsAnalyze)
+				{
+					continue;
+				}
+				if (playerKvp.Value.Character.AnalyzedStock != null)
+				{
+					var analyzed = trendData.FirstOrDefault(t => t.StockName == playerKvp.Value.Character.AnalyzedStock.Name);
+					if (analyzed != null)
+					{
+						m_roundTrendIndexedByPlayer.Add(playerKvp.Key, analyzed);
+						playerKvp.Value.Character.AnalyzedStock = null;
+					}
+					else
+					{
+						m_roundTrendIndexedByPlayer.Add(playerKvp.Key, trendData[rand.Next(0, trendData.Count)]);
+					}
+				}
+				else
+				{
+					m_roundTrendIndexedByPlayer.Add(playerKvp.Key, trendData[rand.Next(0, trendData.Count)]);
+				}
 			}
 		}
 
@@ -589,6 +636,8 @@ namespace Models.Game
 		/// <param name="stockName">The stock to push down.</param>
 		public void RequestStockPushDown(string playerId, string stockName)
 		{
+			return;
+			/*
 			if(Players[playerId].Character.GetsPushDownVote && IsMarketOpen && !IsMarketHalfTime)
 			{
 				if(m_pushDownVotesIndexedByPlayer.ContainsKey(playerId))
@@ -600,6 +649,7 @@ namespace Models.Game
 					m_pushDownVotesIndexedByPlayer.Add(playerId, stockName);
 				}
 			}
+			*/
 		}
 
 		private void PushDownStock()

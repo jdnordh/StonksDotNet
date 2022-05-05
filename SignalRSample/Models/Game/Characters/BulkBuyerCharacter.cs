@@ -10,7 +10,7 @@ namespace StonkTrader.Models.Game.Characters
 	public class BulkBuyerCharacter : CharacterBase
 	{
 		private const int MinimumBuyAmountToRebate = 4000;
-		private const decimal RebateAmount = 0.2M;
+		private const decimal RebateAmount = 0.25M;
 
 		#region Properties
 

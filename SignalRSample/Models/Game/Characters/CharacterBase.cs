@@ -2,7 +2,6 @@
 using Models.Game;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace StonkTrader.Models.Game.Characters
@@ -58,6 +57,11 @@ namespace StonkTrader.Models.Game.Characters
 		public virtual bool GetsShort => false;
 
 		/// <summary>
+		/// Whether or not the character gets to analyze a stock.
+		/// </summary>
+		public virtual bool GetsAnalyze => false;
+
+		/// <summary>
 		/// If the stocks are initialized.
 		/// </summary>
 		public bool AreStocksInitialized { get; set; }
@@ -71,6 +75,11 @@ namespace StonkTrader.Models.Game.Characters
 		/// The current short position. Null if none exists.
 		/// </summary>
 		public ShortDto ShortPosition { get; set; }
+
+		/// <summary>
+		/// The analyzed stock.
+		/// </summary>
+		public Stock AnalyzedStock { get; set; }
 		
 		/// <summary>
 		/// The changes to the holdings this round.
@@ -82,9 +91,29 @@ namespace StonkTrader.Models.Game.Characters
 		/// </summary>
 		protected Dictionary<string, Stock> StockValues { get; private set; }
 
+		/// <summary>
+		/// The rounds in the game.
+		/// </summary>
+		public int GameRounds { get; private set; }
+
 		#endregion
 
 		#region Public Methods
+
+		/// <summary>
+		/// Set the amount of game rounds.
+		/// </summary>
+		/// <param name="rounds">The number of rounds.</param>
+		public void SetGameRounds(int rounds)
+		{
+			GameRounds = rounds;
+			GameRoundsSet();
+		}
+
+		/// <summary>
+		/// Called when game rounds set.
+		/// </summary>
+		protected virtual void GameRoundsSet() { }
 
 		/// <summary>
 		/// Gets the detailed information about how to play this character.

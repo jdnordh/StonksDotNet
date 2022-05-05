@@ -51,7 +51,8 @@ namespace StonkTrader.Models.Workers
 
 			//m_connection.On<string, string>(GameWorkerRequests.StockPushDownRequest, StockPushDown);
 			m_connection.On<string, string, int>(GameWorkerRequests.ShortRequest, ShortStock); 
-			m_connection.On<string>(GameWorkerRequests.CoverShortRequest, CoverShortPosition); 
+			m_connection.On<string>(GameWorkerRequests.CoverShortRequest, CoverShortPosition);
+			m_connection.On<string, string>(GameWorkerRequests.AnalyzeRequest, AnalyzeStock);
 
 			m_connection.On<string, PredictionDto>(GameWorkerRequests.MakePredictionRequest, MakePrediction);
 
@@ -107,6 +108,15 @@ namespace StonkTrader.Models.Workers
 				return;
 			}
 			m_game.RequestStockPushDown(playerId, stockName);
+		}
+
+		private void AnalyzeStock(string connectionId, string stockName)
+		{
+			if(!m_connectionIdToPlayerIdMap.TryGetValue(connectionId, out var playerId))
+			{
+				return;
+			}
+			m_game.AnalyzeStock(playerId, stockName);
 		}
 
 		private async Task ShortStock(string connectionId, string stockName, int amount)

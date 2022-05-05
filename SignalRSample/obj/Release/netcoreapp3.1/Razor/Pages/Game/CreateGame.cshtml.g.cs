@@ -21,7 +21,9 @@ using SignalRSample;
 #nullable disable
     [global::Microsoft.AspNetCore.Razor.Hosting.RazorSourceChecksumAttribute(@"SHA1", @"d8640993e4c631ad1fd14417a5e09a56b546d5d6", @"/Pages/Game/CreateGame.cshtml")]
     [global::Microsoft.AspNetCore.Razor.Hosting.RazorSourceChecksumAttribute(@"SHA1", @"d1e47127102eeefebecfe9a2686eee1fc3d4a78d", @"/Pages/_ViewImports.cshtml")]
+    #nullable restore
     public class Pages_Game_CreateGame : global::Microsoft.AspNetCore.Mvc.RazorPages.Page
+    #nullable disable
     {
         #line hidden
         #pragma warning disable 0649
@@ -47,7 +49,7 @@ using SignalRSample;
         #pragma warning disable 1998
         public async override global::System.Threading.Tasks.Task ExecuteAsync()
         {
-            __tagHelperExecutionContext = __tagHelperScopeManager.Begin("body", global::Microsoft.AspNetCore.Razor.TagHelpers.TagMode.StartTagAndEndTag, "d8640993e4c631ad1fd14417a5e09a56b546d5d62865", async() => {
+            __tagHelperExecutionContext = __tagHelperScopeManager.Begin("body", global::Microsoft.AspNetCore.Razor.TagHelpers.TagMode.StartTagAndEndTag, "d8640993e4c631ad1fd14417a5e09a56b546d5d62911", async() => {
                 WriteLiteral("\r\n\t<div id=\"parameters-menu\" class=\"scrollviewer-vertical\">\r\n\t\t<div class=\"grid-input-parameters\">\r\n\t\t\t<label for=\"marketOpenTime\" class=\"menu-text\">Market Open Time (s): ");
 #nullable restore
 #line 8 "D:\Repos\StonksStable\SignalRSample\Pages\Game\CreateGame.cshtml"
@@ -296,16 +298,26 @@ WriteAttributeValue("", 1963, value, 1963, 6, false);
             WriteLiteral("\r\n");
         }
         #pragma warning restore 1998
+        #nullable restore
         [global::Microsoft.AspNetCore.Mvc.Razor.Internal.RazorInjectAttribute]
-        public global::Microsoft.AspNetCore.Mvc.ViewFeatures.IModelExpressionProvider ModelExpressionProvider { get; private set; }
+        public global::Microsoft.AspNetCore.Mvc.ViewFeatures.IModelExpressionProvider ModelExpressionProvider { get; private set; } = default!;
+        #nullable disable
+        #nullable restore
         [global::Microsoft.AspNetCore.Mvc.Razor.Internal.RazorInjectAttribute]
-        public global::Microsoft.AspNetCore.Mvc.IUrlHelper Url { get; private set; }
+        public global::Microsoft.AspNetCore.Mvc.IUrlHelper Url { get; private set; } = default!;
+        #nullable disable
+        #nullable restore
         [global::Microsoft.AspNetCore.Mvc.Razor.Internal.RazorInjectAttribute]
-        public global::Microsoft.AspNetCore.Mvc.IViewComponentHelper Component { get; private set; }
+        public global::Microsoft.AspNetCore.Mvc.IViewComponentHelper Component { get; private set; } = default!;
+        #nullable disable
+        #nullable restore
         [global::Microsoft.AspNetCore.Mvc.Razor.Internal.RazorInjectAttribute]
-        public global::Microsoft.AspNetCore.Mvc.Rendering.IJsonHelper Json { get; private set; }
+        public global::Microsoft.AspNetCore.Mvc.Rendering.IJsonHelper Json { get; private set; } = default!;
+        #nullable disable
+        #nullable restore
         [global::Microsoft.AspNetCore.Mvc.Razor.Internal.RazorInjectAttribute]
-        public global::Microsoft.AspNetCore.Mvc.Rendering.IHtmlHelper<StonkTrader.Pages.Game.CreateGameModel> Html { get; private set; }
+        public global::Microsoft.AspNetCore.Mvc.Rendering.IHtmlHelper<StonkTrader.Pages.Game.CreateGameModel> Html { get; private set; } = default!;
+        #nullable disable
         public global::Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary<StonkTrader.Pages.Game.CreateGameModel> ViewData => (global::Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary<StonkTrader.Pages.Game.CreateGameModel>)PageContext?.ViewData;
         public StonkTrader.Pages.Game.CreateGameModel Model => ViewData.Model;
     }

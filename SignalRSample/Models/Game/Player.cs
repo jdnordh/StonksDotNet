@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.HttpOverrides;
-using Models.DataTransferObjects;
+﻿using Models.DataTransferObjects;
 using StonkTrader.Models.Game.Characters;
 using System.Collections.Generic;
 using System.Linq;
