@@ -411,9 +411,16 @@ namespace StonkTrader.Models.Workers
 			m_creatorConnectionId = null;
 		}
 
+		/// <inheritdoc />
 		public async Task SendMessageToPlayer(string playerId, MessageDto message)
 		{
 			await m_connection.InvokeAsync(GameWorkerResponses.SendMessageToPlayer, m_playerIdToConnectionIdMap[playerId], message);
+		}
+
+		/// <inheritdoc />
+		public async Task SendMessageToPresenter(MessageDto message)
+		{
+			await m_connection.InvokeAsync(GameWorkerResponses.SendMessageToPlayer, m_creatorConnectionId, message);
 		}
 
 		#endregion

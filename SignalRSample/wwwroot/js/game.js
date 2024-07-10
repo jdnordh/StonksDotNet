@@ -217,6 +217,9 @@ var Connection = {
 			if (Connection.ClientType === Connection.ClientTypes.Player) {
 				ScreenOps.ShowMessage(messageDto);
 			}
+			else if (Connection.ClientType !== Connection.ClientTypes.None){
+				Presenter.ShowBestAndWorstStockMessage(messageDto);
+			}
 		});
 
 		Connection.Hub.on(Connection.ClientMethods.PlayerInventoriesUpdated, function (marketDto) {
@@ -1772,7 +1775,7 @@ var Presenter = {
 		Presenter.SwitchToMarketChart();
 	},
 	SetGameOver: function () {
-		$(ConstHtmlIds.PresenterText).text("Game Over");
+		$(ConstHtmlIds.PresenterText).text("Game Over!");
 		// Show user graph
 		Presenter.SwitchToPlayerInventoryChart();
 	},
@@ -1978,6 +1981,11 @@ var Presenter = {
 
 		Presenter.InventoryChart.update();
 	},
+	ShowBestAndWorstStockMessage : function (messageDto){
+		// TODO: Test this...
+		log(messageDto);
+		$(ConstHtmlIds.PresenterText).text("Game Over! " + messageDto.message);
+	}
 };
 
 $(document).ready(function () {

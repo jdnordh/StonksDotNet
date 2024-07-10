@@ -26,7 +26,7 @@ for details on configuring this project to bundle and minify static web assets. 
 #help-screen{
    padding: 10px;
    text-align: center;
-   text-wrap: normal;
+   text-wrap: wrap;
    text-justify: inter-word;
 }
 #help-screen h1{

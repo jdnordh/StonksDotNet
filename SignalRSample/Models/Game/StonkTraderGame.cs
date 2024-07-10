@@ -34,6 +34,7 @@ namespace Models.Game
 		private readonly int m_timeBetweenRollsInSeconds;
 		private readonly IGameEventCommunicator m_gameEventCommunicator;
 		private readonly Dictionary<string, Stock> m_stocks;
+		private readonly Dictionary<string, decimal> m_cumulativeStockValue;
 
 		// Rolling
 		private List<List<Roll>> m_rolls;
@@ -52,9 +53,9 @@ namespace Models.Game
 		private int m_currentRollNumber;
 		private long m_currentMarketEndTime;
 
-		private readonly Dictionary<string, TrendDto> m_roundTrendIndexedByPlayer;
-		private readonly Dictionary<string, RollPreviewDto> m_roundRollPreviewIndexedByPlayerId;
-		private readonly Dictionary<string, string> m_pushDownVotesIndexedByPlayer;
+		private Dictionary<string, TrendDto> m_roundTrendIndexedByPlayer = new Dictionary<string, TrendDto>();
+		private readonly Dictionary<string, RollPreviewDto> m_roundRollPreviewIndexedByPlayerId = new Dictionary<string, RollPreviewDto>();
+		private readonly Dictionary<string, string> m_pushDownVotesIndexedByPlayer = new Dictionary<string, string>();
 
 		#endregion
 
@@ -66,22 +67,13 @@ namespace Models.Game
 
 		public bool IsMarketHalfTime { get; private set; }
 
-		public Dictionary<string, Player> Players;
+		public readonly Dictionary<string, Player> Players = new Dictionary<string, Player>();
 
-		private bool ShouldDoHalfTimeMarket
-		{
-			get => Players.Values.Where(p => p.Character.GetsHalfTimeTransaction).Any();
-		}
+		private bool ShouldDoHalfTimeMarket => Players.Values.Any(p => p.Character.GetsHalfTimeTransaction);
 
-		private bool ShouldCheckPredictions
-		{
-			get => Players.Values.Where(p => p.Character.GetsPrediction).Any();
-		}
+		private bool ShouldCheckPredictions => Players.Values.Any(p => p.Character.GetsPrediction);
 
-		private bool ShouldPushDownStock
-		{
-			get => false;// Players.Values.Where(p => p.Character.GetsPushDownVote).Any();
-		}
+		private bool ShouldPushDownStock => false; // Players.Values.Where(p => p.Character.GetsPushDownVote).Any();
 
 		#endregion
 
@@ -89,7 +81,6 @@ namespace Models.Game
 
 		public StonkTraderGame(GameInitializerDto initializer, IGameEventCommunicator gameEventCommunicator)
 		{
-			Players = new Dictionary<string, Player>();
 			m_numberOfRounds = initializer.NumberOfRounds;
 			m_numberOfRollsPerRound = initializer.RollsPerRound;
 			m_startingMoney = initializer.StartingMoney;
@@ -101,7 +92,7 @@ namespace Models.Game
 			m_currentRoundNumber = -1;
 			m_currentRollNumber = 0;
 
-			// Intialize timers
+			// Initialize timers
 			m_marketTimer = new Timer(m_marketOpenTimeInSeconds * 1000);
 			m_marketTimer.Elapsed += MarketTimerElapsed;
 			m_marketTimer.AutoReset = false;
@@ -123,14 +114,12 @@ namespace Models.Game
 
 			GenerateRolls(initializer);
 
-			m_roundTrendIndexedByPlayer = new Dictionary<string, TrendDto>();
-			m_roundRollPreviewIndexedByPlayerId = new Dictionary<string, RollPreviewDto>();
-			m_pushDownVotesIndexedByPlayer = new Dictionary<string, string>();
-
 			m_stocks = new Dictionary<string, Stock>();
+			m_cumulativeStockValue = new Dictionary<string, decimal>();
 			foreach (StockDto stockDto in initializer.Stocks)
 			{
 				m_stocks.Add(stockDto.Name, new Stock(stockDto));
+				m_cumulativeStockValue.Add(stockDto.Name, 0M);
 			}
 			IsMarketOpen = false;
 			IsStarted = false;
@@ -159,12 +148,14 @@ namespace Models.Game
 				case RollType.Up:
 				{
 					m_stocks[m_currentRoll.StockName].IncreaseValue(m_currentRoll.PercentageAmount);
+					m_cumulativeStockValue[m_currentRoll.StockName] += m_currentRoll.PercentageAmount;
 					rollMethod = ResolveSplitOrCrash;
 					break;
 				}
 				case RollType.Down:
 				{
 					m_stocks[m_currentRoll.StockName].DecreaseValue(m_currentRoll.PercentageAmount);
+					m_cumulativeStockValue[m_currentRoll.StockName] -= m_currentRoll.PercentageAmount;
 					rollMethod = ResolveSplitOrCrash;
 					break;
 				}
@@ -199,18 +190,9 @@ namespace Models.Game
 			{
 				Results = new List<Func<string, decimal, Roll>>
 				{
-					(stock, percentAmount) =>
-					{
-						return new Roll(RollType.Up, stock, percentAmount);
-					},
-					(stock, percentAmount) =>
-					{
-						return new Roll(RollType.Down, stock, percentAmount);
-					},
-					(stock, percentAmount) =>
-					{
-						return new Roll(RollType.Dividend, stock, percentAmount);
-					}
+					(stock, percentAmount) => new Roll(RollType.Up, stock, percentAmount),
+					(stock, percentAmount) => new Roll(RollType.Down, stock, percentAmount),
+					(stock, percentAmount) => new Roll(RollType.Dividend, stock, percentAmount)
 				}
 			};
 
@@ -362,11 +344,15 @@ namespace Models.Game
 		public void AnalyzeStock(string playerId, string stockName)
 		{
 			var player = Players[playerId];
-			if(player.Character.GetsAnalyze && IsMarketOpen && !IsMarketHalfTime)
+			if(player.Character.GetsStockAnalyze && IsMarketOpen && !IsMarketHalfTime)
 			{
 				if (m_stocks.TryGetValue(stockName, out var stock))
 				{
 					player.Character.AnalyzedStock = stock;
+				}
+				else
+				{
+					// TODO: This should never happen...
 				}
 			}
 		}
@@ -419,6 +405,7 @@ namespace Models.Game
 
 		private PlayerInventoryDto CoverShortPrivate(string playerId)
 		{
+			// TODO: Look into re-balancing this...
 			var player = Players[playerId];
 			if(player.ShortPosition != null)
 			{
@@ -560,16 +547,19 @@ namespace Models.Game
 		/// <returns>The roll dto, or null if not allowed.</returns>
 		public TrendDto PreviewRoundTrend(string playerId)
 		{
-			if(Players[playerId].Character.GetsHalfTimeTransaction && IsMarketOpen && IsMarketHalfTime)
+			if (Players[playerId].Character.GetsStockAnalyze && IsMarketOpen && IsMarketHalfTime)
 			{
-				return m_roundTrendIndexedByPlayer.TryGetValue(playerId, out var trendDto) ? trendDto : m_roundTrendIndexedByPlayer.First().Value;
+				return m_roundTrendIndexedByPlayer.GetValueOrDefault(playerId);
 			}
+			
 			return null;
 		}
 
 		private void SetupHalfTimeRoundTrends()
 		{
-			var marketCopy = m_stocks.ToDictionary(kvp => kvp.Key, kvp => new Stock(kvp.Key));
+			Dictionary<string, Stock> temporaryMarket = m_stocks.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Clone());
+			Dictionary<string, decimal> stocksFutureValue = m_stocks.ToDictionary(kvp => kvp.Key, kvp => 0M);
+			
 			for(int i = m_currentRollNumber; i < m_numberOfRollsPerRound; i++)
 			{
 				Roll roll = m_rolls[m_currentRoundNumber][i];
@@ -577,54 +567,64 @@ namespace Models.Game
 				{
 					case RollType.Up:
 					{
-						marketCopy[roll.StockName].IncreaseValue(roll.PercentageAmount);
+						stocksFutureValue[roll.StockName] += roll.PercentageAmount;
+						temporaryMarket[roll.StockName].IncreaseValue(roll.PercentageAmount);
 						break;
 					}
 					case RollType.Down:
 					{
-						marketCopy[roll.StockName].DecreaseValue(roll.PercentageAmount);
+						stocksFutureValue[roll.StockName] -= roll.PercentageAmount;
+						temporaryMarket[roll.StockName].DecreaseValue(roll.PercentageAmount);
+						break;
+					}
+					case RollType.Dividend:
+					{
+						// If the roll will dividend, add the value to future value.
+						if (temporaryMarket[roll.StockName].Value > Stock.DefaultStockValue)
+						{
+							stocksFutureValue[roll.StockName] += roll.PercentageAmount;
+						}
 						break;
 					}
 				}
 			}
-			var trendData = new List<TrendDto>();
-			foreach(var kvp in marketCopy)
-			{
-				if(kvp.Value.Value == 1M)
-				{
-					continue;
-				}
-				trendData.Add(new TrendDto(kvp.Key, kvp.Value.Value > 1M ? "Up" : "Down"));
-			}
-			if(trendData.Count == 0)
-			{
-				trendData.Add(new TrendDto("No Information", null, true));
-			}
 
-			m_roundTrendIndexedByPlayer.Clear();
-			var rand = new Random();
-			foreach(var playerKvp in Players.Where(p => p.Value.Character.GetsHalfTimeTransaction))
+			var futureValueTrends = new Dictionary<string, TrendDto>();
+			
+			foreach (var kvp in stocksFutureValue)
 			{
-				if(!playerKvp.Value.Character.GetsAnalyze)
+				if (kvp.Value == 0M)
 				{
 					continue;
 				}
-				if (playerKvp.Value.Character.AnalyzedStock != null)
+				futureValueTrends.Add(kvp.Key, new TrendDto(kvp.Key, kvp.Value > 0M ? "Up" : "Down"));
+			}
+			
+			// Clear any previous trends
+			m_roundTrendIndexedByPlayer.Clear();
+
+			// If the market has no net change, add a 'no info' trend
+			if(futureValueTrends.Count == 0)
+			{
+				var noInfoTrend = new TrendDto("No information", string.Empty, true);
+				m_roundTrendIndexedByPlayer = Players.Where(kvp => kvp.Value.Character.GetsStockAnalyze)
+					.ToDictionary(kvp => kvp.Key, kvp => noInfoTrend);
+			}
+			else
+			{
+				foreach((string playerId, Player player) in Players.Where(p => p.Value.Character.GetsStockAnalyze))
 				{
-					var analyzed = trendData.FirstOrDefault(t => t.StockName == playerKvp.Value.Character.AnalyzedStock.Name);
-					if (analyzed != null)
+					// If they have not analyzed a stock, we give them nothing lol.
+					if (player.Character.AnalyzedStock == null ||
+					   !futureValueTrends.TryGetValue(player.Character.AnalyzedStock.Name, out var trendDto))
 					{
-						m_roundTrendIndexedByPlayer.Add(playerKvp.Key, analyzed);
-						playerKvp.Value.Character.AnalyzedStock = null;
+						continue;
 					}
-					else
-					{
-						m_roundTrendIndexedByPlayer.Add(playerKvp.Key, trendData[rand.Next(0, trendData.Count)]);
-					}
-				}
-				else
-				{
-					m_roundTrendIndexedByPlayer.Add(playerKvp.Key, trendData[rand.Next(0, trendData.Count)]);
+
+					m_roundTrendIndexedByPlayer.Add(playerId, trendDto);
+						
+					// Reset the analyzed stock
+					player.Character.AnalyzedStock = null;
 				}
 			}
 		}
@@ -767,6 +767,10 @@ namespace Models.Game
 			{
 				return;
 			}
+
+			// Add to the cumulative value if paying dividends.
+			m_cumulativeStockValue[m_currentRoll.StockName] += percentage;
+			
 			foreach (Player player in Players.Values)
 			{
 				var holdings = player.Holdings[stock];
@@ -1003,6 +1007,33 @@ namespace Models.Game
 				}
 			}
 
+			// Create summary text for best/worst stocks
+			string bestStock = string.Empty;
+			string worstStock = string.Empty;
+			decimal bestStockValue = decimal.MinValue;
+			decimal worstStockValue = decimal.MaxValue;
+
+			foreach(KeyValuePair<string,decimal> kvp in m_cumulativeStockValue)
+			{
+				if(bestStockValue < kvp.Value)
+				{
+					bestStockValue = kvp.Value;
+					bestStock = $"{kvp.Key} ({(kvp.Value >= 0M ? "+" : "-")}{kvp.Value * 100}%)";
+				}
+
+				if(worstStockValue > kvp.Value)
+				{
+					worstStockValue = kvp.Value;
+					worstStock = $"{kvp.Key} ({(kvp.Value >= 0M ? "+" : "-")}{kvp.Value * 100}%)";
+				}
+			}
+
+			string summaryMessage = $"Best stock: {bestStock} | Worst stock: {worstStock}";
+			var bestWorstStocksMessage = new MessageDto
+			{
+				Message = summaryMessage,
+			};
+			
 			var preSellInventories = GetInventoryCollectionDto();
 			SellAllShares();
 
@@ -1011,6 +1042,8 @@ namespace Models.Game
 
 			// Send inventory update to observer with inventory breakdowns
 			await m_gameEventCommunicator.GameOver(preSellInventories, messages);
+
+			await m_gameEventCommunicator.SendMessageToPresenter(bestWorstStocksMessage);
 
 			IsStarted = false;
 

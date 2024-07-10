@@ -11,55 +11,55 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public abstract class CharacterBase
 	{
-		protected readonly static Func<decimal, string> Num = (d) => d.ToString("N0");
-		protected readonly static Func<decimal, string> Money = (d) => d.ToString("C");
+		protected static readonly Func<decimal, string> Num = (d) => d.ToString("N0");
+		protected static readonly Func<decimal, string> Money = (d) => d.ToString("C");
 
 		#region Properties
 
 		/// <summary>
-		/// The name of this chacter.
+		/// The name of this character.
 		/// </summary>
 		public abstract string Name { get; }
 
 		/// <summary>
-		/// The description of this chacter.
+		/// The description of this character.
 		/// </summary>
 		public abstract string Description { get; }
 
 		/// <summary>
-		/// The id of this chacter.
+		/// The id of this character.
 		/// </summary>
 		public abstract int Id { get; }
 
 		/// <summary>
-		/// Whether or not the character gets half time transactions.
+		/// Whether the character gets half-time transactions.
 		/// </summary>
 		public virtual bool GetsHalfTimeTransaction => false;
 
 		/// <summary>
-		/// Whether or not the character gets a reveal of the first roll of each round.
+		/// Whether the character gets a reveal of the first roll of each round.
 		/// </summary>
 		public virtual bool GetsRollPreviews => false;
 
 		/// <summary>
-		/// Whether or not the character gets a vote to push down a stock.
+		/// Whether the character gets a vote to push down a stock.
 		/// </summary>
 		public virtual bool GetsPushDownVote => false;
 
 		/// <summary>
-		/// Whether or not the character gets a vote to push down a stock.
+		/// Whether the character gets a vote to push down a stock.
 		/// </summary>
 		public virtual bool GetsPrediction => false;
 
 		/// <summary>
-		/// Whether or not the character gets to short a stock.
+		/// Whether the character gets to short a stock.
 		/// </summary>
 		public virtual bool GetsShort => false;
 
 		/// <summary>
-		/// Whether or not the character gets to analyze a stock.
+		/// Whether the character gets to analyze a stock.
 		/// </summary>
-		public virtual bool GetsAnalyze => false;
+		public virtual bool GetsStockAnalyze => false;
 
 		/// <summary>
 		/// If the stocks are initialized.

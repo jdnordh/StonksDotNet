@@ -7,28 +7,21 @@ namespace StonkTrader.Models.Game.Characters
 	public class DayTraderCharacter : CharacterBase
 	{
 		#region Properties
-
-		/// <summary>
-		/// The name of this chacter.
-		/// </summary>
+		
+		/// <inheritdoc />
 		public override string Name => "Day Trader";
 
-		/// <summary> 
-		/// The name of this chacter.
-		/// </summary>
+		/// <inheritdoc />
 		public override string Description => "This character can make additional trades half way through a closed market and gets information about trends.";
 
-		/// <summary>
-		/// The id of this chacter.
-		/// </summary>
+		/// <inheritdoc />
 		public override int Id => 2;
 
-		/// <summary>
-		/// Whether or not the character gets half time transactions.
-		/// </summary>
+		/// <inheritdoc />
 		public override bool GetsHalfTimeTransaction => true;
 
-		public override bool GetsAnalyze => true;
+		/// <inheritdoc />
+		public override bool GetsStockAnalyze => true;
 
 		#endregion
 

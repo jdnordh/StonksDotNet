@@ -5,9 +5,9 @@ namespace Models.Game
 {
 	public class Stock
 	{
-		private const decimal DefaultStockValue = 1M;
-		private const decimal MaxValue = 2M;
-		private const decimal MinValue = 0M;
+		public const decimal DefaultStockValue = 1M;
+		public const decimal MaxValue = 2M;
+		public const decimal MinValue = 0M;
 
 		public decimal Value { get; private set; }
 
@@ -78,6 +78,11 @@ namespace Models.Game
 		public int GetValueOfAmount(int amount)
 		{
 			return (int)(Value * (decimal)amount);
+		}
+
+		public Stock Clone()
+		{
+			return new Stock(Name, Color, IsHalved) { Value = Value };
 		}
 
 		public StockDto ToStockDto()
