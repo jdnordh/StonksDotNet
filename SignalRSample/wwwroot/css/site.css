@@ -6,9 +6,14 @@ for details on configuring this project to bundle and minify static web assets. 
     overflow-x: hidden;
 }
 
+.btn{
+    border-radius: 8px;
+}
+
 .buy-sell-banner-button {
 	padding-left: 5px;
 	padding-right: 5px;
+    border-radius: 4px;
 }
 
 .margin-small{
@@ -97,7 +102,13 @@ for details on configuring this project to bundle and minify static web assets. 
 #presenterText {
    font-size: 4vw;
    text-align: center;
-   margin: 0;
+   margin: 2vw;
+}
+
+.presenter-sub-heading{
+    font-size: 3vw;
+    text-align: center;
+    margin: 1vw;
 }
 
 .menu-text {
@@ -215,51 +226,55 @@ for details on configuring this project to bundle and minify static web assets. 
 .character-card {
    display: grid;
    grid-template-columns: 70% 30%;
-   border: 1px solid;
+   border-top: 1px solid;
    font-size: 2vh;
    margin: 10px;
+    padding-top: 18px;
 }
 
-.character-card-button {
+.character-card-btn {
    margin: 10px;
 }
 
 .character-text-grid{
+    border-radius: 8px;
    display: grid;
 }
 
 .character-card p {
    padding-left: 5px;
    padding-right: 5px;
-   text-wrap: normal;
+   text-wrap: wrap;
 }
 
 .character-card h2 {
    padding: 5px;
    padding-bottom: 0;
-   text-wrap: normal;
+   text-wrap: wrap;
 }
 
 .character-card img {
    padding: 5px;
    padding-bottom: 0;
-   text-wrap: normal;
+   text-wrap: wrap;
 }
 
 .character-card button {
    padding: 5px;
    padding-bottom: 0;
-   text-wrap: normal;
+   text-wrap: wrap;
 }
 
 .menu-button{
    font-size: 5vh;
    word-wrap: break-word;
    line-height: 5vh;
+    border: 4px;
 }
 
 #username {
    box-sizing: border-box;
+    border: 4px;
    max-width: 100%;
    width: 100%;
 }
@@ -305,14 +320,15 @@ p {
 }
 
 .stock-banner {
-    border: solid 2px;
+    border: solid 1px;
+    border-radius: 8px;
     display: grid;
     grid-template-columns: 45% 25% 30%;
     margin: 1vh;
 }
 
 .text-banner {
-   border: solid 2px;
+   border: solid 0px;
    text-align: center;
    display: grid;
    margin: 1vh;
@@ -340,7 +356,7 @@ p {
 }
 
 .buy-sell-div {
-   border-bottom: solid;
+   border-bottom: solid 1px;
 }
 
 .buy-sell-buttons {

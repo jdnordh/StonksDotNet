@@ -535,6 +535,7 @@ var ConstHtmlIds =
 	PresenterChart: "presenterChart", // No hash in front because it's used by chartjs, not jquery
 	InventoryChart: "inventoryChart", // No hash in front because it's used by chartjs, not jquery
 	PresenterText: "#presenterText",
+	SendGameStockMessage: "#sendGameStockMessage",
 	RollName: "#rollName",
 	RollFunc: "#rollFunc",
 	RollAmount: "#rollAmount",
@@ -855,7 +856,7 @@ var HtmlGeneration =
 		return '<div class="center-absolute menu-grid"> <button id="startGame" class="btn btn-primary menu-button">Start Game</button></div>';
 	},
 	MakePresenter: function () {
-		return '<div class="grid-observer-main grid-fill" id="mainGrid"> <div id="presenter" class="fill"> <h1 id="presenterText" class="grid-column-2 grid-row-1">Market Closed</h1> </div><div class="chart-grid grid-row-2"> <div id="chart-slide-container" class="grid-row-1"> <div id="inventoryChartSlider" class="chart-fill"> <canvas class="canvas-chart" id="inventoryChart"></canvas> </div><div id="presenterChartSlider" class="chart-fill"> <canvas class="canvas-chart" id="presenterChart"></canvas> </div></div><div class="roll-display grid-row-2"> <h1 class="grid-column-1 roll-text" id="rollName"></h1> <h1 class="grid-column-2 roll-text" id="rollFunc"></h1> <h1 class="grid-column-3 roll-text" id="rollAmount"></h1> </div></div></div>';
+		return '<div class="grid-observer-main grid-fill" id="mainGrid"> <div id="presenter" class="fill"> <h1 id="presenterText" class="grid-column-2 grid-row-1">Market Closed</h1><h2 id="sendGameStockMessage" class="presenter-sub-heading"></h2> </div><div class="chart-grid grid-row-2"> <div id="chart-slide-container" class="grid-row-1"> <div id="inventoryChartSlider" class="chart-fill"> <canvas class="canvas-chart" id="inventoryChart"></canvas> </div><div id="presenterChartSlider" class="chart-fill"> <canvas class="canvas-chart" id="presenterChart"></canvas> </div></div><div class="roll-display grid-row-2"> <h1 class="grid-column-1 roll-text" id="rollName"></h1> <h1 class="grid-column-2 roll-text" id="rollFunc"></h1> <h1 class="grid-column-3 roll-text" id="rollAmount"></h1> </div></div></div>';
 	},
 	MakeEndGameButton: function () {
 		return '<button class="btn btn-primary menu-button" id="endGameButton">End Game</button>';
@@ -1775,7 +1776,7 @@ var Presenter = {
 		Presenter.SwitchToMarketChart();
 	},
 	SetGameOver: function () {
-		$(ConstHtmlIds.PresenterText).text("Game Over!");
+		$(ConstHtmlIds.PresenterText).text("Game Over");
 		// Show user graph
 		Presenter.SwitchToPlayerInventoryChart();
 	},
@@ -1982,9 +1983,10 @@ var Presenter = {
 		Presenter.InventoryChart.update();
 	},
 	ShowBestAndWorstStockMessage : function (messageDto){
-		// TODO: Test this...
 		log(messageDto);
-		$(ConstHtmlIds.PresenterText).text("Game Over! " + messageDto.message);
+		// TODO: This message does not fit on the screen.
+		// TODO: It would be cool if the 'Game Over' text scrolled horizontally...
+		//$(ConstHtmlIds.SendGameStockMessage).text(messageDto.message);
 	}
 };
 

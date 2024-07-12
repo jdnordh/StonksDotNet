@@ -624,6 +624,7 @@ namespace Models.Game
 					}
 					else if (futureValueTrends.TryGetValue(player.Character.AnalyzedStock.Name, out TrendDto trendDto))
 					{
+						// TODO: Add the stock to the end of the message
 						m_roundTrendIndexedByPlayer.Add(playerId, trendDto);
 					}
 					else
@@ -1026,13 +1027,13 @@ namespace Models.Game
 				if(bestStockValue < kvp.Value)
 				{
 					bestStockValue = kvp.Value;
-					bestStock = $"{kvp.Key} ({(kvp.Value >= 0M ? "+" : "-")}{kvp.Value * 100}%)";
+					bestStock = $"{kvp.Key} ({(kvp.Value >= 0M ? "+" : "")}{kvp.Value * 100}%)";
 				}
 
 				if(worstStockValue > kvp.Value)
 				{
 					worstStockValue = kvp.Value;
-					worstStock = $"{kvp.Key} ({(kvp.Value >= 0M ? "+" : "-")}{kvp.Value * 100}%)";
+					worstStock = $"{kvp.Key} ({(kvp.Value >= 0M ? "+" : "")}{kvp.Value * 100}%)";
 				}
 			}
 
