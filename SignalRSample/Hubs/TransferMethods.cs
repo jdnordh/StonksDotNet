@@ -23,6 +23,11 @@ namespace Hubs
 		public const string StockPushDown = "stockPushDown";
 	}
 
+	public static class GlobalStrings
+	{
+		public const string CreatorConnectionId = "CreatorConnectionId";
+	}
+
 	public static class GameWorkerRequests
 	{
 		public const string CreateGameRequest = "createGameRequest";

@@ -402,9 +402,17 @@ namespace StonkTrader.Models.Workers
 		{
 			m_logger.Log(LogLevel.Information, "Game over.");
 			await m_connection.InvokeAsync(GameWorkerResponses.GameOver, inventoryCollectionDto);
-			foreach(var kvp in messages)
+			foreach((string playerId, MessageDto message) in messages)
 			{
-				await m_connection.InvokeAsync(GameWorkerResponses.SendMessageToPlayer, m_playerIdToConnectionIdMap[kvp.Key], kvp.Value);
+				if(playerId == GlobalStrings.CreatorConnectionId)
+				{
+					await m_connection.InvokeAsync(GameWorkerResponses.SendMessageToPlayer, m_creatorConnectionId, message);
+
+				}
+				else
+				{
+					await m_connection.InvokeAsync(GameWorkerResponses.SendMessageToPlayer, m_playerIdToConnectionIdMap[playerId], message);
+				}
 			}
 			ClearPlayerIdMaps();
 			m_game = null;
@@ -415,12 +423,6 @@ namespace StonkTrader.Models.Workers
 		public async Task SendMessageToPlayer(string playerId, MessageDto message)
 		{
 			await m_connection.InvokeAsync(GameWorkerResponses.SendMessageToPlayer, m_playerIdToConnectionIdMap[playerId], message);
-		}
-
-		/// <inheritdoc />
-		public async Task SendMessageToPresenter(MessageDto message)
-		{
-			await m_connection.InvokeAsync(GameWorkerResponses.SendMessageToPlayer, m_creatorConnectionId, message);
 		}
 
 		#endregion

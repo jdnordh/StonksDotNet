@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Hubs;
 using Timer = System.Timers.Timer;
 
 namespace Models.Game
@@ -602,11 +603,13 @@ namespace Models.Game
 			
 			// Clear any previous trends
 			m_roundTrendIndexedByPlayer.Clear();
+			
+			var noInfoTrend = new TrendDto("No information", string.Empty, true);
+			var noAnalyzedStockTrend = new TrendDto("Didn't analyze", string.Empty, true);
 
 			// If the market has no net change, add a 'no info' trend
 			if(futureValueTrends.Count == 0)
 			{
-				var noInfoTrend = new TrendDto("No information", string.Empty, true);
 				m_roundTrendIndexedByPlayer = Players.Where(kvp => kvp.Value.Character.GetsStockAnalyze)
 					.ToDictionary(kvp => kvp.Key, kvp => noInfoTrend);
 			}
@@ -614,15 +617,20 @@ namespace Models.Game
 			{
 				foreach((string playerId, Player player) in Players.Where(p => p.Value.Character.GetsStockAnalyze))
 				{
-					// If they have not analyzed a stock, we give them nothing lol.
-					if (player.Character.AnalyzedStock == null ||
-					   !futureValueTrends.TryGetValue(player.Character.AnalyzedStock.Name, out var trendDto))
+					// If they have not analyzed a stock, we give them a message saying they didn't analyze.
+					if (player.Character.AnalyzedStock == null)
 					{
-						continue;
+						m_roundTrendIndexedByPlayer.Add(playerId, noAnalyzedStockTrend);
 					}
-
-					m_roundTrendIndexedByPlayer.Add(playerId, trendDto);
-						
+					else if (futureValueTrends.TryGetValue(player.Character.AnalyzedStock.Name, out TrendDto trendDto))
+					{
+						m_roundTrendIndexedByPlayer.Add(playerId, trendDto);
+					}
+					else
+					{
+						m_roundTrendIndexedByPlayer.Add(playerId, noInfoTrend);
+					}
+					
 					// Reset the analyzed stock
 					player.Character.AnalyzedStock = null;
 				}
@@ -1029,10 +1037,10 @@ namespace Models.Game
 			}
 
 			string summaryMessage = $"Best stock: {bestStock} | Worst stock: {worstStock}";
-			var bestWorstStocksMessage = new MessageDto
+			messages.Add(GlobalStrings.CreatorConnectionId, new MessageDto
 			{
 				Message = summaryMessage,
-			};
+			});
 			
 			var preSellInventories = GetInventoryCollectionDto();
 			SellAllShares();
@@ -1042,8 +1050,6 @@ namespace Models.Game
 
 			// Send inventory update to observer with inventory breakdowns
 			await m_gameEventCommunicator.GameOver(preSellInventories, messages);
-
-			await m_gameEventCommunicator.SendMessageToPresenter(bestWorstStocksMessage);
 
 			IsStarted = false;
 

@@ -40,11 +40,5 @@ namespace Models.Game
 		/// <param name="playerId">The player ID.</param>
 		/// <param name="message">The message.</param>
 		Task SendMessageToPlayer(string playerId, MessageDto message);
-
-		/// <summary>
-		/// Send a message to the presenter.
-		/// </summary>
-		/// <param name="message">The message to send.</param>
-		Task SendMessageToPresenter(MessageDto message);
 	}
 }
