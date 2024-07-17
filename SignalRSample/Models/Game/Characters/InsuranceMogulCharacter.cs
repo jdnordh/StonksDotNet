@@ -6,30 +6,33 @@ namespace StonkTrader.Models.Game.Characters
 	/// </summary>
 	public class InsuranceMogulCharacter : CharacterBase
 	{
-		private const decimal CashBonusPercentage = 0.25M;
-		public const decimal ShortingMargin = 4M;
+		private const decimal CashBonusPercentage = 0.1M;
+		public const decimal ShortingMargin = 3M;
 
 		#region Properties
 
 		/// <summary>
-		/// The name of this chacter.
+		/// The name of this character.
 		/// </summary>
 		public override string Name => "Insurance Mogul";
 
 		/// <summary>
-		/// The name of this chacter.
+		/// The name of this character.
 		/// </summary>
 		public override string Description => $"This character can short sell stocks and gets a cash bonus for shares lost in a stock crash. WARNING: This is an advanced character.";
 
 		/// <summary>
-		/// The id of this chacter.
+		/// The id of this character.
 		/// </summary>
 		public override int Id => 6;
 
 		/// <summary>
-		/// Whether or not the character gets to short a stock.
+		/// Whether the character gets to short a stock.
 		/// </summary>
 		public override bool GetsShort => true;
+
+		/// <inheritdoc />
+		public override bool GetsHalfTimeTransaction => true;
 
 		#endregion
 
@@ -55,7 +58,6 @@ namespace StonkTrader.Models.Game.Characters
 		{
 			return (int)(sharesLost * CashBonusPercentage);
 		}
-
 
 		#endregion
 	}
