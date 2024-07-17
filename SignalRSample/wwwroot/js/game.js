@@ -75,7 +75,7 @@ var GameAudio = {
 };
 
 var Balance = {
-	ShortingMargin: 4,
+	ShortingMargin: 3,
 }
 
 var Unit = {
@@ -249,7 +249,8 @@ var Connection = {
 				}
 			}
 			else if (Connection.ClientType === Connection.ClientTypes.Player) {
-				let canParticipateInHalfTimeMarket = CurrentData.Character.id === 2;
+				// TODO: Change this back if the insurance mogul shouldn't have half time trades...
+				let canParticipateInHalfTimeMarket = CurrentData.Character.id === 2;// || CurrentData.Character.id === 6;
 				if ((marketDto.isOpen && !marketDto.isHalfTime) ||
 					(marketDto.isOpen && marketDto.isHalfTime && canParticipateInHalfTimeMarket)) {
 					ScreenOps.SwitchToOpenMarket(marketDto);
@@ -1609,7 +1610,6 @@ var Presenter = {
 							label1: {
 								drawTime: 'beforeDatasetsDraw',
 								type: 'line',
-								scaleID: 'y',
 								mode: 'horizontal',
 								scaleID: 'yAxes',
 								value: 150,
@@ -1624,7 +1624,6 @@ var Presenter = {
 							label2: {
 								drawTime: 'beforeDatasetsDraw',
 								type: 'line',
-								scaleID: 'y',
 								mode: 'horizontal',
 								scaleID: 'yAxes',
 								value: 50,
@@ -1639,11 +1638,9 @@ var Presenter = {
 							parLine: {
 								drawTime: 'beforeDatasetsDraw',
 								type: 'line',
-								scaleID: 'y',
 								mode: 'horizontal',
 								scaleID: 'yAxes',
 								value: 100,
-								mode: 'horizontal',
 								borderDash: [10,10],
 								borderWidth: 3,
 								borderColor: 'rgba(0, 0, 0, 0.4)',

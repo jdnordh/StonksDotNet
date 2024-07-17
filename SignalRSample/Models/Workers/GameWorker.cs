@@ -153,11 +153,19 @@ namespace StonkTrader.Models.Workers
 			{
 				return;
 			}
-			var trendDto = m_game.PreviewRoundTrend(playerId);
-			if (trendDto != null)
-			{
-				await m_connection.InvokeAsync(GameWorkerResponses.TrendPreviewResponse, connectionId, trendDto);
-			}
+			
+			var trendDto = m_game.PreviewStockTrend(playerId);
+			await m_connection.InvokeAsync(GameWorkerResponses.TrendPreviewResponse, connectionId, trendDto);
+
+			// Uncomment this to see all trends
+			// var trends = m_game.PreviewAllRoundTrends();
+			// if (trends != null)
+			// {
+			// 	foreach(TrendDto trend in trends)
+			// 	{
+			// 		await m_connection.InvokeAsync(GameWorkerResponses.TrendPreviewResponse, connectionId, trend);
+			// 	}
+			// }
 		}
 
 		private async Task RollPreview(string connectionId)
