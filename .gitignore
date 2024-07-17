@@ -1,4 +1,4 @@
 
-/SignalRSample/obj
-/StonkTrader.Tests/obj
-/SignalRSample/bin
+bin
+obj
+.idea
