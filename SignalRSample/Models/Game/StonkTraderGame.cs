@@ -73,11 +73,12 @@ namespace Models.Game
 
 			public string GetStringValueStartingAtRound(int startingRound)
 			{
+				const int previewRoundCount = 2;
 				var builder = new StringBuilder();
 
-				for(int i = startingRound; i < MarketFirstHalfTrends.Count; i++)
+				for(int i = startingRound; i < MarketFirstHalfTrends.Count && i < startingRound + previewRoundCount; i++)
 				{
-					if(i > 0)
+					if(i > startingRound)
 					{
 						builder.Append(", ");
 					}
@@ -89,7 +90,7 @@ namespace Models.Game
 					}
 					else
 					{
-						builder.Append($"{MarketFirstHalfTrends[i]} | {MarketSecondHalfTrends[i]}");
+						builder.Append($"{MarketFirstHalfTrends[i]}, {MarketSecondHalfTrends[i]}");
 					}
 				}
 

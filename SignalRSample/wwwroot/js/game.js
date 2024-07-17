@@ -249,7 +249,6 @@ var Connection = {
 				}
 			}
 			else if (Connection.ClientType === Connection.ClientTypes.Player) {
-				// TODO: Change this back if the insurance mogul shouldn't have half time trades...
 				let canParticipateInHalfTimeMarket = CurrentData.Character.id === 2;// || CurrentData.Character.id === 6;
 				if ((marketDto.isOpen && !marketDto.isHalfTime) ||
 					(marketDto.isOpen && marketDto.isHalfTime && canParticipateInHalfTimeMarket)) {
@@ -1983,7 +1982,7 @@ var Presenter = {
 		log(messageDto);
 		// TODO: This message does not fit on the screen.
 		// TODO: It would be cool if the 'Game Over' text scrolled horizontally...
-		//$(ConstHtmlIds.SendGameStockMessage).text(messageDto.message);
+		$(ConstHtmlIds.SendGameStockMessage).text(messageDto.message);
 	}
 };
 
