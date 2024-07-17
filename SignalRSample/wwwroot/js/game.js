@@ -1980,8 +1980,6 @@ var Presenter = {
 	},
 	ShowBestAndWorstStockMessage : function (messageDto){
 		log(messageDto);
-		// TODO: This message does not fit on the screen.
-		// TODO: It would be cool if the 'Game Over' text scrolled horizontally...
 		$(ConstHtmlIds.SendGameStockMessage).text(messageDto.message);
 	}
 };
