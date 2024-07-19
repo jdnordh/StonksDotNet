@@ -1233,15 +1233,16 @@ var ScreenOps = {
 
 		// Add handlers
 		$(ConstHtmlIds.BuyAmount).change(function () {
-			let stockAmount = $(ConstHtmlIds.BuyAmount).find(":selected").text();
+			let stockAmount = $(ConstHtmlIds.BuyAmount).find(":selected").val();
 			let cost = (CurrentData.StockValues[stockName] * stockAmount) / 100;
 			$(ConstHtmlIds.Buy).text('Buy for ' + DisplayUtils.GetMoneyText(cost));
 		});
 		$(ConstHtmlIds.Buy).on(clickHandler, function () {
-			let stockAmount = $(ConstHtmlIds.BuyAmount).find(":selected").text();
+			let stockAmount = $(ConstHtmlIds.BuyAmount).find(":selected").val();
 			if (stockAmount === '0') {
 				return;
 			}
+			log('Buying ' + stockAmount);
 			Connection.BuyStock(stockName, stockAmount);
 			ScreenOps.SwitchToMarketScreen(true);
 		});
@@ -1257,12 +1258,12 @@ var ScreenOps = {
 
 		// Add handlers
 		$(ConstHtmlIds.SellAmount).change(function () {
-			let stockAmount = $(ConstHtmlIds.SellAmount).find(":selected").text();
+			let stockAmount = $(ConstHtmlIds.SellAmount).find(":selected").val();
 			let cost = (CurrentData.StockValues[stockName] * stockAmount) / 100;
 			$(ConstHtmlIds.Sell).text('Sell for ' + DisplayUtils.GetMoneyText(cost));
 		});
 		$(ConstHtmlIds.Sell).on(clickHandler, function () {
-			let stockAmount = $(ConstHtmlIds.SellAmount).find(":selected").text();
+			let stockAmount = $(ConstHtmlIds.SellAmount).find(":selected").val();
 			if (stockAmount === '0') {
 				return;
 			}
@@ -1344,7 +1345,7 @@ var ScreenOps = {
 
 		$(ConstHtmlIds.StockShortButton).on(clickHandler, function () {
 			let stockName = $(ConstHtmlIds.StockShortName).find(":selected").text();
-			let sharesAmount = $(ConstHtmlIds.StockShortAmount).find(":selected").text();
+			let sharesAmount = $(ConstHtmlIds.StockShortAmount).find(":selected").val();
 			Connection.RequestShort(stockName, sharesAmount);
 			ScreenOps.SwitchToMarketScreen(isBuy);
 		});
@@ -1375,7 +1376,7 @@ var ScreenOps = {
 		$(ConstHtmlIds.StockShortAmount).change(function () {
 			// Set the cost
 			let stockName = $(ConstHtmlIds.StockShortName).find(":selected").text();
-			let sharesAmount = $(ConstHtmlIds.StockShortAmount).find(":selected").text();
+			let sharesAmount = $(ConstHtmlIds.StockShortAmount).find(":selected").val();
 			let stockValue = CurrentData.StockValues[stockName];
 			let cost = sharesAmount * stockValue / (100 * Balance.ShortingMargin);
 			$(ConstHtmlIds.StockShortButton).text('Short for ' + DisplayUtils.GetMoneyText(Math.round(cost)));
