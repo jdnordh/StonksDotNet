@@ -127,7 +127,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// <param name="stockValue">The value of the stock that is dividending.</param>
 		/// <param name="originalDiv">The original dividend amount.</param>
 		/// <returns>The adjusted amout.</returns>
-		public virtual decimal GetDivedendAmount(decimal stockValue, decimal originalDiv)
+		public virtual decimal GetDividendAmount(decimal stockValue, decimal originalDiv)
 		{
 			return originalDiv;
 		}

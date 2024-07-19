@@ -19,7 +19,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// <summary>
 		/// The name of this character.
 		/// </summary>
-		public override string Description => $"This character can short sell stocks and gets a cash bonus for shares lost in a stock crash. WARNING: This is an advanced character.";
+		public override string Description => $"This character can short sell stocks and participate in the half time market. WARNING: This is an advanced character.";
 
 		/// <summary>
 		/// The id of this character.

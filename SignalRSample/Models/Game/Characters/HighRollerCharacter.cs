@@ -64,7 +64,7 @@ namespace StonkTrader.Models.Game.Characters
 					{
 						rebatePercentage = 0.1M;
 					}
-					else 
+					else
 					{
 						rebatePercentage = 1M - stock.Value;
 					}

@@ -13,22 +13,22 @@
 		#region Properties
 
 		/// <summary>
-		/// The name of this chacter.
+		/// The name of this character.
 		/// </summary>
 		public override string Name => "Master of the Hold";
 
 		/// <summary>
-		/// The name of this chacter.
+		/// The name of this character.
 		/// </summary>
 		public override string Description => $"This character gets paid extra dividends. The extra dividend amount increases by making correct market predictions.";
 
 		/// <summary>
-		/// Whether or not the character gets a vote to push down a stock.
+		/// Whether the character gets a vote to push down a stock.
 		/// </summary>
 		public override bool GetsPrediction => true;
 
 		/// <summary>
-		/// The id of this chacter.
+		/// The id of this character.
 		/// </summary>
 		public override int Id => 3;
 
@@ -49,12 +49,12 @@
 		}
 
 		/// <summary>
-		/// Gets the divedend amount for this character.
+		/// Gets the dividend amount for this character.
 		/// </summary>
-		/// <param name="stockValue">The value of the stock that is dividending.</param>
+		/// <param name="stockValue">The value of the stock that is paying dividends.</param>
 		/// <param name="originalDiv">The original dividend amount.</param>
-		/// <returns>The adjusted amout.</returns>
-		public override decimal GetDivedendAmount(decimal stockValue, decimal originalDiv)
+		/// <returns>The adjusted amount.</returns>
+		public override decimal GetDividendAmount(decimal stockValue, decimal originalDiv)
 		{
 			return originalDiv + m_currentDividendBonus;
 		}

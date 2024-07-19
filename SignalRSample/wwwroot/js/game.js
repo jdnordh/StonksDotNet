@@ -91,6 +91,24 @@ var Unit = {
 	},
 };
 
+var DisplayUtils = {
+	GetMoneyText(amount){
+		// Determine the sign and absolute value of the number
+		let sign = amount < 0 ? '-' : '';
+		let absoluteValue = Math.abs(amount);
+
+		// Format the absolute value with commas as thousands separators
+		let formattedValue = absoluteValue.toLocaleString('en-US');
+
+		// Concatenate the sign and formatted value with a dollar sign
+		return sign + '$' + formattedValue;
+	},
+	GetNumberText(amount){
+		let number= Number(amount);
+		return number.toLocaleString('en-US');
+	}
+}
+
 var CurrentData = {
 	Username: "StonkMaster",
 	SelectedCharacterId: 0,
@@ -249,7 +267,7 @@ var Connection = {
 				}
 			}
 			else if (Connection.ClientType === Connection.ClientTypes.Player) {
-				let canParticipateInHalfTimeMarket = CurrentData.Character.id === 2;// || CurrentData.Character.id === 6;
+				let canParticipateInHalfTimeMarket = CurrentData.Character.id === 2 || CurrentData.Character.id === 6;
 				if ((marketDto.isOpen && !marketDto.isHalfTime) ||
 					(marketDto.isOpen && marketDto.isHalfTime && canParticipateInHalfTimeMarket)) {
 					ScreenOps.SwitchToOpenMarket(marketDto);
@@ -502,22 +520,10 @@ var Connection = {
 		CurrentData.Money = money;
 		CurrentData.NetWorth = netWorth;
 		if (CurrentData.IsMarketOpen) {
-			if (money >= 0){
-				$(ConstHtmlIds.Money).text('Cash: $' + money);
-			}
-			else {
-				// Adjust where the negative sign is
-				$(ConstHtmlIds.Money).text('Cash: -$' + money * -1);
-			}
+			$(ConstHtmlIds.Money).text('Cash: ' + DisplayUtils.GetMoneyText(money));
 		}
 		else {
-			if (netWorth >= 0){
-				$(ConstHtmlIds.Money).text('Net Worth: $' + money);
-			}
-			else {
-				// Adjust where the negative sign is
-				$(ConstHtmlIds.Money).text('Net Worth: -$' + netWorth * -1);
-			}
+			$(ConstHtmlIds.Money).text('Net Worth: ' + DisplayUtils.GetMoneyText(netWorth));
 		}
 	},
 };
@@ -614,7 +620,7 @@ var HtmlGeneration =
 			html += '<option value="';
 			html += buyAmount;
 			html += '">'
-			html += buyAmount;
+			html += DisplayUtils.GetNumberText(buyAmount);
 			html += '</option>';
 		}
 		html += '</select><button class="btn btn-success buy-sell-button fill grid-column-2 grid-row-2" id="buy">Buy for $';
@@ -635,7 +641,7 @@ var HtmlGeneration =
 			html += '<option value="';
 			html += i;
 			html += '">'
-			html += i;
+			html += DisplayUtils.GetNumberText(i);
 			html += '</option>';
 		}
 		html += '</select><button class="btn btn-info buy-sell-button fill grid-column-2 grid-row-2" id="sell">Sell for $';
@@ -657,7 +663,7 @@ var HtmlGeneration =
 				html += '<option value="';
 				html += stockName;
 				html += '">'
-				html += stockName;
+				html += DisplayUtils.GetNumberText(stockName);
 				html += '</option>';
 			}
 		}
@@ -710,22 +716,22 @@ var HtmlGeneration =
 	MakeWaitingScreen: function (username, money) {
 		let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1"><p class="market-closed">';
 		html += username;
-		html += '</p></div><div class="grid-row-2 flex-box-center-content"><p id="money" class="money-cash-text">Cash: $'
-		html += money;
+		html += '</p></div><div class="grid-row-2 flex-box-center-content"><p id="money" class="money-cash-text">Cash: '
+		html += DisplayUtils.GetMoneyText(money);
 		html += '</p></div></div><div class="grid-row-2 scrollviewer-vertical" id="stockList"></div>';
 		return html;
 	},
 	MakeMarketClosedScreen: function () {
 		let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1"><p class="market-closed" id="marketOpenClosedHeader">';
 		html += CurrentData.Username;
-		html += '</p></div><div class="grid-row-2 flex-box-center-content"><p id="money" class="money-net-worth-text">Net Worth: $'
-		html += CurrentData.NetWorth;
+		html += '</p></div><div class="grid-row-2 flex-box-center-content"><p id="money" class="money-net-worth-text">Net Worth: '
+		html += DisplayUtils.GetMoneyText(CurrentData.NetWorth);
 		html += '</p></div></div><div class="grid-row-2 scrollviewer-vertical" id="stockList"></div>';
 		return html;
 	},
 	MakeGameOverScreen: function (money) {
-		let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1"><p class="market-closed" id="marketOpenClosedHeader">Game Over</p></div><div class="grid-row-2 flex-box-center-content"><p id="money" class="money-net-worth-text">Net Worth: $';
-		html += money;
+		let html = '<div class="grid-row-1 grid-fill buy-sell-div"><div class="grid-row-1"><p class="market-closed" id="marketOpenClosedHeader">Game Over</p></div><div class="grid-row-2 flex-box-center-content"><p id="money" class="money-net-worth-text">Net Worth: ';
+		html += DisplayUtils.GetMoneyText(money);
 		html += '</p></div></div><div class="grid-row-2 scrollviewer-vertical" id="stockList"></div>';
 		return html;
 	},
@@ -737,8 +743,8 @@ var HtmlGeneration =
 		else {
 			html += 'btn-outline-primary" id="buyTab">Buy</button><p class="grid-column-3 buy-sell-timer" id="buySellTimer"></p><button type="button" class="grid-column-4 buy-sell-text btn btn-primary" id="sellTab">';
 		}
-		html += 'Sell</button></div><div class="grid-row-2 flex-box-center-content"><p id="money" class="money-cash-text">Cash: $';
-		html += money;
+		html += 'Sell</button></div><div class="grid-row-2 flex-box-center-content"><p id="money" class="money-cash-text">Cash: ';
+		html += DisplayUtils.GetMoneyText(money);
 		html += '</p></div></div><div class="grid-row-2 scrollviewer-vertical" id="stockList"></div>';
 		return html;
 	},
@@ -936,7 +942,7 @@ var HtmlGeneration =
 			html += '<option value="';
 			html += shortAmount;
 			html += '">'
-			html += shortAmount;
+			html += DisplayUtils.GetNumberText(shortAmount);
 			html += '</option>';
 		}
 		html += '</select><button class="btn btn-warning buy-sell-button fill grid-column-2 grid-row-4" id="stockShortButton">Short for $';
@@ -953,19 +959,14 @@ var HtmlGeneration =
 		let currentCost = sharesAmount * stockValue / 100;
 		let returnPrice = purchasePrice + sellPrice - currentCost;
 
-		// Insurance on negative returns...
-		if (returnPrice < 0) {
-			returnPrice *= 0.1;
-        }
-
 		let html = '<div class="fill grid-row-2"><div class="short-position-grid"><p class="short-position-header grid-row-1 grid-column-1">Stock:</p><p class="short-position-header-value grid-row-1 grid-column-2">';
 		html += stockName;
 		html += '</p><p class="short-position-header grid-row-2 grid-column-1">Shares:</p><p class="short-position-header-value grid-row-2 grid-column-2">';
-		html += sharesAmount;
-		html += '</p><p class="short-position-header grid-row-3 grid-column-1">Sold For:</p><p class="short-position-header-value grid-row-3 grid-column-2">$';
-		html += sellPrice;
-		html += '</p></div ><p class="short-position-info">Covering your short position now will return you <span class="money-text">$';
-		html += returnPrice;
+		html += DisplayUtils.GetNumberText(sharesAmount);
+		html += '</p><p class="short-position-header grid-row-3 grid-column-1">Sold For:</p><p class="short-position-header-value grid-row-3 grid-column-2">';
+		html += DisplayUtils.GetMoneyText(sellPrice);
+		html += '</p></div ><p class="short-position-info">Covering your short position now will return you <span class="money-text">';
+		html += DisplayUtils.GetMoneyText(returnPrice);
 		html += '</span>.</p><div class="buy-sell-control"><button class="btn btn-warning buy-sell-button fill grid-column-2 grid-row-1" id="coverShortPositionButton">Cover</button><button class="btn btn-outline-danger buy-sell-button fill grid-column-2 grid-row-2" id="cancel">Cancel</button></div></div>';
 		return html;
 	},
@@ -1368,7 +1369,7 @@ var ScreenOps = {
 				}
 				amountSelector.append($('<option></option>').attr('value', shortAmount).text(shortAmount));
 			}
-			$(ConstHtmlIds.StockShortButton).text('Short for $' + initialBuyFor);
+			$(ConstHtmlIds.StockShortButton).text('Short for $' + Math.round(initialBuyFor));
 		});
 
 		$(ConstHtmlIds.StockShortAmount).change(function () {
@@ -1376,8 +1377,8 @@ var ScreenOps = {
 			let stockName = $(ConstHtmlIds.StockShortName).find(":selected").text();
 			let sharesAmount = $(ConstHtmlIds.StockShortAmount).find(":selected").text();
 			let stockValue = CurrentData.StockValues[stockName];
-			let cost = sharesAmount * stockValue / 200;
-			$(ConstHtmlIds.StockShortButton).text('Short for $' + cost);
+			let cost = sharesAmount * stockValue / (100 * Balance.ShortingMargin);
+			$(ConstHtmlIds.StockShortButton).text('Short for $' + Math.round(cost));
 		});
 	},
 	PreCoverShort: function (isBuy) {
@@ -1948,7 +1949,7 @@ var Presenter = {
 							if (value === null || value === undefined) {
 								return null;
 							}
-							return '$' + value;
+							return DisplayUtils.GetMoneyText(value);
 						},
 						display: function (ctx) {
 							let value = Number(ctx.dataset.data[ctx.dataIndex]);

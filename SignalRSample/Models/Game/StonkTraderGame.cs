@@ -509,7 +509,7 @@ namespace Models.Game
 		public PlayerInventoryDto ShortStock(string playerId, string stockName, int sharesToShort)
 		{
 			var player = Players[playerId];
-			if(player.Character.GetsShort && IsMarketOpen && !IsMarketHalfTime)
+			if(player.Character.GetsShort && IsMarketOpen)// && !IsMarketHalfTime)
 			{
 				if (player.ShortPosition == null)
 				{
@@ -538,7 +538,7 @@ namespace Models.Game
 		public PlayerInventoryDto CoverShortPosition(string playerId)
 		{
 			var player = Players[playerId];
-			if(player.Character.GetsShort && IsMarketOpen && !IsMarketHalfTime)
+			if(player.Character.GetsShort && IsMarketOpen)// && !IsMarketHalfTime)
 			{
 				return CoverShortPrivate(playerId);
 			}
@@ -547,7 +547,6 @@ namespace Models.Game
 
 		private PlayerInventoryDto CoverShortPrivate(string playerId)
 		{
-			// TODO: Look into re-balancing this...
 			var player = Players[playerId];
 			if(player.ShortPosition != null)
 			{
@@ -556,12 +555,6 @@ namespace Models.Game
 
 				int adjustment = (int)(shortPosition.PurchasePrice + shortPosition.SharesSoldPrice - shortPosition.SharesAmount * stock.Value);
 
-				// Insurance if you lose money...
-				// TODO Check if this is even worth it
-				// if (adjustment < 0)
-				// {
-				// 	adjustment = (int)(adjustment * 0.1M);
-				// }
 				player.Money += adjustment;
 				player.ShortPosition = player.Character.ShortPosition = null;
 				return player.GetPlayerInventory(m_stocks);
@@ -960,7 +953,7 @@ namespace Models.Game
 				var holdings = player.Holdings[stock];
 				if (holdings > 0)
 				{
-					decimal specificPercentage = player.Character.GetDivedendAmount(m_stocks[stock].Value, percentage);
+					decimal specificPercentage = player.Character.GetDividendAmount(m_stocks[stock].Value, percentage);
 					player.Money += (int)(holdings * specificPercentage);
 				}
 
@@ -1010,7 +1003,7 @@ namespace Models.Game
 				{
 					foreach (Player player in Players.Values)
 					{
-						player.Holdings[stock.Name] = player.Holdings[stock.Name] * 2;
+						player.Holdings[stock.Name] *= 2;
 
 						// Continue to grow the short position's terribleness
 						// TODO This is not yet reflected on the client side
@@ -1202,13 +1195,13 @@ namespace Models.Game
 				if(bestStockValue < kvp.Value)
 				{
 					bestStockValue = kvp.Value;
-					bestStock = $"{kvp.Key} ({(kvp.Value >= 0M ? "+" : "")}{kvp.Value * 100}%)";
+					bestStock = $"{kvp.Key} ({(kvp.Value >= 0M ? "+" : "")}{kvp.Value * 100:0}%)";
 				}
 
 				if(worstStockValue > kvp.Value)
 				{
 					worstStockValue = kvp.Value;
-					worstStock = $"{kvp.Key} ({(kvp.Value >= 0M ? "+" : "")}{kvp.Value * 100}%)";
+					worstStock = $"{kvp.Key} ({(kvp.Value >= 0M ? "+" : "")}{kvp.Value * 100:0}%)";
 				}
 			}
 
@@ -1217,7 +1210,7 @@ namespace Models.Game
 			{
 				Message = summaryMessage,
 			});
-			
+
 			var preSellInventories = GetInventoryCollectionDto();
 			SellAllShares();
 
