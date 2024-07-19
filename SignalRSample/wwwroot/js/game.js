@@ -502,10 +502,22 @@ var Connection = {
 		CurrentData.Money = money;
 		CurrentData.NetWorth = netWorth;
 		if (CurrentData.IsMarketOpen) {
-			$(ConstHtmlIds.Money).text('Cash: $' + money);
+			if (money >= 0){
+				$(ConstHtmlIds.Money).text('Cash: $' + money);
+			}
+			else {
+				// Adjust where the negative sign is
+				$(ConstHtmlIds.Money).text('Cash: -$' + money * -1);
+			}
 		}
 		else {
-			$(ConstHtmlIds.Money).text('Net Worth: $' + netWorth);
+			if (netWorth >= 0){
+				$(ConstHtmlIds.Money).text('Net Worth: $' + money);
+			}
+			else {
+				// Adjust where the negative sign is
+				$(ConstHtmlIds.Money).text('Net Worth: -$' + netWorth * -1);
+			}
 		}
 	},
 };
@@ -793,7 +805,7 @@ var HtmlGeneration =
 			html += 'No Information (so sad)';
 		}
 		else {
-			html += trendDto.stockName + ' Trending ' + trendDto.direction;
+			html += trendDto.stockName + ' trending ' + trendDto.direction;
 		}
 		html += '</p></div>';
 		return html;

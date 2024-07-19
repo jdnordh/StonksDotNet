@@ -7,7 +7,7 @@ namespace StonkTrader.Models.Game.Characters
 	public class DayTraderCharacter : CharacterBase
 	{
 		#region Properties
-		
+
 		/// <inheritdoc />
 		public override string Name => "Day Trader";
 
@@ -31,7 +31,7 @@ namespace StonkTrader.Models.Game.Characters
 		public override string GetDetailedInformation()
 		{
 			string preamble = AnalyzedStock == null ? "" : $"Currently analyzing {AnalyzedStock.Name}. ";
-			return $"{preamble}As the Day Trader, you get to trade in the Half Time market. This is an exclusive open market halfway through the rounds. Additionally, during half time, you get to see a trend of what will happen to the analyzed stock in the second half of the round.";
+			return $"{preamble}As the Day Trader, you get to trade in the Half Time market. This is an exclusive open market halfway through the rounds. Additionally, during half time, you get to see a trend of what will happen to the analyzed stock in the coming rounds.";
 		}
 
 		#endregion
