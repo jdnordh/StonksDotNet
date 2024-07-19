@@ -623,8 +623,8 @@ var HtmlGeneration =
 			html += DisplayUtils.GetNumberText(buyAmount);
 			html += '</option>';
 		}
-		html += '</select><button class="btn btn-success buy-sell-button fill grid-column-2 grid-row-2" id="buy">Buy for $';
-		html += initialBuyFor;
+		html += '</select><button class="btn btn-success buy-sell-button fill grid-column-2 grid-row-2" id="buy">Buy for ';
+		html += DisplayUtils.GetMoneyText(initialBuyFor);
 		html += '</button ><button class="btn btn-outline-danger buy-sell-button fill grid-column-2 grid-row-3" id="cancel">Cancel</button></div></div>';
 		return html;
 	},
@@ -644,8 +644,8 @@ var HtmlGeneration =
 			html += DisplayUtils.GetNumberText(i);
 			html += '</option>';
 		}
-		html += '</select><button class="btn btn-info buy-sell-button fill grid-column-2 grid-row-2" id="sell">Sell for $';
-		html += initialSellFor;
+		html += '</select><button class="btn btn-info buy-sell-button fill grid-column-2 grid-row-2" id="sell">Sell for ';
+		html += DisplayUtils.GetMoneyText(initialSellFor);
 		html += '</button><button class="btn btn-outline-danger buy-sell-button fill grid-column-2 grid-row-3" id="cancel">Cancel</button></div></div>';
 		return html;
 	},
@@ -945,8 +945,8 @@ var HtmlGeneration =
 			html += DisplayUtils.GetNumberText(shortAmount);
 			html += '</option>';
 		}
-		html += '</select><button class="btn btn-warning buy-sell-button fill grid-column-2 grid-row-4" id="stockShortButton">Short for $';
-		html += initialBuyFor;
+		html += '</select><button class="btn btn-warning buy-sell-button fill grid-column-2 grid-row-4" id="stockShortButton">Short for ';
+		html += DisplayUtils.GetMoneyText(initialBuyFor);
 		html += '</button><button class="btn btn-outline-danger buy-sell-button fill grid-column-2 grid-row-5" id="cancel">Cancel</button></div></div>';
 		return html;
 	},
@@ -1235,7 +1235,7 @@ var ScreenOps = {
 		$(ConstHtmlIds.BuyAmount).change(function () {
 			let stockAmount = $(ConstHtmlIds.BuyAmount).find(":selected").text();
 			let cost = (CurrentData.StockValues[stockName] * stockAmount) / 100;
-			$(ConstHtmlIds.Buy).text('Buy for $' + cost);
+			$(ConstHtmlIds.Buy).text('Buy for ' + DisplayUtils.GetMoneyText(cost));
 		});
 		$(ConstHtmlIds.Buy).on(clickHandler, function () {
 			let stockAmount = $(ConstHtmlIds.BuyAmount).find(":selected").text();
@@ -1259,7 +1259,7 @@ var ScreenOps = {
 		$(ConstHtmlIds.SellAmount).change(function () {
 			let stockAmount = $(ConstHtmlIds.SellAmount).find(":selected").text();
 			let cost = (CurrentData.StockValues[stockName] * stockAmount) / 100;
-			$(ConstHtmlIds.Sell).text('Sell for $' + cost);
+			$(ConstHtmlIds.Sell).text('Sell for ' + DisplayUtils.GetMoneyText(cost));
 		});
 		$(ConstHtmlIds.Sell).on(clickHandler, function () {
 			let stockAmount = $(ConstHtmlIds.SellAmount).find(":selected").text();
@@ -1369,7 +1369,7 @@ var ScreenOps = {
 				}
 				amountSelector.append($('<option></option>').attr('value', shortAmount).text(shortAmount));
 			}
-			$(ConstHtmlIds.StockShortButton).text('Short for $' + Math.round(initialBuyFor));
+			$(ConstHtmlIds.StockShortButton).text('Short for ' + DisplayUtils.GetMoneyText(Math.round(initialBuyFor)));
 		});
 
 		$(ConstHtmlIds.StockShortAmount).change(function () {
@@ -1378,7 +1378,7 @@ var ScreenOps = {
 			let sharesAmount = $(ConstHtmlIds.StockShortAmount).find(":selected").text();
 			let stockValue = CurrentData.StockValues[stockName];
 			let cost = sharesAmount * stockValue / (100 * Balance.ShortingMargin);
-			$(ConstHtmlIds.StockShortButton).text('Short for $' + Math.round(cost));
+			$(ConstHtmlIds.StockShortButton).text('Short for ' + DisplayUtils.GetMoneyText(Math.round(cost)));
 		});
 	},
 	PreCoverShort: function (isBuy) {
@@ -1515,7 +1515,7 @@ var ScreenOps = {
 				$('label[for=marketOpenTime]').text('Market Open Time: ' + this.value + 's');
 			})
 			$(ConstHtmlIds.ParamStartingMoney).on('input', function () {
-				$('label[for=startingMoney]').text('Starting Money: $' + this.value);
+				$('label[for=startingMoney]').text('Starting Money: ' + DisplayUtils.GetMoneyText(this.value));
 			})
 			$(ConstHtmlIds.ParamRollsPerRound).on('input', function () {
 				$('label[for=rollsPerRound]').text('Rolls per Round: ' + this.value);
