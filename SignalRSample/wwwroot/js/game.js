@@ -564,6 +564,7 @@ var ConstHtmlIds =
 	ParamRollsPerRound: "#rollsPerRound",
 	ParamRounds: "#rounds",
 	ParamStockPresets: "#stockPresets",
+	ParamEnableCharacters: "#enableCharacters",
 	BuySellTimer: "#buySellTimer",
 	IsPlayer: "#isPlayer",
 	ChartSlideContainer: "#chart-slide-container",
@@ -859,7 +860,7 @@ var HtmlGeneration =
 	},
 	MakeJoinMenu: function (initialUsername) {
 		if (initialUsername && initialUsername.length > 0) {
-			let html = '<div class="center-absolute menu-join-grid"><div class="menu-sub-grid"><label for="username" class="menu-text">Username (';
+			let html = '<div class="center-absolute menu-join-grid"><div class="menu-sub-grid"><label for="username" class="username-text">Username (';
 			html += initialUsername.length;
 			html += '/12):</label><input autocomplete="off" type="text" maxlength="12" class="menu-text" id="username" value="';
 			html += initialUsername;
@@ -880,7 +881,7 @@ var HtmlGeneration =
 		return '<button class="btn btn-primary menu-button" id="endGameButton">End Game</button>';
 	},
 	MakeMainMenu: function () {
-		return '<div class="grid-player-main grid-fill" id="mainGrid"><div class="center-absolute menu-grid"><button id="createGame" class="btn btn-primary grid-row-1 menu-button" disabled>Create Game</button><button id="joinGame" class="btn btn-primary grid-row-2 menu-button" disabled>Join Game</button><button id="watchGame" class="btn btn-primary grid-row-3 menu-button" disabled>Watch Game</button><form action="/help" class="grid-row-4"><button type="submit" id="howToPlay" class="btn btn-primary fill menu-button">How To Play</button></form></div></div>';
+		return '<div class="grid-player-main grid-fill" id="mainGrid"><div class="center-absolute menu-grid"><button id="joinGame" class="btn btn-primary grid-row-2 menu-button" disabled>Join Game</button><button id="createGame" class="btn btn-primary grid-row-1 menu-button" disabled>Create Game</button><button id="watchGame" class="btn btn-primary grid-row-3 menu-button" disabled>Watch Game</button><form action="/help" class="grid-row-4"><button type="submit" id="howToPlay" class="btn btn-primary fill menu-button">How To Play</button></form></div></div>';
 	},
 	MakeEmptyGameplayGrid: function () {
 		return '<div class="grid-player-main grid-fill" id="mainGrid"></div>';
@@ -1501,6 +1502,7 @@ var ScreenOps = {
 				let rollsPerRound = Number($(ConstHtmlIds.ParamRollsPerRound).val());
 				let rounds = Number($(ConstHtmlIds.ParamRounds).val());
 				let stockPreset = Number($(ConstHtmlIds.ParamStockPresets).val());
+				let enableCharacters = Number($(ConstHtmlIds.ParamEnableCharacters).val());
 
 				let params = {
 					marketOpenTimeInSeconds: marketTime,
@@ -1508,6 +1510,7 @@ var ScreenOps = {
 					rollsPerRound: rollsPerRound,
 					numberOfRounds: rounds,
 					stockPreset: stockPreset,
+					enableCharacters: enableCharacters
 				};
 				Connection.CreateGame(params);
 			});

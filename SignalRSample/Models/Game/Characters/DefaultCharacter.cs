@@ -9,17 +9,17 @@ namespace StonkTrader.Models.Game.Characters
 		#region Properties
 
 		/// <summary>
-		/// The name of this chacter.
+		/// The name of this character.
 		/// </summary>
 		public override string Name => "Default";
 
 		/// <summary>
-		/// The name of this chacter.
+		/// The name of this character.
 		/// </summary>
 		public override string Description => "The default character.";
 
 		/// <summary>
-		/// The id of this chacter.
+		/// The id of this character.
 		/// </summary>
 		public override int Id => 0;
 
@@ -30,7 +30,7 @@ namespace StonkTrader.Models.Game.Characters
 		/// <inheritdoc/>
 		public override string GetDetailedInformation()
 		{
-			return "As the default character, you have no special abilities. It would suck to be you right now.";
+			return "You can buy and sell stocks to try to make a profit.";
 		}
 
 		#endregion

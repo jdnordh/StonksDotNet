@@ -31,5 +31,9 @@ namespace Models.DataTransferObjects
 		[JsonInclude]
 		[JsonProperty("stocks")]
 		public StockDto [] Stocks { get; set; }
+
+		[JsonInclude]
+		[JsonProperty("enableCharacters")]
+		public bool EnableCharacters { get; set; }
 	}
 }

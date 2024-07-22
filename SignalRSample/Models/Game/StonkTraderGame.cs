@@ -137,7 +137,7 @@ namespace Models.Game
 
 		#endregion
 
-		#region Constructor 
+		#region Constructor
 
 		public StonkTraderGame(GameInitializerDto initializer, IGameEventCommunicator gameEventCommunicator)
 		{
